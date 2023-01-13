@@ -1,10 +1,14 @@
-# Visualisation of model outputs
+# Visualisation of forecasting model outputs
 
 > _This is a work in progress!_
 
 ### Installation
 
-* Everything should happen from the `viz` directory (where this file is)
+* Clone this repository via one of
+```
+git clone git@github.com:nextstrain/forecasts-viz.git
+git clone https://github.com/nextstrain/forecasts-viz.git
+```
 
 * Create an enviornment with nodeJS and npm, e.g. 
 `conda create -n <env-name> -c conda-forge nodejs=18`
