@@ -1,7 +1,6 @@
 import React, {useRef} from 'react';
 import styled from 'styled-components';
-import { SmallMultiple } from "./SmallMultiple.js";
-import {useLegend} from "./Legend.js"
+import {useLegend, SmallMultiple} from "./lib/index.js"
 
 const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200;
 
