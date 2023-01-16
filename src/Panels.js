@@ -1,20 +1,6 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import {useLegend, SmallMultiple} from "./lib/index.js"
-
-const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200;
-
-const Container = styled.div`
-  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
-    margin-right: 100px; // + the 100px from <App> Container
-  }
-`;
-
-const PanelSectionContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-`;
+import {PanelDisplay} from "./lib/index.js"
 
 /**
  * styles chosen to match nextstrain.org
@@ -47,52 +33,11 @@ const PanelAbstract = styled.div`
   margin-right: 10%;
 `;
 
-const LegendContainer = styled.div`
-  /* border: solid red; */
-  display: flex;
-
-  /* legend-inline styles (which will be overridden by a media query if necessary) */
-  position: block;
-  flex-wrap: wrap;
-  flex-direction: row;
-  margin: 10px 0px;
-  & > div {
-    padding-right: 10px;
-  }
-
-  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
-    position: fixed;
-    right: 0px;
-    max-width: 200px;
-    min-width: 200px;
-    flex-wrap: nowrap;
-    flex-direction: column;
-    & > div {
-      padding-right: 0px;
-    }
-  }
-`;
-
-
-const useResponsiveSizing = () => {
-  /* following are in pixel coordinates */
-  const width = 250;
-  const height = 200;
-  /* control the spacing around graphs via the margin of each graph */
-  const margin = {top: 5, right: 20, bottom: 40, left: 40}
-  const fontSize = "10px";
-
-  return {width, height, margin, fontSize};
-}
 
 export const Panels = ({modelData, sidebar}) => {
 
-  const sizes = useResponsiveSizing();
-  const legendContainer = useRef(null);
-  useLegend(legendContainer, modelData); // renders the legend
-
   return (
-    <Container id="mainPanelsContainer" >
+    <div id="mainPanelsContainer" >
 
       <MainTitle>
         Nextstrain SARS-CoV-2 Forecasts
@@ -117,18 +62,7 @@ export const Panels = ({modelData, sidebar}) => {
         {`These estimates are derived from sequence count data using a multinomial logistic regression model.`}
       </PanelAbstract>
 
-      {/* To do - the only appears once, however the intention is that on small screens
-      it should appear above _every_ <PanelSectionContainer/> */}
-      <LegendContainer id="legend" ref={legendContainer}/>
-
-      <PanelSectionContainer id="frequenciesPanel">
-        {modelData.get('locations')
-          .map((location) => ({location, graph: "freq", sizes}))
-          .map((param) => (
-            <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData}/>
-          ))
-        }
-      </PanelSectionContainer>
+      <PanelDisplay modelData={modelData} graphType="freq"/>
 
       <PanelSectionHeaderContainer>
         {`Growth Advantage`}
@@ -140,14 +74,7 @@ export const Panels = ({modelData, sidebar}) => {
           Vertical bars show the 95% HPD.
         `}
       </PanelAbstract>
-      <PanelSectionContainer id="growthAdvantagePanel">
-        {modelData.get('locations')
-          .map((location) => ({location, graph: "ga", sizes}))
-          .map((param) => (
-            <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData}/>
-          ))
-        }
-      </PanelSectionContainer>
+      <PanelDisplay modelData={modelData} graphType="ga"/>
 
       <PanelSectionHeaderContainer>
         {`Estimated Cases over time`}
@@ -156,14 +83,8 @@ export const Panels = ({modelData, sidebar}) => {
         {`As estimated by the variant renewal model.
         These estimates are smoothed to deal with daily reporting noise and weekend effects present in case data.`}
       </PanelAbstract>
-      <PanelSectionContainer id="smoothedIncidencePanel">
-        {modelData.get('locations')
-          .map((location) => ({location, graph: "stackedIncidence", sizes}))
-          .map((param) => (
-            <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData}/>
-          ))
-        }
-      </PanelSectionContainer>
+      <PanelDisplay modelData={modelData} graphType="stackedIncidence"/>
+
 
       <PanelSectionHeaderContainer>
         {`Estimated effective reproduction number over time`}
@@ -172,15 +93,9 @@ export const Panels = ({modelData, sidebar}) => {
         {`This is an estimate of the average number of secondary infections expected to be caused by an individual infected with a given variant as estimated by the variant renewal model.
         In general, we expect the variant to be growing if this number is greater than 1.`}
       </PanelAbstract>
-      <PanelSectionContainer id="rtPanel">
-      {modelData.get('locations')
-          .map((location) => ({location, graph: "r_t", sizes}))
-          .map((param) => (
-            <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData}/>
-          ))
-        }
-      </PanelSectionContainer>
+      <PanelDisplay modelData={modelData} graphType="r_t"/>
 
-    </Container>
+
+    </div>
   )
 }
