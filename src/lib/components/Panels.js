@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { SmallMultiple } from "./SmallMultiple";
 import { Legend } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
+import { useModelData } from "./ModelDataProvider";
 
 /**
  * The intention is to (eventually) expose two components here
@@ -39,27 +40,37 @@ const useResponsiveSizing = () => {
   return {width, height, margin, fontSize};
 }
 
-export const PanelDisplay = ({
+/**
+ * Main logic placed within <Panel> so that if any hooks have errors they
+ * bubble up to this component
+ */
+export const PanelDisplay = (props) => {
+  return (
+    <ErrorBoundary>
+      <Panel {...props}/>
+    </ErrorBoundary>
+  )
+}
+
+export const Panel = ({
   graphType,
-  modelData,
   locations=undefined, /* optional. Defaults to all available */
 }) => {
   const sizes = useResponsiveSizing();
+  const {modelData} = useModelData();
   const locationList = locations || modelData.get('locations');
   return (
-    <ErrorBoundary>
-      <Container>
-        <Legend modelData={modelData} thresholdWidth={WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}/>
-        <PanelSectionContainer>
-          {locationList
-            .map((location) => ({location, graph: graphType, sizes}))
-            .map((param) => (
-              <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData}/>
-              ))
-            }
-        </PanelSectionContainer>
-      </Container>
-    </ErrorBoundary>
+    <Container>
+      <Legend modelData={modelData} thresholdWidth={WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}/>
+      <PanelSectionContainer>
+        {locationList
+          .map((location) => ({location, graph: graphType, sizes}))
+          .map((param) => (
+            <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData}/>
+            ))
+          }
+      </PanelSectionContainer>
+    </Container>
   )
 }
 

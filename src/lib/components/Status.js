@@ -1,8 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
+import {useModelData} from "./ModelDataProvider.js";
 
 const Container = styled.div`
-  margin-top: 25vw;
+  margin-top: 100px;
+  margin-bottom: 100px;
   font-size: 20px;
 `;
 
@@ -20,5 +22,15 @@ export const Status = ({children, err}) => {
         <ErrorMessage>{String(err)}</ErrorMessage>
       </>}
     </Container>
+  )
+}
+
+export const ModelDataStatus = () => {
+  const {modelData, status, error} = useModelData();
+  if (modelData) {
+    return null;
+  }
+  return (
+    <Status err={error}>{status}</Status>
   )
 }

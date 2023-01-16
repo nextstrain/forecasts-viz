@@ -1,6 +1,5 @@
-import { useDataFetch } from './utils/dataFetch.js';
 import { PanelDisplay } from './components/Panels.js';
-import { Status } from './components/Status.js';
-import { ErrorBoundary } from './components/ErrorBoundary.js';
+import { ModelDataStatus } from './components/Status.js';
+import { ModelDataProvider, useModelData } from "./components/ModelDataProvider.js";
 
-export {useDataFetch, PanelDisplay, Status, ErrorBoundary};
+export {PanelDisplay, ModelDataStatus, ModelDataProvider, useModelData};
