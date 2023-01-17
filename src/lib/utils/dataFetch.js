@@ -6,6 +6,20 @@ const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/
 const DEFAULT_RENEWAL_ENPOINT = `${DEFAULT_ENDPOINT_PREFIX}/renewal/latest_results.json`;
 const DEFAULT_MLR_ENDPOINT = `${DEFAULT_ENDPOINT_PREFIX}/mlr/latest_results.json`;
 
+/**
+ * @typedef {Object} ContextData
+ * The data made available via React Context
+ * @property {(ModelData|undefined)} modelData
+ * @property {string} status
+ * @property {(Error|undefined)} error
+ * @inner
+ * @memberof module:@nextstrain/forecasts-viz
+ */
+
+/**
+ * @returns {ContextData}
+ * @private
+ */
 export const useDataFetch = () => {
   const [status, setStatus] = useState('Downloading model data JSONs (n=2)...');
   const [error, setError] = useState(undefined); // TODO

@@ -11,7 +11,8 @@ import * as d3 from "d3";
  * (set of small-multiples) as I want to enable interactivity between the legend
  * and the corresponding panel, and to allow panels with different legends.
  *                                                                james, jan 2023
- */
+ * @private
+*/
 
 const LegendContainer = styled.div`
   /* border: solid red; */

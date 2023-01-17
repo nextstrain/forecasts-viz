@@ -25,8 +25,23 @@ export const Status = ({children, err}) => {
   )
 }
 
+/**
+ * A React component which displays the status of the model data being
+ * fetched and parsed by `ModelDataProvider`. Once the data has been
+ * (successfully) parsed this component will return `null` and thus
+ * not render any elements to screen. If you wish to have custom display
+ * of progress then it's easy to write your own component which considers
+ * the `status` and `error` properties of `useModelData()`
+ * @kind React Component
+ * @category Components
+ * @memberof module:@nextstrain/forecasts-viz
+ * @example
+ * <ModelDataProvider ...>
+ *   <ModelDataStatus/>
+ * </ModelDataProvider
+ */
 export const ModelDataStatus = () => {
-  const {modelData, status, error} = useModelData();
+  const {modelData, status, error} = `useModelData()`;
   if (modelData) {
     return null;
   }

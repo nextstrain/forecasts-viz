@@ -5,12 +5,14 @@ import { Legend } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
 import { useModelData } from "./ModelDataProvider";
 
+
 /**
  * The intention is to (eventually) expose two components here
  * which display a panel of graphs (or perhaps one component
  * parameterised by props). The first will display the same graph
  * type, for multiple locations. The second will display multiple
  * graph types for the same location.
+ * @private
  */
 
 
@@ -41,8 +43,15 @@ const useResponsiveSizing = () => {
 }
 
 /**
- * Main logic placed within <Panel> so that if any hooks have errors they
- * bubble up to this component
+ * Display a panel of small-multiple graphs for different locations.
+ * This component must be a descendent of a `<ModelDataProvider>`
+ * @param {('ga'|'r_t'|'freq'|'stackedIncidence')} graphType
+ * @param {(Array|undefined)} locations Defaults to `undefined` which will display all available locations
+ * @kind React Component
+ * @memberof module:@nextstrain/forecasts-viz
+ * @category Components
+ * @example
+ * <PanelDisplay graphType="ga"/>
  */
 export const PanelDisplay = (props) => {
   return (
@@ -52,6 +61,11 @@ export const PanelDisplay = (props) => {
   )
 }
 
+/**
+ * See <PanelDisplay> for description. That component wraps this one
+ * so that if any hooks have errors they bubble up and can be caught
+ * @private 
+ */
 export const Panel = ({
   graphType,
   locations=undefined, /* optional. Defaults to all available */
