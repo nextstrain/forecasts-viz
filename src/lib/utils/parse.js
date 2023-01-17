@@ -1,8 +1,22 @@
 import { variantColors, variantDisplayNames } from "./ncovSpecificSettings";
 
-/** An "empty" data point.
- * Map used instead of object as it's (seemingly) faster + consumes less
+/**
+ * Maps used instead of object as it's (seemingly) faster + consumes less
  * memory (https://www.zhenghao.io/posts/object-vs-map)
+ * @private
+ */
+
+/**
+ * @typedef {Map} TimePoint
+ * An data point representing a model estimate at a certain date
+ * @property {(string|undefined)} date
+ * @property {(number|NaN)} freq
+ * @property {(number|NaN)} I_smooth
+ * @property {(number|NaN)} I_smooth_y0
+ * @property {(number|NaN)} I_smooth_y1
+ * @property {(number|NaN)} r_t
+ * @inner
+ * @memberof module:@nextstrain/forecasts-viz
  */
 const TimePoint = new Map([
   ['date', undefined],
@@ -12,6 +26,18 @@ const TimePoint = new Map([
   ['I_smooth_y1', NaN], // stacked
   ['r_t', NaN],
 ]);
+
+/**
+ * @typedef {Map} VariantPoint
+ * An data point representing a model estimate for a variant.
+ * The properties defined directly here are not specific to any date.
+ * Date-specific estimates are specified via `temporal`
+ * @property {(string|undefined)} variant Variant name
+ * @property {(number|undefined)} ga Growth Advantage
+ * @property {(Array|undefined)} temporal Array of `TimePoint` estimates
+ * @inner
+ * @memberof module:@nextstrain/forecasts-viz
+ */
 const VariantPoint = new Map([
   ['ga', undefined],
   ['temporal', undefined],
@@ -31,15 +57,26 @@ const initialisePointsPerVariant = (variant, dates) => {
 const THRESHOLD_FREQ = 0.005; /* half a percent */
 const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
 
+
 /**
- * <returned_Object> ["points"] [location] [ variant ] [ dateIdx ] : Point
- *                   ["variants"] : list
- *                   ["dates"] : list
- *                   ["locations"] : list
- *                   ["dateIdx"] : Map (lookup for date string -> idx in dates array)
- *                   ["variantColors"] : Map
- *                   ["variantDisplayNames"] : Map
- *                   ["pivot"]: string
+ * @typedef {Map} ModelData
+ * @property {Points} points
+ * @property {Array} variants
+ * @property {Array} dates
+ * @property {Array} locations
+ * @property {Map} dateIdx lookup for date string -> idx in dates array
+ * @property {Map} variantColors
+ * @property {Map} variantDisplayNames
+ * @property {String} pivot
+ * @property {Map} dateIdx
+ * @inner
+ * @memberof module:@nextstrain/forecasts-viz
+ */
+
+/**
+ * @returns {ModelData}
+ * @private
+ * @throws Error
  */
 export const parseModelData = (renewal, mlr) => {
 

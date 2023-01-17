@@ -2,6 +2,7 @@
  * following hardcoded in src for initial simplicity
  * however these should be lifted into the dataset
  * JSON once we are happy with the format / options
+ * @private
  */
 
 export const variantColors = new Map([

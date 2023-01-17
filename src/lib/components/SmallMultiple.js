@@ -5,6 +5,7 @@ import * as d3 from "d3";
 /**
  * A lot of these functions can be broken out into custom hooks / separate files.
  * But for now, this is easier...
+ * @private
  */
 
 const D3Container = styled.div`

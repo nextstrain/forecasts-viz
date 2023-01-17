@@ -8,14 +8,15 @@
 
 # dependencies
 /node_modules
-/.pnp
-.pnp.js
 
-# testing
-/coverage
+# library build (`npm run transpile`)
+/dist
 
-# production
+# test app build (`npm run build`)
 /build
+
+# don't accidentally commit tarballs from `npm pack`
+nextstrain-forecasts-viz-*.tgz
 
 # misc
 .DS_Store

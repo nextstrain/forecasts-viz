@@ -1,12 +1,28 @@
 import {useState, useEffect} from 'react';
 import {parseModelData} from "./parse.js";
 
+
 const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global";
 const DEFAULT_RENEWAL_ENPOINT = `${DEFAULT_ENDPOINT_PREFIX}/renewal/latest_results.json`;
 const DEFAULT_MLR_ENDPOINT = `${DEFAULT_ENDPOINT_PREFIX}/mlr/latest_results.json`;
 
+/**
+ * @typedef {Object} ContextData
+ * The data made available via React Context
+ * @property {(ModelData|undefined)} modelData
+ * @property {string} status
+ * @property {(Error|undefined)} error
+ * @inner
+ * @memberof module:@nextstrain/forecasts-viz
+ */
+
+/**
+ * @returns {ContextData}
+ * @private
+ */
 export const useDataFetch = () => {
-  const [status, setStatus] = useState({msg: 'Downloading model data JSONs (n=2)...'});
+  const [status, setStatus] = useState('Downloading model data JSONs (n=2)...');
+  const [error, setError] = useState(undefined); // TODO
   const [modelData, setModelData] = useState(undefined);
 
   useEffect( () => {
@@ -22,20 +38,23 @@ export const useDataFetch = () => {
         renewalData = await renewalJson;
         mlrData = await mlrJson;
       } catch (err) {
-        setStatus({msg: 'Downloading model data JSONs failed.', err})
+        setStatus('Downloading model data JSONs failed.')
+        setError(err);
         return;
       }
-      setStatus({msg: "Data downloaded. Processing the data now..."})
+      setStatus("Data downloaded. Processing the data now...")
       try {
         setModelData(parseModelData(renewalData, mlrData));
       } catch (err) {
-        setStatus({msg: 'Downloading model data JSONs succeeded, but parsing the JSONs failed.', err})
+        setStatus('Downloading model data JSONs succeeded, but parsing the JSONs failed.');
+        setError(err);
       }
+      setStatus("Data ready for visualisation.")
     }
 
     fetchAndParse();
   }, []);
 
 
-  return [modelData, status]
+  return {modelData, status, error}
 }
