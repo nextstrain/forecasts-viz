@@ -9,7 +9,7 @@ import {parseModelData} from "./parse.js";
  * @property {string} status
  * @property {(Error|undefined)} error
  * @inner
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  */
 
 /**
@@ -24,7 +24,7 @@ import {parseModelData} from "./parse.js";
  * @property {Map<string,string>} variantColors colors for the variants specified in the model JSONs
  * @property {Map<string,string>} variantDisplayNames display names for the variants specified in the model JSONs
  * @inner
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  */
 
 

@@ -33,7 +33,7 @@ export const Status = ({children, err}) => {
  * the `status` and `error` properties of `useModelData()`
  * @kind React Component
  * @category Components
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  * @example
  * <ModelDataProvider ...>
  *   <ModelDataStatus/>

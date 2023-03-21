@@ -12,7 +12,7 @@ const Context = createContext()
  * @category Components
  * @param {DatasetConfig} config Configuration of datasets
  * @param {ReactComponent} children Child react components for rendering
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  * @example
  * <ModelDataProvider ...>
  *   <PanelDisplay.../>
@@ -32,7 +32,7 @@ export const ModelDataProvider = ({
  * @returns {ContextData} The data provided by `<ModelDataProvider>`
  * @kind React Hook
  * @category Hooks
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  * @throws Error
  * @example
  * const MyReactComponent = ({}) => {

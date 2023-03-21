@@ -1,31 +1,31 @@
-<a name="module_@nextstrain/forecasts-viz"></a>
+<a name="module_@nextstrain/evofr-viz"></a>
 
-## @nextstrain/forecasts-viz
+## @nextstrain/evofr-viz
 
-* [@nextstrain/forecasts-viz](#module_@nextstrain/forecasts-viz)
+* [@nextstrain/evofr-viz](#module_@nextstrain/evofr-viz)
     * _static_
         * _Components_
-            * [.exports.ModelDataProvider](#module_@nextstrain/forecasts-viz.exports.ModelDataProvider)
-            * [.exports.PanelDisplay](#module_@nextstrain/forecasts-viz.exports.PanelDisplay)
-            * [.exports.ModelDataStatus](#module_@nextstrain/forecasts-viz.exports.ModelDataStatus)
+            * [.exports.ModelDataProvider](#module_@nextstrain/evofr-viz.exports.ModelDataProvider)
+            * [.exports.PanelDisplay](#module_@nextstrain/evofr-viz.exports.PanelDisplay)
+            * [.exports.ModelDataStatus](#module_@nextstrain/evofr-viz.exports.ModelDataStatus)
         * _Hooks_
-            * [.exports.useModelData](#module_@nextstrain/forecasts-viz.exports.useModelData) ⇒ <code>ContextData</code>
+            * [.exports.useModelData](#module_@nextstrain/evofr-viz.exports.useModelData) ⇒ <code>ContextData</code>
     * _inner_
-        * [~ContextData](#module_@nextstrain/forecasts-viz..ContextData) : <code>Object</code>
-        * [~DatasetConfig](#module_@nextstrain/forecasts-viz..DatasetConfig) : <code>Object</code>
-        * [~TimePoint](#module_@nextstrain/forecasts-viz..TimePoint) : <code>Map</code>
-        * [~VariantPoint](#module_@nextstrain/forecasts-viz..VariantPoint) : <code>Map</code>
-        * [~ModelData](#module_@nextstrain/forecasts-viz..ModelData) : <code>Map</code>
+        * [~ContextData](#module_@nextstrain/evofr-viz..ContextData) : <code>Object</code>
+        * [~DatasetConfig](#module_@nextstrain/evofr-viz..DatasetConfig) : <code>Object</code>
+        * [~TimePoint](#module_@nextstrain/evofr-viz..TimePoint) : <code>Map</code>
+        * [~VariantPoint](#module_@nextstrain/evofr-viz..VariantPoint) : <code>Map</code>
+        * [~ModelData](#module_@nextstrain/evofr-viz..ModelData) : <code>Map</code>
 
-<a name="module_@nextstrain/forecasts-viz.exports.ModelDataProvider"></a>
+<a name="module_@nextstrain/evofr-viz.exports.ModelDataProvider"></a>
 
-### forecastsViz.exports.ModelDataProvider
+### evofr.exports.ModelDataProvider
 A React component which fetches and parses forecast-model JSONs
 and exposes them via React context. This data can be accessed by
 using the `useModelData` hook. All display content which wants to
 use this data (e.g. panels) should be children of this component.
 
-**Kind**: static React Component of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: static React Component of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Category**: Components  
 
 | Param | Type | Description |
@@ -39,13 +39,13 @@ use this data (e.g. panels) should be children of this component.
   <PanelDisplay.../>
 </ModelDataProvider
 ```
-<a name="module_@nextstrain/forecasts-viz.exports.PanelDisplay"></a>
+<a name="module_@nextstrain/evofr-viz.exports.PanelDisplay"></a>
 
-### forecastsViz.exports.PanelDisplay
+### evofr.exports.PanelDisplay
 Display a panel of small-multiple graphs for different locations.
 This component must be a descendent of a `<ModelDataProvider>`
 
-**Kind**: static React Component of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: static React Component of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Category**: Components  
 
 | Param | Type | Description |
@@ -57,9 +57,9 @@ This component must be a descendent of a `<ModelDataProvider>`
 ```js
 <PanelDisplay graphType="ga"/>
 ```
-<a name="module_@nextstrain/forecasts-viz.exports.ModelDataStatus"></a>
+<a name="module_@nextstrain/evofr-viz.exports.ModelDataStatus"></a>
 
-### forecastsViz.exports.ModelDataStatus
+### evofr.exports.ModelDataStatus
 A React component which displays the status of the model data being
 fetched and parsed by `ModelDataProvider`. Once the data has been
 (successfully) parsed this component will return `null` and thus
@@ -67,7 +67,7 @@ not render any elements to screen. If you wish to have custom display
 of progress then it's easy to write your own component which considers
 the `status` and `error` properties of `useModelData()`
 
-**Kind**: static React Component of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: static React Component of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Category**: Components  
 **Example**  
 ```js
@@ -75,12 +75,12 @@ the `status` and `error` properties of `useModelData()`
   <ModelDataStatus/>
 </ModelDataProvider
 ```
-<a name="module_@nextstrain/forecasts-viz.exports.useModelData"></a>
+<a name="module_@nextstrain/evofr-viz.exports.useModelData"></a>
 
-### forecastsViz.exports.useModelData ⇒ <code>ContextData</code>
+### evofr.exports.useModelData ⇒ <code>ContextData</code>
 Accesses data provided by `<ModelDataProvider>`
 
-**Kind**: static React Hook of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: static React Hook of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Returns**: <code>ContextData</code> - The data provided by `<ModelDataProvider>`  
 **Category**: Hooks  
 **Throws**:
@@ -94,12 +94,12 @@ const MyReactComponent = ({}) => {
   ...
 }
 ```
-<a name="module_@nextstrain/forecasts-viz..ContextData"></a>
+<a name="module_@nextstrain/evofr-viz..ContextData"></a>
 
-### @nextstrain/forecasts-viz~ContextData : <code>Object</code>
+### @nextstrain/evofr-viz~ContextData : <code>Object</code>
 The data made available via React Context
 
-**Kind**: inner typedef of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
 
 | Name | Type |
@@ -108,15 +108,15 @@ The data made available via React Context
 | status | <code>string</code> | 
 | error | <code>Error</code> \| <code>undefined</code> | 
 
-<a name="module_@nextstrain/forecasts-viz..DatasetConfig"></a>
+<a name="module_@nextstrain/evofr-viz..DatasetConfig"></a>
 
-### @nextstrain/forecasts-viz~DatasetConfig : <code>Object</code>
+### @nextstrain/evofr-viz~DatasetConfig : <code>Object</code>
 Configuration for the datasets to fetch & parse
 Currently the library is only built for `forecasts-ncov` model data
 and so there are hardcoded expectations. These will be lifted up and
 made config-options so that this library is pathogen agnostic.
 
-**Kind**: inner typedef of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
 
 | Name | Type | Description |
@@ -126,12 +126,12 @@ made config-options so that this library is pathogen agnostic.
 | variantColors | <code>Map.&lt;string, string&gt;</code> | colors for the variants specified in the model JSONs |
 | variantDisplayNames | <code>Map.&lt;string, string&gt;</code> | display names for the variants specified in the model JSONs |
 
-<a name="module_@nextstrain/forecasts-viz..TimePoint"></a>
+<a name="module_@nextstrain/evofr-viz..TimePoint"></a>
 
-### @nextstrain/forecasts-viz~TimePoint : <code>Map</code>
+### @nextstrain/evofr-viz~TimePoint : <code>Map</code>
 An data point representing a model estimate at a certain date
 
-**Kind**: inner typedef of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
 
 | Name | Type |
@@ -143,14 +143,14 @@ An data point representing a model estimate at a certain date
 | I_smooth_y1 | <code>number</code> \| <code>NaN</code> | 
 | r_t | <code>number</code> \| <code>NaN</code> | 
 
-<a name="module_@nextstrain/forecasts-viz..VariantPoint"></a>
+<a name="module_@nextstrain/evofr-viz..VariantPoint"></a>
 
-### @nextstrain/forecasts-viz~VariantPoint : <code>Map</code>
+### @nextstrain/evofr-viz~VariantPoint : <code>Map</code>
 An data point representing a model estimate for a variant.
 The properties defined directly here are not specific to any date.
 Date-specific estimates are specified via `temporal`
 
-**Kind**: inner typedef of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
 
 | Name | Type | Description |
@@ -159,10 +159,10 @@ Date-specific estimates are specified via `temporal`
 | ga | <code>number</code> \| <code>undefined</code> | Growth Advantage |
 | temporal | <code>Array</code> \| <code>undefined</code> | Array of `TimePoint` estimates |
 
-<a name="module_@nextstrain/forecasts-viz..ModelData"></a>
+<a name="module_@nextstrain/evofr-viz..ModelData"></a>
 
-### @nextstrain/forecasts-viz~ModelData : <code>Map</code>
-**Kind**: inner typedef of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+### @nextstrain/evofr-viz~ModelData : <code>Map</code>
+**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
 
 | Name | Type | Description |

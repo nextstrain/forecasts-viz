@@ -1,7 +1,7 @@
 {
-  "name": "nextstrain-forecasts-viz",
+  "name": "@nextstrain/evofr-viz",
   "version": "0.1.0",
-  "description": "React components for visualising Nextstrain forecasting model JSONs",
+  "description": "React components for visualising evofr model JSONs",
   "private": true,
   "author": "Nextstrain",
   "license": "AGPL-3.0-only",

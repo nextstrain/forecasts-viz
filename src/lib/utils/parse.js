@@ -14,7 +14,7 @@
  * @property {(number|NaN)} I_smooth_y1
  * @property {(number|NaN)} r_t
  * @inner
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  */
 const TimePoint = new Map([
   ['date', undefined],
@@ -34,7 +34,7 @@ const TimePoint = new Map([
  * @property {(number|undefined)} ga Growth Advantage
  * @property {(Array|undefined)} temporal Array of `TimePoint` estimates
  * @inner
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  */
 const VariantPoint = new Map([
   ['ga', undefined],
@@ -68,7 +68,7 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  * @property {String} pivot (final entry in MLR model's list of variants)
  * @property {Map} dateIdx
  * @inner
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  */
 
 /**

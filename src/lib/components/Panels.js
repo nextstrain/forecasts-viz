@@ -48,7 +48,7 @@ const useResponsiveSizing = () => {
  * @param {('growthAdvantage'|'r_t'|'frequency'|'stackedIncidence')} graphType
  * @param {(Array|undefined)} locations Defaults to `undefined` which will display all available locations
  * @kind React Component
- * @memberof module:@nextstrain/forecasts-viz
+ * @memberof module:@nextstrain/evofr-viz
  * @category Components
  * @example
  * <PanelDisplay graphType="ga"/>

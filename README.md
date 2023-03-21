@@ -1,69 +1,60 @@
-# Visualisation of forecasting model outputs
+# Visualisation of evofr model outputs
 
-> _This is a work in progress!_
+> _This is a work in progress - all functionality, parameters etc are in flux_
 
-### Installation
+React components to parse [evofr](https://github.com/blab/evofr) model outputs and visualise them.
+Based on prior work including:
 
-* Clone this repository via one of
-```
-git clone git@github.com:nextstrain/forecasts-viz.git
-git clone https://github.com/nextstrain/forecasts-viz.git
-```
+* https://github.com/blab/rt-from-frequency-dynamics/tree/master/results/omicron-countries-split
+* https://github.com/blab/rt-from-frequency-dynamics/tree/master/results/pango-countries
 
-* Create an enviornment with nodeJS and npm, e.g. 
-`conda create -n <env-name> -c conda-forge nodejs=18`
+This repo includes the source code for the library (`./src/lib`) and a small test-app to showcase
+them and for development purposes (`./src/App.js`).
 
-```sh
-npm install 
-npm run start # dev mode
-```
+Currently the name of the library in `@nextstrain/evofr-viz` (as defined in `package.json`).
+Once we settle on a final name this GitHub repo will be renamed accordingly.
 
-### Where are model data sourced from?
+### Examples of how to use the Components
 
-By default, the two model data JSONs are fetched from `https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/<MODEL>/latest_results.json`, where `<MODEL>={renewal,mlr}`;
-Each of these can be changed via the following environment variables:
+Please see the [`api.md`](./api.md) file for documentation and the code in [`./src/App.js`](./src/App.js) for a working example
 
-* If you wish to use HTTP endpoints, run `REACT_APP_RENEWAL_ENDPOINT="https://..." REACT_APP_MLR_ENDPOINT="https://" npm run start`. Browser-compatible MIME types will be used but note this doesn't yet include zstd.
+### How to import the library
 
-* If you wish to use a local JSON, provision the files and serve them via a simple server (see below), then use 
+Currently this is unpublished and so to use it we pack the library into a tarball and then import from that within the parent app.
 
-```sh
-REACT_APP_RENEWAL_ENDPOINT="http://localhost:8000/renewal.json" \
-  REACT_APP_MLR_ENDPOINT="http://localhost:8000/mlr.json" \
-  npm run start
-```
 
-How to make local data available (note that `/data` is gitignored):
+1. In this repo run `npm pack` to produce a tarball such as `nextstrain-evofr-viz-0.1.0.tgz`.
+2. Move this to your App directory
+3. Define the library as a dependency in your `package.json` via `"nextstrain-forecasts-viz": "file:./nextstrain-evofr-viz-0.1.0.tgz"`
+4. Import components in your code as normal, e.g. `import { ModelDataProvider, ModelDataStatus } from 'nextstrain-evofr-viz';`
+
+
+### How to run the test-app
 
 ```sh
-# provision the files
+conda create -n <env-name> -c conda-forge nodejs=18 # or similar
+npm ci # install dependencies
+npm run start # and view at http://localhost:3000
+```
+
+The model data JSONs are fetched from a Nextstrain S3 bucket.
+If you wish to use local files for dev purposes you can do the following:
+
+```sh
+# provision the model JSONs
 mkdir -p data/
 curl --compressed "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/renewal/latest_results.json" --output data/renewal.json
 curl --compressed "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/mlr/latest_results.json" --output data/mlr.json
 # serve them over localhost:8000
 node scripts/data-server.js
+# in a separate terminal (or background the data server)
+REACT_APP_RENEWAL_ENDPOINT="http://localhost:8000/renewal.json" \
+  REACT_APP_MLR_ENDPOINT="http://localhost:8000/mlr.json" \
+  npm run start
 ```
-
-> Note that we cannot currently use the zstd encodings. There is a library to decompress this in the browser (https://github.com/bokuweb/zstd-wasm) but it requires webpack modifications. For the time being, I've chosen to use gzip encodings. 
 
 ### Linting
 
-If your code editor does not pick this up automatically you may run `npm run lint`.
+`npm run lint`
 
-### Regenerating the png images in `figures`
-
-`node scripts/static-images.js`
-
-These images are referenced in `./report.md`
-
-### Prior art
-
-* https://github.com/blab/rt-from-frequency-dynamics/tree/master/results/omicron-countries-split
-* https://github.com/blab/rt-from-frequency-dynamics/tree/master/results/pango-countries
-
-### Todo
-
-* export a react component we can use in gatsby, or render / serve SVG server-side?
-* run on schedule, somewhere, to generate at each model run
-* URL inspection to choose model JSON path
 
