@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import {useModelData} from "./ModelDataProvider.js";
 
 const Container = styled.div`
   margin-top: 100px;

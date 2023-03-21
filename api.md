@@ -50,7 +50,7 @@ This component must be a descendent of a `<ModelDataProvider>`
 
 | Param | Type | Description |
 | --- | --- | --- |
-| graphType | <code>&#x27;ga&#x27;</code> \| <code>&#x27;r\_t&#x27;</code> \| <code>&#x27;freq&#x27;</code> \| <code>&#x27;stackedIncidence&#x27;</code> |  |
+| graphType | <code>&#x27;growthAdvantage&#x27;</code> \| <code>&#x27;r\_t&#x27;</code> \| <code>&#x27;frequency&#x27;</code> \| <code>&#x27;stackedIncidence&#x27;</code> |  |
 | locations | <code>Array</code> \| <code>undefined</code> | Defaults to `undefined` which will display all available locations |
 
 **Example**  
@@ -168,12 +168,12 @@ Date-specific estimates are specified via `temporal`
 | Name | Type | Description |
 | --- | --- | --- |
 | points | <code>Points</code> |  |
-| variants | <code>Array</code> |  |
-| dates | <code>Array</code> |  |
-| locations | <code>Array</code> |  |
+| variants | <code>Array</code> | (from renewal model) |
+| dates | <code>Array</code> | (from renewal model, with some early dates removed) |
+| locations | <code>Array</code> | (from renewal model) |
 | dateIdx | <code>Map</code> | lookup for date string -> idx in dates array |
 | variantColors | <code>Map</code> |  |
 | variantDisplayNames | <code>Map</code> |  |
-| pivot | <code>String</code> |  |
+| pivot | <code>String</code> | (final entry in MLR model's list of variants) |
 | dateIdx | <code>Map</code> |  |
 

@@ -280,7 +280,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData}) => {
       const dom = d3.select(d3Container.current);
 
       switch (graph) {
-        case 'freq':
+        case 'frequency':
           frequencyPlot(dom, sizes, location, modelData);
           break;
         case 'r_t':
@@ -289,7 +289,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData}) => {
         case 'stackedIncidence':
           stackedIncidence(dom, sizes, location, modelData);
           break;
-        case 'ga':
+        case 'growthAdvantage':
           categoryPointEstimate(dom, sizes, location, modelData, 'ga');
           break;
         default:

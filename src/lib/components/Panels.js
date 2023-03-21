@@ -45,7 +45,7 @@ const useResponsiveSizing = () => {
 /**
  * Display a panel of small-multiple graphs for different locations.
  * This component must be a descendent of a `<ModelDataProvider>`
- * @param {('ga'|'r_t'|'freq'|'stackedIncidence')} graphType
+ * @param {('growthAdvantage'|'r_t'|'frequency'|'stackedIncidence')} graphType
  * @param {(Array|undefined)} locations Defaults to `undefined` which will display all available locations
  * @kind React Component
  * @memberof module:@nextstrain/forecasts-viz

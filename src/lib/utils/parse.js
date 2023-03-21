@@ -59,13 +59,13 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
 /**
  * @typedef {Map} ModelData
  * @property {Points} points
- * @property {Array} variants
- * @property {Array} dates
- * @property {Array} locations
+ * @property {Array} variants (from renewal model)
+ * @property {Array} dates (from renewal model, with some early dates removed)
+ * @property {Array} locations (from renewal model)
  * @property {Map} dateIdx lookup for date string -> idx in dates array
  * @property {Map} variantColors
  * @property {Map} variantDisplayNames
- * @property {String} pivot
+ * @property {String} pivot (final entry in MLR model's list of variants)
  * @property {Map} dateIdx
  * @inner
  * @memberof module:@nextstrain/forecasts-viz
