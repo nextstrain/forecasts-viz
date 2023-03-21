@@ -26,7 +26,7 @@ export const Panels = () => {
         {`Growth Advantage`}
       </PanelSectionHeaderContainer>
       <PanelAbstract>
-        {`Data comes from MLR model objects matching 'ga' + {'median', 'HDI_80_lower', 'HDI_80_upper'}`}
+        {`Data comes from MLR model objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
       </PanelAbstract>
       <PanelDisplay graphType="growthAdvantage"/>
 

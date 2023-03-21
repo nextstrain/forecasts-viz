@@ -143,9 +143,9 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
       } else if (d.site==="ga") {
         if (d.ps==="median") {
           points.get(d.location).get(d.variant).set('ga', d.value);
-        } else if (d.ps==="HDI_80_lower") {
+        } else if (d.ps==="HDI_95_lower") {
           points.get(d.location).get(d.variant).set('ga_HDI_95_lower', d.value);
-        } else if (d.ps==="HDI_80_upper") {
+        } else if (d.ps==="HDI_95_upper") {
           points.get(d.location).get(d.variant).set('ga_HDI_95_upper', d.value);
         }
       }
