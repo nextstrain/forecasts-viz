@@ -90,20 +90,38 @@ const frequencyPlot = (dom, sizes, location, modelData) => {
   svg.append("g")
     .call(simpleYAxis(y, sizes, d3.format(".0%")));
 
-  // Add dots - one group per variant
+  /* how many pixels are available for each time slice? */
+  let tPx = (sizes.width - sizes.margin.left - sizes.margin.right) / modelData.get('dates').length;
+  tPx = tPx<1 ? "1" : tPx.toFixed(1) // sizes in SVG are strings
+
+  const hdiLine = (d) => `M${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_lower')).toFixed(1)}L${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_upper')).toFixed(1)}`;
+
+  /* Frequency graphs currently use dots (i.e. one dot for each time entry), and lines for the HDI.
+     Lines + shared areas may be better */
   /* note map.forEach() returns a tuple of (value, key, map) -- perhaps not the order you expect! */
   modelData.get('points').get(location).forEach((variantPoint, variant) => {
     const temporalPoints = variantPoint.get('temporal')
       .filter((point) => !!point.get('date'));
-    svg.append('g')
+    const hdiPoints = temporalPoints.filter((point) => point.get('freq_HDI_95_upper')!==undefined && point.get('freq_HDI_95_lower')!==undefined)
+    const color = modelData.get('variantColors').get(variant) ||  modelData.get('variantColors').get('other')
+
+    const selection = svg.append('g')
       .selectAll("dot")
-      .data(temporalPoints)
+    selection.data(hdiPoints) // HDI lines (effectively areas) behind
+      .enter()
+      .append("path")
+        .attr('d', hdiLine)
+        .style("stroke-width", tPx)
+        .style("stroke", color)
+        .style("opacity", 0.4)
+        .style("fill", 'none')
+    selection.data(temporalPoints) // Point estimates in front
       .enter()
       .append("circle")
         .attr("cx", (d) => x(d.get('date')))
         .attr("cy", (d) => y(d.get('freq')))
-        .attr("r", 1.5)
-        .style("fill", modelData.get('variantColors').get(variant) ||  modelData.get('variantColors').get('other'))
+        .attr("r", tPx)
+        .style("fill", color)
   });
 
   title(svg, sizes, location)
@@ -112,7 +130,6 @@ const frequencyPlot = (dom, sizes, location, modelData) => {
 
 const rtPlot = (dom, sizes, location, modelData) => {
   // todo: y-axis domain depending on data
-  // todo: CIs
 
   const svg = svgSetup(dom, sizes);
 
@@ -131,24 +148,37 @@ const rtPlot = (dom, sizes, location, modelData) => {
   svg.append("g")
     .call(simpleYAxis(y, sizes));
 
-  /* coloured lines for each variant */
-  // line path generator
+  /* coloured lines for each variant, with shaded areas for HDI */
   const line = d3.line()
     .defined(d => !isNaN(d.get('r_t')))
     .curve(d3.curveLinear)
     .x((d) => x(d.get('date')))
     .y((d) => y(d.get('r_t')))
+  const area = d3.area()
+    .defined(d => d.get('r_t_HDI_95_lower')!==undefined && d.get('r_t_HDI_95_upper')!==undefined)
+    .curve(d3.curveLinear)
+    .x((d) => x(d.get('date')))
+    .y0((d) => y(d.get('r_t_HDI_95_lower')))
+    .y1((d) => y(d.get('r_t_HDI_95_upper')))
 
   modelData.get('points').get(location).forEach((variantPoint, variant) => {
     const temporalPoints = variantPoint.get('temporal');
     const color = modelData.get('variantColors').get(variant) || modelData.get('variantColors').get('other');
     const g = svg.append('g');
+
+    g.append('path')
+      .attr("stroke", "none")
+      .attr("fill", color)
+      .attr("opacity", 0.2)
+      .attr("d", area(temporalPoints));
+
     g.append('path')
       .attr("fill", "none")
       .attr("stroke", color)
       .attr("stroke-width", 1.5)
       .attr("stroke-opacity", 0.8)
       .attr("d", line(temporalPoints));
+
     const finalPt = finalValidPoint(temporalPoints, 'r_t');
     if (!finalPt) return;
     g.append("text")

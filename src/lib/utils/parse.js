@@ -119,6 +119,10 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
       if (d.site==="R") {
         if (d.ps==="median") {
           points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)].set('r_t', d.value);
+        } else if (d.ps==="HDI_95_lower") {
+          points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)].set('r_t_HDI_95_lower', d.value);
+        } else if (d.ps==="HDI_95_upper") {
+          points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)].set('r_t_HDI_95_upper', d.value);
         }
       }
       else if (d.site==="I_smooth") {
@@ -137,8 +141,13 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
     })
     .forEach((d) => {
       if (d.site==="freq") {
+        // if (dateIdx.get(d.date) % 50) return
         if (d.ps==="median") {
           points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)].set('freq', d.value);
+        } else if (d.ps==="HDI_95_lower") {
+          points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)].set('freq_HDI_95_lower', d.value);
+        } else if (d.ps==="HDI_95_upper") {
+          points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)].set('freq_HDI_95_upper', d.value);
         }
       } else if (d.site==="ga") {
         if (d.ps==="median") {

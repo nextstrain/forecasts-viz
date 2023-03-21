@@ -17,7 +17,7 @@ export const Panels = () => {
         {`Variant Frequencies`}
       </PanelSectionHeaderContainer>
       <PanelAbstract>
-        {`Data comes from MLR model objects matching 'freq' + 'median'`}
+        {`Data comes from MLR model objects matching 'freq' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
       </PanelAbstract>
 
       <PanelDisplay graphType="frequency"/>
@@ -43,7 +43,7 @@ export const Panels = () => {
         {`Estimated effective reproduction number over time`}
       </PanelSectionHeaderContainer>
       <PanelAbstract>
-        {`Data comes from renewal model objects matching 'R' + 'median'`}
+        {`Data comes from renewal model objects matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
       </PanelAbstract>
       <PanelDisplay graphType="r_t"/>
 
