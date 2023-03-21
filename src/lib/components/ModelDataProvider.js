@@ -10,6 +10,8 @@ const Context = createContext()
  * use this data (e.g. panels) should be children of this component.
  * @kind React Component
  * @category Components
+ * @param {DatasetConfig} config Configuration of datasets
+ * @param {ReactComponent} children Child react components for rendering
  * @memberof module:@nextstrain/forecasts-viz
  * @example
  * <ModelDataProvider ...>
@@ -17,9 +19,10 @@ const Context = createContext()
  * </ModelDataProvider
  */
 export const ModelDataProvider = ({
+  config,
   children
 }) => {
-  const value = useDataFetch()
+  const value = useDataFetch(config)
   return <Context.Provider value={value}>{children}</Context.Provider>
 }
 

@@ -2,10 +2,6 @@ import {useState, useEffect} from 'react';
 import {parseModelData} from "./parse.js";
 
 
-const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global";
-const DEFAULT_RENEWAL_ENPOINT = `${DEFAULT_ENDPOINT_PREFIX}/renewal/latest_results.json`;
-const DEFAULT_MLR_ENDPOINT = `${DEFAULT_ENDPOINT_PREFIX}/mlr/latest_results.json`;
-
 /**
  * @typedef {Object} ContextData
  * The data made available via React Context
@@ -17,19 +13,36 @@ const DEFAULT_MLR_ENDPOINT = `${DEFAULT_ENDPOINT_PREFIX}/mlr/latest_results.json
  */
 
 /**
+ * @typedef {Object} DatasetConfig
+ * Configuration for the datasets to fetch & parse
+ * Currently the library is only built for `forecasts-ncov` model data
+ * and so there are hardcoded expectations. These will be lifted up and
+ * made config-options so that this library is pathogen agnostic.
+ *
+ * @property {string} mlrUrl Address to fetch the MLR model JSON
+ * @property {string} renewalUrl Address to fetch the Renewal model JSON
+ * @property {Map<string,string>} variantColors colors for the variants specified in the model JSONs
+ * @property {Map<string,string>} variantDisplayNames display names for the variants specified in the model JSONs
+ * @inner
+ * @memberof module:@nextstrain/forecasts-viz
+ */
+
+
+/**
+ * @param {DatasetConfig} config 
  * @returns {ContextData}
  * @private
  */
-export const useDataFetch = () => {
+export const useDataFetch = (config) => {
   const [status, setStatus] = useState('Downloading model data JSONs (n=2)...');
   const [error, setError] = useState(undefined); // TODO
   const [modelData, setModelData] = useState(undefined);
 
   useEffect( () => {
     // start both fetches immediately
-    const renewalJson = fetch(process.env.REACT_APP_RENEWAL_ENDPOINT || DEFAULT_RENEWAL_ENPOINT)
+    const renewalJson = fetch(config.renewalUrl)
       .then((res) => res.json())
-    const mlrJson = fetch(process.env.REACT_APP_MLR_ENDPOINT || DEFAULT_MLR_ENDPOINT)
+    const mlrJson = fetch(config.mlrUrl)
       .then((res) => res.json())
 
     async function fetchAndParse() {
@@ -44,7 +57,7 @@ export const useDataFetch = () => {
       }
       setStatus("Data downloaded. Processing the data now...")
       try {
-        setModelData(parseModelData(renewalData, mlrData));
+        setModelData(parseModelData(renewalData, mlrData, config.variantColors, config.variantDisplayNames));
       } catch (err) {
         setStatus('Downloading model data JSONs succeeded, but parsing the JSONs failed.');
         setError(err);
@@ -53,7 +66,7 @@ export const useDataFetch = () => {
     }
 
     fetchAndParse();
-  }, []);
+  }, [config]);
 
 
   return {modelData, status, error}

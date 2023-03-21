@@ -12,6 +12,7 @@
             * [.exports.useModelData](#module_@nextstrain/forecasts-viz.exports.useModelData) ⇒ <code>ContextData</code>
     * _inner_
         * [~ContextData](#module_@nextstrain/forecasts-viz..ContextData) : <code>Object</code>
+        * [~DatasetConfig](#module_@nextstrain/forecasts-viz..DatasetConfig) : <code>Object</code>
         * [~TimePoint](#module_@nextstrain/forecasts-viz..TimePoint) : <code>Map</code>
         * [~VariantPoint](#module_@nextstrain/forecasts-viz..VariantPoint) : <code>Map</code>
         * [~ModelData](#module_@nextstrain/forecasts-viz..ModelData) : <code>Map</code>
@@ -26,6 +27,12 @@ use this data (e.g. panels) should be children of this component.
 
 **Kind**: static React Component of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
 **Category**: Components  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| config | <code>DatasetConfig</code> | Configuration of datasets |
+| children | <code>ReactComponent</code> | Child react components for rendering |
+
 **Example**  
 ```js
 <ModelDataProvider ...>
@@ -100,6 +107,24 @@ The data made available via React Context
 | modelData | <code>ModelData</code> \| <code>undefined</code> | 
 | status | <code>string</code> | 
 | error | <code>Error</code> \| <code>undefined</code> | 
+
+<a name="module_@nextstrain/forecasts-viz..DatasetConfig"></a>
+
+### @nextstrain/forecasts-viz~DatasetConfig : <code>Object</code>
+Configuration for the datasets to fetch & parse
+Currently the library is only built for `forecasts-ncov` model data
+and so there are hardcoded expectations. These will be lifted up and
+made config-options so that this library is pathogen agnostic.
+
+**Kind**: inner typedef of [<code>@nextstrain/forecasts-viz</code>](#module_@nextstrain/forecasts-viz)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| mlrUrl | <code>string</code> | Address to fetch the MLR model JSON |
+| renewalUrl | <code>string</code> | Address to fetch the Renewal model JSON |
+| variantColors | <code>Map.&lt;string, string&gt;</code> | colors for the variants specified in the model JSONs |
+| variantDisplayNames | <code>Map.&lt;string, string&gt;</code> | display names for the variants specified in the model JSONs |
 
 <a name="module_@nextstrain/forecasts-viz..TimePoint"></a>
 

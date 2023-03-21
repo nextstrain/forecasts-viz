@@ -1,5 +1,3 @@
-import { variantColors, variantDisplayNames } from "./ncovSpecificSettings";
-
 /**
  * Maps used instead of object as it's (seemingly) faster + consumes less
  * memory (https://www.zhenghao.io/posts/object-vs-map)
@@ -78,7 +76,7 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  * @private
  * @throws Error
  */
-export const parseModelData = (renewal, mlr) => {
+export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames) => {
 
   compareModels(renewal, mlr); // throws if inconsistent JSONs
 
