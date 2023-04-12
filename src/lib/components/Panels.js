@@ -72,9 +72,12 @@ const Panel = ({
 }) => {
   const sizes = useResponsiveSizing();
   const {modelData} = useModelData();
-  console.log("modelData in library <Panel>", modelData)
 
-  // TODO XXX
+  /**
+   * The loading status and/or errors (available via `useModelData()`) are intended to be
+   * used by the <ModelDataStatus> component, or similar. For panel rendering we simply wait
+   * until the modelData is available. Improvements (loading spinners etc) are possible.
+   */ 
   if (!modelData) {
     return null;
   }

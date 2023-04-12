@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import {useModelData} from "./ModelDataProvider";
 
 const Container = styled.div`
   margin-top: 100px;
@@ -40,7 +41,7 @@ export const Status = ({children, err}) => {
  * </ModelDataProvider
  */
 export const ModelDataStatus = () => {
-  const {modelData, status, error} = `useModelData()`;
+  const {modelData, status, error} = useModelData();
   if (modelData) {
     return null;
   }
