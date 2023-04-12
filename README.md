@@ -20,24 +20,34 @@ Please see the [`api.md`](./api.md) file for documentation and the code in [`./s
 
 ### How to import the library
 
-Currently this is unpublished and so to use it we pack the library into a tarball and then import from that within the parent app.
-
+If you wish to use this library in another project (i.e. outside this repo), you can use the following steps.
+This approach is how we use the library in [forecasts-ncov](https://github.com/nextstrain/forecasts-ncov/tree/main/viz).
+Note that this is temporary: once we publish this on npm it'll be a typical `npm install` command.
 
 1. In this repo run `npm pack` to produce a tarball such as `nextstrain-evofr-viz-0.1.0.tgz`.
-2. Move this to your App directory
-3. Define the library as a dependency in your `package.json` via `"nextstrain-forecasts-viz": "file:./nextstrain-evofr-viz-0.1.0.tgz"`
+2. Move this tarball to your App directory
+3. `npm install nextstrain-evofr-viz-0.1.0.tgz` (filename may be slightly different).
 4. Import components in your code as normal, e.g. `import { ModelDataProvider, ModelDataStatus } from 'nextstrain-evofr-viz';`
 
 
-### How to run the test-app
+### How to run the test-app contained in this repo
+
+We use a basic test-app in this repo to help with development of the library.
+
+Firstly create a suitable environment with nodejs, e.g. by using conda:
 
 ```sh
-conda create -n <env-name> -c conda-forge nodejs=18 # or similar
+conda create -n node18 -c conda-forge nodejs=18 # or similar
+conda activate node18
+```
+Then install dependencies and run the test app:
+
+```sh
 npm ci # install dependencies
-npm run start # and view at http://localhost:3000
+npm run start # open a browser at http://localhost:3000
 ```
 
-The model data JSONs are fetched from a Nextstrain S3 bucket.
+The model data JSONs are fetched from a Nextstrain S3 bucket at runtime.
 If you wish to use local files for dev purposes you can do the following:
 
 ```sh
