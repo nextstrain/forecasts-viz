@@ -1,9 +1,10 @@
 import React from 'react';
-import { Container, MainTitle, PanelAbstract } from './Styles.js';
-import { Panels } from './Panels.js';
-import { ModelDataProvider, ModelDataStatus } from './lib/index.js';
-import './fonts.css';
+import { ModelDataProvider, ModelDataStatus, PanelDisplay} from './lib/index.js';
+import './styles.css';
 
+let locations = undefined;
+// uncomment the following line to limit the number of small multiples
+// locations = ["Australia", "Belgium"];
 
 const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global";
 const DEFAULT_RENEWAL_ENDPOINT = `${DEFAULT_ENDPOINT_PREFIX}/renewal/latest_results.json`;
@@ -35,22 +36,58 @@ const datasetConfiguration = {
 
 function App() {
   return (
-    <Container>
+    <div id="AppContainer">
       <ModelDataProvider config={datasetConfiguration}>
-        <MainTitle>
+        <h1>
           evofr visualisation library
-        </MainTitle>
+        </h1>
 
-        <PanelAbstract>
+        <div className="abstract">
           This page is used to test and develop the React Components which visualise evofr modelling datasets.
-        </PanelAbstract>
+        </div>
 
         <ModelDataStatus/>
 
-        <Panels/>
+        <div id="mainPanelsContainer" >
+
+          <h2>
+            {`Variant Frequencies`}
+          </h2>
+          <div className="abstract">
+            {`Data comes from MLR model objects matching 'freq' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
+          </div>
+
+          <PanelDisplay locations={locations} graphType="frequency"/>
+
+          <h2>
+            {`Growth Advantage`}
+          </h2>
+          <div className="abstract">
+            {`Data comes from MLR model objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
+          </div>
+          <PanelDisplay locations={locations} graphType="growthAdvantage"/>
+
+          <h2>
+            {`Estimated Cases over time`}
+          </h2>
+          <div className="abstract">
+            {`Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
+          </div>
+          <PanelDisplay locations={locations} graphType="stackedIncidence"/>
+
+
+          <h2>
+            {`Estimated effective reproduction number over time`}
+          </h2>
+          <div className="abstract">
+            {`Data comes from renewal model objects matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
+          </div>
+          <PanelDisplay locations={locations} graphType="r_t"/>
+
+        </div>
 
       </ModelDataProvider>
-    </Container>
+    </div>
   );
 }
 

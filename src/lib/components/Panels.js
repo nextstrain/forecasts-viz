@@ -66,12 +66,18 @@ export const PanelDisplay = (props) => {
  * so that if any hooks have errors they bubble up and can be caught
  * @private 
  */
-export const Panel = ({
+const Panel = ({
   graphType,
   locations=undefined, /* optional. Defaults to all available */
 }) => {
   const sizes = useResponsiveSizing();
   const {modelData} = useModelData();
+  console.log("modelData in library <Panel>", modelData)
+
+  // TODO XXX
+  if (!modelData) {
+    return null;
+  }
   const locationList = locations || modelData.get('locations');
   return (
     <Container>
