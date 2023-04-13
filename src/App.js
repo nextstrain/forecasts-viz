@@ -54,7 +54,7 @@ function App() {
             {`Variant Frequencies`}
           </h2>
           <div className="abstract">
-            {`Data comes from MLR model objects matching 'freq' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
+            {`Data comes from MLR model objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
           </div>
 
           <PanelDisplay locations={locations} graphType="frequency"/>

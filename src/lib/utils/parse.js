@@ -1,3 +1,5 @@
+import { min, max } from 'd3';
+
 /**
  * Maps used instead of object as it's (seemingly) faster + consumes less
  * memory (https://www.zhenghao.io/posts/object-vs-map)
@@ -78,19 +80,18 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  */
 export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames) => {
 
-  compareModels(renewal, mlr); // throws if inconsistent JSONs
-
-  // Skip initial days of model estimates to avoid artifacts in plots
-  const keep_dates = renewal.metadata.dates.slice(INITIAL_DAY_CUTOFF);
-  const dateIdx = new Map(keep_dates.map((d, i) => [d, i]));
+  ensureModelConsistency(renewal, mlr, ['location', 'variants']); // throws upon inconsistency
+  const [dates, nowcastFinalDate] = extractDatesFromModels(renewal, mlr)
+  const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
   const data = new Map([
     ["locations", renewal.metadata.location],
     ["variants", renewal.metadata.variants],
-    ["dates", keep_dates],
+    ["dates", dates],
     ["variantColors", variantColors],
     ["variantDisplayNames", variantDisplayNames],
     ["dateIdx", dateIdx],
+    ["nowcastFinalDate", nowcastFinalDate],
     ["points", undefined],
     ["domains", undefined],
     // TODO: use the explicit pivot in the metadata instead of assuming the
@@ -106,7 +107,7 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
       new Map(
         data.get('variants').map((variant) => [
           variant,
-          initialisePointsPerVariant(variant, keep_dates)
+          initialisePointsPerVariant(variant, dates)
         ])
       )
     ])
@@ -140,7 +141,7 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
       return true;
     })
     .forEach((d) => {
-      if (d.site==="freq") {
+      if (d.site==="freq" | d.site==="freq_forecast") {
         // if (dateIdx.get(d.date) % 50) return
         if (d.ps==="median") {
           points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)].set('freq', d.value);
@@ -196,7 +197,7 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
   /* create a stack for I_smooth to help with plotting - this could be in the previous set of
   loops but it's here for readability */
   for (const variantMap of points.values()) {
-    let runningTotalPerDay = new Array(keep_dates.length).fill(0);
+    let runningTotalPerDay = new Array(dates.length).fill(0);
     for (const variantPoint of variantMap.values()) {
       const dateList = variantPoint.get('temporal');
       dateList.forEach((point, idx) => {
@@ -212,7 +213,7 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
   ]));
 
   console.log(`Renewal model data`)
-  console.log(`\t${renewal.metadata.location.length} locations x ${renewal.metadata.variants.length} variants x ${keep_dates.length} dates`)
+  console.log(`\t${renewal.metadata.location.length} locations x ${renewal.metadata.variants.length} variants x ${dates.length} dates`)
   console.log(`\tNote: The earliest ${INITIAL_DAY_CUTOFF} days have been ignored`);
   console.log(`\t${censorCount} censored points as frequency<${THRESHOLD_FREQ}`);
   console.log(`\t${nanCount} points missing`);
@@ -222,25 +223,76 @@ export const parseModelData = (renewal, mlr, variantColors, variantDisplayNames)
 };
 
 
-function compareModels(renewal, mlr) {
+function ensureModelConsistency(renewal, mlr, keys) {
   let errMsg = ''
-  for (const key of ['location', 'variants', 'dates']) {
+  for (const key of keys) {
     if (renewal.metadata[key].length!==mlr.metadata[key]) {
       const a = renewal.metadata[key].filter((x) => !mlr.metadata[key].includes(x));
       const b = mlr.metadata[key].filter((x) => !renewal.metadata[key].includes(x));
       if (a.length || b.length) {
-        let msg = `Inconsistency between Renewal & MLR models for ${key}; values only in renewal model: ${a.join(", ")}, only in MRL model: ${b.join(", ")}. `
-        if (key==="dates") {
-          /* this is not terminal, and in fact is often the case! */
-          msg += "Proceeding with the dates specified in the renewal model."
-          console.log(msg)
-        } else {
-          errMsg += msg;
-        }
+        errMsg += `Inconsistency between Renewal & MLR models for ${key}; values only in renewal model: ${a.join(", ")}, only in MRL model: ${b.join(", ")}. `
       }
     }
   }
   if (errMsg) {
     throw new Error(errMsg);
   }
+}
+
+/**
+ * All graphs currently use a single (common) array of dates. This work is in
+ * flux as we incorporate forecasted (future) dates, which only certain models
+ * may use. Our approach to dates, especially as they compare between models,
+ * should be revisited.
+ */
+function extractDatesFromModels(renewal, mlr) {
+  const renewalDates = (renewal.metadata.dates || []).sort(); // YYYY-MM-DD are sorted correctly
+  const renewalDatesForecast = (renewal.metadata.forecast_dates || []).sort();
+  const mlrDates = (mlr.metadata.dates || []).sort();
+  const mlrDatesForecast = (mlr.metadata.forecast_dates || []).sort();
+
+  console.log(renewalDates[renewalDates.length-1], mlrDates[mlrDates.length-1])
+
+  /* are the dates different? Log this if so - it is not a problem, per-se, but we should be aware of it. */
+  let startDate 
+  if (renewalDates[0] === mlrDates[0]) {
+    startDate = renewalDates[0];
+  } else {
+    startDate = min([renewalDates[0], mlrDates[0]]);
+    console.log(`The models start on different dates. Renewal: ${renewalDates[0]}, mlr: ${mlrDates[0]}; using ${startDate}`)
+  }
+
+  let endDate;
+  if (renewalDates[renewalDates.length-1] === mlrDates[mlrDates.length-1]) {
+    endDate = renewalDates[renewalDates.length-1];
+  } else {
+    endDate = max([renewalDates[renewalDates.length-1], mlrDates[mlrDates.length-1]]);
+    console.log(`The models end on different dates. Renewal: ${renewalDates[renewalDates.length-1]}, mlr: ${mlrDates[mlrDates.length-1]}; using ${endDate}`)
+  }
+  
+  console.log("Forecast renewal date range", renewalDatesForecast[0], renewalDatesForecast[renewalDatesForecast.length-1])
+  console.log("Forecast MLR date range", mlrDatesForecast[0], mlrDatesForecast[mlrDatesForecast.length-1])
+
+  /* currently we only consider the MLR forecasts */
+  const lastForecastDate = mlrDatesForecast[mlrDatesForecast.length-1];
+
+  /* because we use the dates as the domain for graphs, create the array ourselves to ensure no holes */
+  const dates = [];
+  let d = new Date(startDate);
+  const endDateForViz = new Date(max([endDate, lastForecastDate]));
+  while (d <= endDateForViz) {
+    dates.push(d.toISOString().split("T")[0]); // YYYY-MM-DD
+    d.setDate(d.getDate()+1); // increment one day
+  }
+
+  /* The forecast date is simply the crossover date between now-casting and forecasting. It's not that simple -- from
+  Marlin: "There’s really two different lines that should be there, but I would start with the date of the model run I think."
+  But we don't currently encode the date of the model run! I'm using end of MLR `dates` but I expect this to be added to the JSON
+  shortly */
+  const nowcastFinalDate = mlrDates[mlrDates.length-1];
+
+  /* Skip initial days of model estimates to avoid artifacts in plots */
+  const keepDates = dates.slice(INITIAL_DAY_CUTOFF);
+  console.log(`After removing initial ${INITIAL_DAY_CUTOFF} days, model dates (including forecasting) are: ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days)`);
+  return [keepDates, nowcastFinalDate];
 }

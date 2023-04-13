@@ -124,6 +124,25 @@ const frequencyPlot = (dom, sizes, location, modelData) => {
         .style("fill", color)
   });
 
+  /* vertical (dashed) line + text to convey nowcast/forecast */
+  /* dashed horizontal line at r_t=1 */
+  const forecastGroup = svg.append('g')
+  const forecastX = x(modelData.get('nowcastFinalDate'))
+  forecastGroup.append('path')
+    .attr("fill", "none")
+    .attr("stroke", "#444")
+    .attr("stroke-width", 1)
+    .attr("stroke-opacity", 1)
+    .attr("d", `M ${forecastX} ${y(0.0)} L ${forecastX} ${y(1.0)}`)
+    .style("stroke-dasharray", "4 2")
+  /* rotate text (translate rather than x/y as rotation is relative to the origin) */
+    forecastGroup.append("text")
+      .text(`forecast`)
+      .attr("transform", `translate(${forecastX+3},${y(1.0)+3})rotate(90)`)
+      .style("font-size", "12px")
+      .style("fill", '#aaa')
+
+
   title(svg, sizes, location)
 }
 
