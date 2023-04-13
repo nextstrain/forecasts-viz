@@ -42,15 +42,19 @@ const PanelSectionContainer = styled.div`
 `;
 
 
-const useResponsiveSizing = () => {
+const useResponsiveSizing = (graphType) => {
   /* following are in pixel coordinates */
   const width = 250;
-  const height = 200;
-  /* control the spacing around graphs via the margin of each graph */
-  const margin = {top: 5, right: 20, bottom: 40, left: 40}
-  const fontSize = "10px";
-
-  return {width, height, margin, fontSize};
+  let height = 200;
+  /* control the spacing around graphs via the margin of each graph
+  We export these as individual keys so they can be easily overridden.
+  The initial ones are generally ok. */
+  let [top, right, bottom, left] = [5, 0, 20, 35];
+  if (graphType==="growthAdvantage") {
+    [top, right, bottom, left] = [5, 30, 60, 30];
+    height = 220;
+  }
+  return {width, height, top, right, bottom, left};
 }
 
 /**
@@ -79,9 +83,10 @@ export const PanelDisplay = (props) => {
  */
 const Panel = ({
   graphType,
+  facetStyles={},
   locations=undefined, /* optional. Defaults to all available */
 }) => {
-  const sizes = useResponsiveSizing();
+  const sizes = {...useResponsiveSizing(graphType), ...facetStyles};
   const {modelData} = useModelData();
 
   /**

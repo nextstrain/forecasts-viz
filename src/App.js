@@ -59,7 +59,7 @@ function App() {
           <div className="abstract">
             {`Data comes from MLR model objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
           </div>
-
+          {/*You can inject styles via a prop like `facetStyles={{top: 40}}`*/}
           <PanelDisplay locations={locations} graphType="frequency"/>
 
           <h2>
