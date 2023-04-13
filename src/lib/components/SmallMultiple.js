@@ -268,7 +268,7 @@ const stackedIncidence = (dom, sizes, location, modelData) => {
 
 
 
-const categoryPointEstimate = (dom, sizes, location, modelData, dataKey) => {
+const categoryPointEstimate = (dom, sizes, location, modelData, dataKey, dashedLineY) => {
   const svg = svgSetup(dom, sizes);
 
   // Removes the pivot category that does not need to be plotted.
@@ -295,6 +295,16 @@ const categoryPointEstimate = (dom, sizes, location, modelData, dataKey) => {
 
   svg.append("g")
     .call(simpleYAxis(y, sizes));
+
+  if (dashedLineY!==undefined) {
+    svg.append('path')
+      .attr("fill", "none")
+      .attr("stroke", "#444")
+      .attr("stroke-width", 1)
+      .attr("stroke-opacity", 1)
+      .attr("d", `M ${x.range()[0]} ${y(dashedLineY)} L ${x.range()[1]} ${y(dashedLineY)}`)
+      .style("stroke-dasharray", "4 2")
+  }
 
   svg.append('g')
     .selectAll("dot")
@@ -339,7 +349,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData}) => {
           stackedIncidence(dom, sizes, location, modelData);
           break;
         case 'growthAdvantage':
-          categoryPointEstimate(dom, sizes, location, modelData, 'ga');
+          categoryPointEstimate(dom, sizes, location, modelData, 'ga', 1.0);
           break;
         default:
           console.error(`Unknown graph type ${graph}`)
