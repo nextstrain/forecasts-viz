@@ -1,4 +1,18 @@
-import styled from 'styled-components';
+/* 
+  Lato fonts downloaded from https://www.latofonts.com/,
+  which also includes the mapping of CSS weights to font names.
+  Only a subset of the available weights imported here to reduce bundle size
+*/
+@font-face {
+  font-family: 'lato';
+  font-weight: 300;
+  src: local('lato'), url(./fonts/LatoLatin-Light.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'lato';
+  font-weight: 500;
+  src: local('lato'), url(./fonts/LatoLatin-Medium.woff2) format('woff2');
+}
 
 /**
  * Essentially the page margins, and some styles that'll be inherited like fonts.
@@ -6,8 +20,8 @@ import styled from 'styled-components';
  * https://github.com/nextstrain/nextstrain.org/blob/dd5b532219188083609cc35d5e6928a43f436745/static-site/src/layouts/theme.js
  * https://github.com/nextstrain/nextstrain.org/blob/355c7d239fb848569a1d1c836e597546653542ae/static-site/src/components/layout.jsx
  */
-export const Container = styled.div`
-  // default margin is for mobile / small displays
+div#AppContainer {
+  /* default margin is for mobile / small displays */
   margin: 50px 0px;
   @media screen and (min-width: 1000px) {
     margin: 50px 100px;
@@ -19,50 +33,52 @@ export const Container = styled.div`
   font-weight: 300;
   line-height: 1.4;
   color: #333;
-  a {
-    text-decoration: none;
-    background-color: transparent;
-    color: #5097BA;
-    font-weight: 500;
-  }
-  a:hover,
-  a:focus {
-    color: #5097BA;
-    text-decoration: underline;
-  }
-  svg {
-    // small font sizes in the panels are improved with 500 weight
-    font-weight: 500;
-  }
-  
-`
+}
+
+div#AppContainer a {
+  text-decoration: none;
+  background-color: transparent;
+  color: #5097BA;
+  font-weight: 500;
+}
+div#AppContainer a:hover,
+div#AppContainer a:focus {
+  color: #5097BA;
+  text-decoration: underline;
+}
+
+div#AppContainer svg {
+  /* small font sizes in the panels are improved with 500 weight */
+  font-weight: 500;
+}
+
 /**
  * styles chosen to match nextstrain.org
  */
-export const MainTitle = styled.div`
+div#AppContainer h1 {
   text-align: center;
   font-size: 38px;
   line-height: 32px;
   min-width: 240px;
   margin-top: 4px;
   margin-bottom: 20px;
-`
+}
 
 /**
  * font weight + size chosen to match nextstrain.org
  */
-export const PanelSectionHeaderContainer = styled.div`
+div#AppContainer h2 {
   margin-bottom: 15px;
   margin-top: 50px;
   margin-left: 10%;
   margin-right: 10%;
   font-size: 20px;
   font-weight: 500;
-`;
+}
 
-export const PanelAbstract = styled.div`
+div#AppContainer div.abstract {
   margin-top: 0px;
   margin-bottom: 30px;
   margin-left: 10%;
   margin-right: 10%;
-`;
+}

@@ -2,6 +2,9 @@ import React, {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 import * as d3 from "d3";
 
+/* Threshold to switch from legend sitting on top of the panels
+to it sitting on the RHS of the panels */
+export const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200; 
 
 /**
  * My original intention for the legend on wide-screens was to have it stay in a
@@ -17,25 +20,26 @@ import * as d3 from "d3";
 const LegendContainer = styled.div`
   /* border: solid red; */
   display: flex;
-
-  /* legend-inline styles (which will be overridden by a media query if necessary) */
+  min-width: 200px;
+  text-align: left;
   position: block;
   flex-wrap: wrap;
   flex-direction: row;
   margin: 10px 0px;
   & > div {
     padding-right: 10px;
+    padding-top: 0px 
+  }
+  & p {
+    margin: 0px 0px;
   }
 
-  @media screen and (min-width: ${(props) => props.thresholdWidth}px) {
-    position: absolute;
-    right: 0px;
-    max-width: 200px;
-    min-width: 200px;
+  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
     flex-wrap: nowrap;
     flex-direction: column;
     & > div {
       padding-right: 0px;
+      padding-top: 10%
     }
   }
 `;
@@ -54,6 +58,7 @@ const useLegend = (d3Container, modelData) => {
         .style("align-items", "center") // legend swatches vertically centered with legend text
 
     containers.append("svg")
+      .style("flex-shrink", "0")
       .attr("width", 30)
       .attr("height", 30)
       .attr("viewBox", `0 0 30 30`)
@@ -69,10 +74,10 @@ const useLegend = (d3Container, modelData) => {
   }, [d3Container, modelData])
 }
 
-export const Legend = ({modelData, thresholdWidth}) => {
+export const Legend = ({modelData}) => {
   const legendContainer = useRef(null);
   useLegend(legendContainer, modelData); // renders the legend
   return (
-    <LegendContainer id="legend" ref={legendContainer} thresholdWidth={thresholdWidth}/>
+    <LegendContainer id="legend" ref={legendContainer}/>
   );
 }

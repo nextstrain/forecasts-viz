@@ -9,6 +9,7 @@ import * as d3 from "d3";
  */
 
 const D3Container = styled.div`
+  /* border: dashed blue; */
   & > div { /* TOOLTIP */
     position: fixed;
     display: none;
@@ -29,7 +30,7 @@ const dateFormatter = (dStr) => {
 
 const generalXAxis = (x, sizes, textFn) => {
   return (g) => g
-    .attr("transform", `translate(0,${sizes.height - sizes.margin.bottom})`)
+    .attr("transform", `translate(0,${sizes.height - sizes.bottom})`)
     .call(d3.axisBottom(x).tickSize(0))
     // .call(g => g.select(".domain").remove())
     .selectAll("text")
@@ -44,7 +45,7 @@ const generalXAxis = (x, sizes, textFn) => {
 }
 
 const simpleYAxis = (y, sizes, textFun = (d) => d) => (g) => g
-  .attr("transform", `translate(${sizes.margin.left},0)`)
+  .attr("transform", `translate(${sizes.left},0)`)
   .call(d3.axisLeft(y).tickSize(0).tickPadding(4))
   // .call(g => g.select(".domain").remove())
   .selectAll("text")
@@ -65,8 +66,8 @@ const title = (svg, sizes, text) => {
   // top-left so we don't obscure any recent activity
   svg.append("text")
     .text(text)
-    .attr("x", sizes.margin.left+5)
-    .attr("y", sizes.margin.top) // todo!
+    .attr("x", sizes.left+5)
+    .attr("y", sizes.top) // todo!
     .style("text-anchor", "start")
     .style("dominant-baseline", "hanging")
     .style("font-size", "16px")
@@ -78,20 +79,20 @@ const frequencyPlot = (dom, sizes, location, modelData) => {
 
   const x = d3.scalePoint()
     .domain(modelData.get('dates'))
-    .range([sizes.margin.left, sizes.width-sizes.margin.right]);
+    .range([sizes.left, sizes.width-sizes.right]);
 
   svg.append("g")
       .call(generalXAxis(x, sizes, dateFormatter));
 
   const y = d3.scaleLinear()
     .domain([0, 1])
-    .range([sizes.height-sizes.margin.bottom, sizes.margin.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
+    .range([sizes.height-sizes.bottom, sizes.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
 
   svg.append("g")
     .call(simpleYAxis(y, sizes, d3.format(".0%")));
 
   /* how many pixels are available for each time slice? */
-  let tPx = (sizes.width - sizes.margin.left - sizes.margin.right) / modelData.get('dates').length;
+  let tPx = (sizes.width - sizes.left - sizes.right) / modelData.get('dates').length;
   tPx = tPx<1 ? "1" : tPx.toFixed(1) // sizes in SVG are strings
 
   const hdiLine = (d) => `M${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_lower')).toFixed(1)}L${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_upper')).toFixed(1)}`;
@@ -124,6 +125,25 @@ const frequencyPlot = (dom, sizes, location, modelData) => {
         .style("fill", color)
   });
 
+  /* vertical (dashed) line + text to convey nowcast/forecast */
+  /* dashed horizontal line at r_t=1 */
+  const forecastGroup = svg.append('g')
+  const forecastX = x(modelData.get('nowcastFinalDate'))
+  forecastGroup.append('path')
+    .attr("fill", "none")
+    .attr("stroke", "#444")
+    .attr("stroke-width", 1)
+    .attr("stroke-opacity", 1)
+    .attr("d", `M ${forecastX} ${y(0.0)} L ${forecastX} ${y(1.0)}`)
+    .style("stroke-dasharray", "4 2")
+  /* rotate text (translate rather than x/y as rotation is relative to the origin) */
+    forecastGroup.append("text")
+      .text(`forecast`)
+      .attr("transform", `translate(${forecastX+3},${y(1.0)+3})rotate(90)`)
+      .style("font-size", "12px")
+      .style("fill", '#aaa')
+
+
   title(svg, sizes, location)
 }
 
@@ -135,7 +155,7 @@ const rtPlot = (dom, sizes, location, modelData) => {
 
   const x = d3.scalePoint()
     .domain(modelData.get('dates'))
-    .range([sizes.margin.left, sizes.width-sizes.margin.right]);
+    .range([sizes.left, sizes.width-sizes.right]);
 
   svg.append("g")
       .call(generalXAxis(x, sizes, dateFormatter));
@@ -143,7 +163,7 @@ const rtPlot = (dom, sizes, location, modelData) => {
   const y = d3.scaleLinear()
     // .domain(modelData.get('domains').get('rt'))
     .domain([0, 3])
-    .range([sizes.height-sizes.margin.bottom, sizes.margin.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
+    .range([sizes.height-sizes.bottom, sizes.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
 
   svg.append("g")
     .call(simpleYAxis(y, sizes));
@@ -197,7 +217,7 @@ const rtPlot = (dom, sizes, location, modelData) => {
     .attr("stroke", "#444")
     .attr("stroke-width", 1)
     .attr("stroke-opacity", 1)
-    .attr("d", `M ${sizes.margin.left} ${y(1.0)} L ${sizes.width-sizes.margin.right} ${y(1.0)}`)
+    .attr("d", `M ${sizes.left} ${y(1.0)} L ${sizes.width-sizes.right} ${y(1.0)}`)
     .style("stroke-dasharray", "4 2")
 
   title(svg, sizes, location)
@@ -208,7 +228,7 @@ const stackedIncidence = (dom, sizes, location, modelData) => {
 
   const x = d3.scalePoint()
     .domain(modelData.get('dates'))
-    .range([sizes.margin.left, sizes.width-sizes.margin.right]);
+    .range([sizes.left, sizes.width-sizes.right]);
 
   svg.append("g")
       .call(generalXAxis(x, sizes, dateFormatter));
@@ -223,7 +243,7 @@ const stackedIncidence = (dom, sizes, location, modelData) => {
 
   const y = d3.scaleLinear()
     .domain([0, maxI])
-    .range([sizes.height-sizes.margin.bottom, sizes.margin.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
+    .range([sizes.height-sizes.bottom, sizes.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
 
   svg.append("g")
     .call(simpleYAxis(y, sizes, d3.format("~s")));
@@ -249,13 +269,13 @@ const stackedIncidence = (dom, sizes, location, modelData) => {
 
 
 
-const categoryPointEstimate = (dom, sizes, location, modelData, dataKey) => {
+const categoryPointEstimate = (dom, sizes, location, modelData, dataKey, dashedLineY) => {
   const svg = svgSetup(dom, sizes);
 
   // Removes the pivot category that does not need to be plotted.
   const x = d3.scalePoint()
     .domain(['', ...modelData.get('variants').filter(v => v !== modelData.get('pivot'))])
-    .range([sizes.margin.left, sizes.width-sizes.margin.right]);
+    .range([sizes.left, sizes.width-sizes.right]);
 
   svg.append("g")
     .call(generalXAxis(x, sizes, (variant) => modelData.get('variantDisplayNames').get(variant) || variant));
@@ -272,10 +292,20 @@ const categoryPointEstimate = (dom, sizes, location, modelData, dataKey) => {
     //   d3.max(points.map((pt) => pt.get(dataKey))) * 1.1 // todo - should use CIs
     // ])
     .domain(modelData.get('domains').get('ga'))
-    .range([sizes.height-sizes.margin.bottom, sizes.margin.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
+    .range([sizes.height-sizes.bottom, sizes.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
 
   svg.append("g")
     .call(simpleYAxis(y, sizes));
+
+  if (dashedLineY!==undefined) {
+    svg.append('path')
+      .attr("fill", "none")
+      .attr("stroke", "#444")
+      .attr("stroke-width", 1)
+      .attr("stroke-opacity", 1)
+      .attr("d", `M ${x.range()[0]} ${y(dashedLineY)} L ${x.range()[1]} ${y(dashedLineY)}`)
+      .style("stroke-dasharray", "4 2")
+  }
 
   svg.append('g')
     .selectAll("dot")
@@ -320,7 +350,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData}) => {
           stackedIncidence(dom, sizes, location, modelData);
           break;
         case 'growthAdvantage':
-          categoryPointEstimate(dom, sizes, location, modelData, 'ga');
+          categoryPointEstimate(dom, sizes, location, modelData, 'ga', 1.0);
           break;
         default:
           console.error(`Unknown graph type ${graph}`)
