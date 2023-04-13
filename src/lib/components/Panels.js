@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { SmallMultiple } from "./SmallMultiple";
-import { Legend } from "./Legend";
+import { Legend, WINDOW_WIDTH_FOR_SIDEBAR_LEGEND } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
 import { useModelData } from "./ModelDataProvider";
 
@@ -16,20 +16,31 @@ import { useModelData } from "./ModelDataProvider";
  */
 
 
-const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200;
-
+/** Container has 2 children: the legend and the container of the small-multiples  */
 const Container = styled.div`
   /* border: dashed orange; */
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: column;
   @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
-    margin-right: 100px; // + the 100px from <App> Container
+    flex-direction: row-reverse;
   }
 `;
 
 const PanelSectionContainer = styled.div`
+  /* border: dashed purple; */
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  /* For full rows I wanted even spacing L-R, which is accomplished by
+  justify-content: space-between. However this has the unfortunate side effect
+  of introducing a large hole in the final row. */
+  justify-content: flex-start;
+  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
+    flex-direction: row-reverse;
+    justify-content: space-evenly;
+  }
 `;
+
 
 const useResponsiveSizing = () => {
   /* following are in pixel coordinates */
@@ -84,7 +95,7 @@ const Panel = ({
   const locationList = locations || modelData.get('locations');
   return (
     <Container>
-      <Legend modelData={modelData} thresholdWidth={WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}/>
+      <Legend modelData={modelData}/>
       <PanelSectionContainer>
         {locationList
           .map((location) => ({location, graph: graphType, sizes}))
