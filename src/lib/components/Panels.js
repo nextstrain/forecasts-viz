@@ -29,16 +29,11 @@ const Container = styled.div`
 
 const PanelSectionContainer = styled.div`
   /* border: dashed purple; */
-  display: flex;
-  flex-wrap: wrap;
-  /* For full rows I wanted even spacing L-R, which is accomplished by
-  justify-content: space-between. However this has the unfortunate side effect
-  of introducing a large hole in the final row. */
-  justify-content: flex-start;
-  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
-    flex-direction: row-reverse;
-    justify-content: space-evenly;
-  }
+  flex-grow: 1;
+  display: grid;
+  gap: 20px;
+  padding-top: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(${props => props.smallMultipleWidth}px, 1fr));
 `;
 
 
@@ -101,7 +96,7 @@ const Panel = ({
   return (
     <Container>
       <Legend modelData={modelData}/>
-      <PanelSectionContainer>
+      <PanelSectionContainer smallMultipleWidth={sizes.width}>
         {locationList
           .map((location) => ({location, graph: graphType, sizes}))
           .map((param) => (
