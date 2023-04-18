@@ -24,7 +24,7 @@ This component must be provided data obtained via the `useModelData` hook
 | Param | Type | Description |
 | --- | --- | --- |
 | data | <code>ModelDataWrapper</code> |  |
-| graphType | <code>&#x27;growthAdvantage&#x27;</code> \| <code>&#x27;r\_t&#x27;</code> \| <code>&#x27;frequency&#x27;</code> \| <code>&#x27;stackedIncidence&#x27;</code> |  |
+| graphType | <code>&#x27;growthAdvantage&#x27;</code> \| <code>&#x27;R&#x27;</code> \| <code>&#x27;frequency&#x27;</code> \| <code>&#x27;stackedIncidence&#x27;</code> |  |
 | locations | <code>Array</code> \| <code>undefined</code> | Defaults to `undefined` which will display all available locations |
 
 **Example**  
@@ -46,6 +46,7 @@ Fetch and parse the model data (JSON)
 
 ### @nextstrain/evofr-viz~TimePoint : <code>Map</code>
 An data point representing a model estimate at a certain date
+Extra properties (e.g. "freq") are added in a data-dependent manner.
 
 **Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
@@ -53,11 +54,6 @@ An data point representing a model estimate at a certain date
 | Name | Type |
 | --- | --- |
 | date | <code>string</code> \| <code>undefined</code> | 
-| freq | <code>number</code> \| <code>NaN</code> | 
-| I_smooth | <code>number</code> \| <code>NaN</code> | 
-| I_smooth_y0 | <code>number</code> \| <code>NaN</code> | 
-| I_smooth_y1 | <code>number</code> \| <code>NaN</code> | 
-| r_t | <code>number</code> \| <code>NaN</code> | 
 
 <a name="module_@nextstrain/evofr-viz..VariantPoint"></a>
 
@@ -65,6 +61,7 @@ An data point representing a model estimate at a certain date
 An data point representing a model estimate for a variant.
 The properties defined directly here are not specific to any date.
 Date-specific estimates are specified via `temporal`
+Extra properties (e.g. "ga") are added in a data-dependent manner.
 
 **Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
@@ -72,7 +69,6 @@ Date-specific estimates are specified via `temporal`
 | Name | Type | Description |
 | --- | --- | --- |
 | variant | <code>string</code> \| <code>undefined</code> | Variant name |
-| ga | <code>number</code> \| <code>undefined</code> | Growth Advantage |
 | temporal | <code>Array</code> \| <code>undefined</code> | Array of `TimePoint` estimates |
 
 <a name="module_@nextstrain/evofr-viz..ModelData"></a>
@@ -118,8 +114,9 @@ made config-options so that this library is pathogen agnostic.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| mlrUrl | <code>string</code> | Address to fetch the MLR model JSON |
-| renewalUrl | <code>string</code> | Address to fetch the Renewal model JSON |
+| modelName | <code>string</code> | Name of the model - used to improve clarity of status & error messages |
+| modelUrl | <code>string</code> | Address to fetch the model JSON from |
+| sites | <code>Set</code> \| <code>undefined</code> | list of sites to extract from JSON. Undefined will use the sites set in the JSON metadata. |
 | variantColors | <code>Map.&lt;string, string&gt;</code> | colors for the variants specified in the model JSONs |
 | variantDisplayNames | <code>Map.&lt;string, string&gt;</code> | display names for the variants specified in the model JSONs |
 

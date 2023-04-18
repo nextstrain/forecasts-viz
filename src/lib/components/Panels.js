@@ -63,7 +63,7 @@ const useResponsiveSizing = (graphType) => {
  * Display a panel of small-multiple graphs for different locations.
  * This component must be provided data obtained via the `useModelData` hook
  * @param {ModelDataWrapper} data
- * @param {('growthAdvantage'|'r_t'|'frequency'|'stackedIncidence')} graphType
+ * @param {('growthAdvantage'|'R'|'frequency'|'stackedIncidence')} graphType
  * @param {(Array|undefined)} locations Defaults to `undefined` which will display all available locations
  * @kind React Component
  * @memberof module:@nextstrain/evofr-viz
@@ -92,11 +92,8 @@ const Panel = ({
   const sizes = {...useResponsiveSizing(graphType), ...facetStyles};
   const {modelData, error, status} = data;
 
-  if (error) {
-    throw error; // handled by surrounding ErrorBoundary
-  }
   if (!modelData) {
-    return (<Status>{status}</Status>);
+    return (<Status err={error}>{status}</Status>);
   }
   
   const locationList = locations || modelData.get('locations');

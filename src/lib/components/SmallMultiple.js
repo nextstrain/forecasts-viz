@@ -126,7 +126,7 @@ const frequencyPlot = (dom, sizes, location, modelData) => {
   });
 
   /* vertical (dashed) line + text to convey nowcast/forecast */
-  /* dashed horizontal line at r_t=1 */
+  /* dashed horizontal line at R=1 */
   const forecastGroup = svg.append('g')
   const forecastX = x(modelData.get('nowcastFinalDate'))
   forecastGroup.append('path')
@@ -170,16 +170,16 @@ const rtPlot = (dom, sizes, location, modelData) => {
 
   /* coloured lines for each variant, with shaded areas for HDI */
   const line = d3.line()
-    .defined(d => !isNaN(d.get('r_t')))
+    .defined(d => !isNaN(d.get('R')))
     .curve(d3.curveLinear)
     .x((d) => x(d.get('date')))
-    .y((d) => y(d.get('r_t')))
+    .y((d) => y(d.get('R')))
   const area = d3.area()
-    .defined(d => d.get('r_t_HDI_95_lower')!==undefined && d.get('r_t_HDI_95_upper')!==undefined)
+    .defined(d => d.get('R_HDI_95_lower')!==undefined && d.get('R_HDI_95_upper')!==undefined)
     .curve(d3.curveLinear)
     .x((d) => x(d.get('date')))
-    .y0((d) => y(d.get('r_t_HDI_95_lower')))
-    .y1((d) => y(d.get('r_t_HDI_95_upper')))
+    .y0((d) => y(d.get('R_HDI_95_lower')))
+    .y1((d) => y(d.get('R_HDI_95_upper')))
 
   modelData.get('points').get(location).forEach((variantPoint, variant) => {
     const temporalPoints = variantPoint.get('temporal');
@@ -199,19 +199,19 @@ const rtPlot = (dom, sizes, location, modelData) => {
       .attr("stroke-opacity", 0.8)
       .attr("d", line(temporalPoints));
 
-    const finalPt = finalValidPoint(temporalPoints, 'r_t');
+    const finalPt = finalValidPoint(temporalPoints, 'R');
     if (!finalPt) return;
     g.append("text")
-      .text(`${parseFloat(finalPt.get('r_t')).toPrecision(2)}`)
+      .text(`${parseFloat(finalPt.get('R')).toPrecision(2)}`)
       .attr("x", x(finalPt.get('date')))
-      .attr("y", y(finalPt.get('r_t')))
+      .attr("y", y(finalPt.get('R')))
       .style("text-anchor", "start")
       .style("alignment-baseline", "baseline")
       .style("font-size", "12px")
       .style("fill", color)
   });
 
-  /* dashed horizontal line at r_t=1 */
+  /* dashed horizontal line at R=1 */
   svg.append('path')
     .attr("fill", "none")
     .attr("stroke", "#444")
@@ -343,7 +343,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData}) => {
         case 'frequency':
           frequencyPlot(dom, sizes, location, modelData);
           break;
-        case 'r_t':
+        case 'R':
           rtPlot(dom, sizes, location, modelData);
           break;
         case 'stackedIncidence':

@@ -4,15 +4,12 @@ import './styles.css';
 
 let locations = undefined;
 // uncomment the following line to limit the number of small multiples
-// locations = ["Australia", "Belgium"];
-// locations = ["Australia", "Belgium", "Canada", "Denmark", "France"];
+// locations = ["Australia", "Canada"];
+// locations = ["Australia", "Canada", "Denmark", "France"];
 
 const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global";
-const DEFAULT_RENEWAL_ENDPOINT = `${DEFAULT_ENDPOINT_PREFIX}/renewal/latest_results.json`;
-const DEFAULT_MLR_ENDPOINT = `${DEFAULT_ENDPOINT_PREFIX}/mlr/latest_results.json`;
-const datasetConfiguration = {
-  mlrUrl: process.env.REACT_APP_MLR_ENDPOINT || DEFAULT_MLR_ENDPOINT,
-  renewalUrl: process.env.REACT_APP_RENEWAL_ENDPOINT || DEFAULT_RENEWAL_ENDPOINT,
+const baseConfiguration = {
+  sites: undefined,
   variantColors: new Map([
     ["other", "#737373"],
     ["21L (Omicron)", "#BDBDBD"],
@@ -36,9 +33,21 @@ const datasetConfiguration = {
     ["23A (Omicron)", "23A (XBB.1.5)"],
   ])
 }
+const mlrConfig = {
+  modelName: "MLR",
+  modelUrl: process.env.REACT_APP_MLR_ENDPOINT || `${DEFAULT_ENDPOINT_PREFIX}/mlr/latest_results.json`,
+  ...baseConfiguration
+};
+const renewalConfig = {
+  modelName: "Renewal",
+  modelUrl: process.env.REACT_APP_RENEWAL_ENDPOINT || `${DEFAULT_ENDPOINT_PREFIX}/renewal/latest_results.json`,
+  ...baseConfiguration
+};
 
 function App() {
-  const data = useModelData(datasetConfiguration);
+  const mlrData = useModelData(mlrConfig);
+  const renewalData = useModelData(renewalConfig);
+
   return (
     <div id="AppContainer">
       <h1>
@@ -51,39 +60,33 @@ function App() {
 
       <div id="mainPanelsContainer" >
 
-        <h2>
-          {`Variant Frequencies`}
-        </h2>
-        <div className="abstract">
-          {`Data comes from MLR model objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
-        </div>
+        <h2>{`MLR Variant Frequencies`}</h2>
+        <div className="abstract">{`Data comes from objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
         {/*You can inject styles via a prop like `facetStyles={{top: 40}}`*/}
-        <PanelDisplay data={data} locations={locations} graphType="frequency"/>
+        <PanelDisplay data={mlrData} locations={locations} graphType="frequency"/>
 
-        <h2>
-          {`Growth Advantage`}
-        </h2>
-        <div className="abstract">
-          {`Data comes from MLR model objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
-        </div>
-        <PanelDisplay data={data} locations={locations} graphType="growthAdvantage"/>
+        <h2>{`Renewal Variant Frequencies`}</h2>
+        <div className="abstract">{`Data comes from objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+        <PanelDisplay data={renewalData} locations={locations} graphType="frequency"/>
 
-        <h2>
-          {`Estimated Cases over time`}
-        </h2>
-        <div className="abstract">
-          {`Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
-        </div>
-        <PanelDisplay data={data} locations={locations} graphType="stackedIncidence"/>
+        <h2>{`MLR Growth Advantage`}</h2>
+        <div className="abstract">{`Data comes from objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+        <PanelDisplay data={mlrData} locations={locations} graphType="growthAdvantage"/>
+
+        <h2>{`Renewal Growth Advantage`}</h2>
+        <div className="abstract">{`Data comes from objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+        <PanelDisplay data={renewalData} locations={locations} graphType="growthAdvantage"/>
+
+        <h2>{`Estimated Cases over time (Renewal Model)`}</h2>
+        <div className="abstract">{`Data comes from objects matching 'I_smooth' + 'median'`}</div>
+        <PanelDisplay data={renewalData} locations={locations} graphType="stackedIncidence"/>
 
 
-        <h2>
-          {`Estimated effective reproduction number over time`}
-        </h2>
+        <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>
         <div className="abstract">
           {`Data comes from renewal model objects matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
         </div>
-        <PanelDisplay data={data} locations={locations} graphType="r_t"/>
+        <PanelDisplay data={renewalData} locations={locations} graphType="R"/>
 
       </div>
 
