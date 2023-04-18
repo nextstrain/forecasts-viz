@@ -1,5 +1,5 @@
 import React from 'react';
-import { ModelDataProvider, ModelDataStatus, PanelDisplay} from './lib/index.js';
+import { PanelDisplay, useModelData} from './lib/index.js';
 import './styles.css';
 
 let locations = undefined;
@@ -38,58 +38,55 @@ const datasetConfiguration = {
 }
 
 function App() {
+  const data = useModelData(datasetConfiguration);
   return (
     <div id="AppContainer">
-      <ModelDataProvider config={datasetConfiguration}>
-        <h1>
-          evofr visualisation library
-        </h1>
+      <h1>
+        evofr visualisation library
+      </h1>
 
+      <div className="abstract">
+        This page is used to test and develop the React Components which visualise evofr modelling datasets.
+      </div>
+
+      <div id="mainPanelsContainer" >
+
+        <h2>
+          {`Variant Frequencies`}
+        </h2>
         <div className="abstract">
-          This page is used to test and develop the React Components which visualise evofr modelling datasets.
+          {`Data comes from MLR model objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
         </div>
+        {/*You can inject styles via a prop like `facetStyles={{top: 40}}`*/}
+        <PanelDisplay data={data} locations={locations} graphType="frequency"/>
 
-        <ModelDataStatus/>
-
-        <div id="mainPanelsContainer" >
-
-          <h2>
-            {`Variant Frequencies`}
-          </h2>
-          <div className="abstract">
-            {`Data comes from MLR model objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
-          </div>
-          {/*You can inject styles via a prop like `facetStyles={{top: 40}}`*/}
-          <PanelDisplay locations={locations} graphType="frequency"/>
-
-          <h2>
-            {`Growth Advantage`}
-          </h2>
-          <div className="abstract">
-            {`Data comes from MLR model objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
-          </div>
-          <PanelDisplay locations={locations} graphType="growthAdvantage"/>
-
-          <h2>
-            {`Estimated Cases over time`}
-          </h2>
-          <div className="abstract">
-            {`Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
-          </div>
-          <PanelDisplay locations={locations} graphType="stackedIncidence"/>
-
-
-          <h2>
-            {`Estimated effective reproduction number over time`}
-          </h2>
-          <div className="abstract">
-            {`Data comes from renewal model objects matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
-          </div>
-          <PanelDisplay locations={locations} graphType="r_t"/>
-
+        <h2>
+          {`Growth Advantage`}
+        </h2>
+        <div className="abstract">
+          {`Data comes from MLR model objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
         </div>
+        <PanelDisplay data={data} locations={locations} graphType="growthAdvantage"/>
 
-      </ModelDataProvider>
+        <h2>
+          {`Estimated Cases over time`}
+        </h2>
+        <div className="abstract">
+          {`Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
+        </div>
+        <PanelDisplay data={data} locations={locations} graphType="stackedIncidence"/>
+
+
+        <h2>
+          {`Estimated effective reproduction number over time`}
+        </h2>
+        <div className="abstract">
+          {`Data comes from renewal model objects matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
+        </div>
+        <PanelDisplay data={data} locations={locations} graphType="r_t"/>
+
+      </div>
+
     </div>
   );
 }

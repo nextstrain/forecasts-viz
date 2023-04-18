@@ -3,8 +3,7 @@ import {parseModelData} from "./parse.js";
 
 
 /**
- * @typedef {Object} ContextData
- * The data made available via React Context
+ * @typedef {Object} ModelDataWrapper
  * @property {(ModelData|undefined)} modelData
  * @property {string} status
  * @property {(Error|undefined)} error
@@ -29,11 +28,12 @@ import {parseModelData} from "./parse.js";
 
 
 /**
+ * Fetch and parse the model data (JSON)
  * @param {DatasetConfig} config 
- * @returns {ContextData}
- * @private
+ * @returns {ModelDataWrapper}
+ * @memberof module:@nextstrain/evofr-viz
  */
-export const useDataFetch = (config) => {
+export const useModelData = (config) => {
   const [status, setStatus] = useState('Downloading model data JSONs (n=2)...');
   const [error, setError] = useState(undefined); // TODO
   const [modelData, setModelData] = useState(undefined);

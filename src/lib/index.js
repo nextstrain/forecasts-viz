@@ -1,10 +1,9 @@
 import { PanelDisplay } from './components/Panels.js';
-import { ModelDataStatus } from './components/Status.js';
-import { ModelDataProvider, useModelData } from "./components/ModelDataProvider.js";
+import { useModelData } from "./utils/useModelData.js";
 
 /**
  * @module @nextstrain/evofr-viz
  * @typicalname evofr
  */
 
-export {PanelDisplay, ModelDataStatus, ModelDataProvider, useModelData};
+export {PanelDisplay, useModelData};

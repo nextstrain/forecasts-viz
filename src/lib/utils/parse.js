@@ -244,6 +244,7 @@ function ensureModelConsistency(renewal, mlr, keys) {
  * flux as we incorporate forecasted (future) dates, which only certain models
  * may use. Our approach to dates, especially as they compare between models,
  * should be revisited.
+ * @private 
  */
 function extractDatesFromModels(renewal, mlr) {
   const renewalDates = (renewal.metadata.dates || []).sort(); // YYYY-MM-DD are sorted correctly
