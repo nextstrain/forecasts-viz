@@ -5,6 +5,7 @@ import * as d3 from "d3";
 /* Threshold to switch from legend sitting on top of the panels
 to it sitting on the RHS of the panels */
 export const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200; 
+export const LEGEND_MIN_WIDTH = 200;
 
 /**
  * My original intention for the legend on wide-screens was to have it stay in a
@@ -20,7 +21,7 @@ export const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200;
 const LegendContainer = styled.div`
   /* border: solid red; */
   display: flex;
-  min-width: 200px;
+  min-width: ${LEGEND_MIN_WIDTH}px;
   text-align: left;
   position: block;
   flex-wrap: wrap;
@@ -35,6 +36,7 @@ const LegendContainer = styled.div`
   }
 
   @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
+    max-width: ${LEGEND_MIN_WIDTH}px;
     flex-wrap: nowrap;
     flex-direction: column;
     & > div {

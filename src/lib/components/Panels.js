@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { SmallMultiple } from "./SmallMultiple";
+import { SmallMultiple, canUseLogit } from "./SmallMultiple";
 import { Legend, WINDOW_WIDTH_FOR_SIDEBAR_LEGEND } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
 import { ErrorMessage } from "./ErrorMessage";
 import Spinner from "./Spinner";
+import { Toggle } from "./Toggle";
 import "../styles/styles.css";
 
 /**
@@ -91,8 +92,10 @@ const Panel = ({
   facetStyles={},
   locations=undefined, /* optional. Defaults to all available */
 }) => {
-  const sizes = {...useResponsiveSizing(graphType), ...facetStyles};
   const {modelData, error} = data;
+  const [logit, toggleLogit] = useState(false);
+  const sizes = {...useResponsiveSizing(graphType), ...facetStyles};
+
   if (error) {
     return (<ErrorMessage error={error}/>);
   }
@@ -104,17 +107,20 @@ const Panel = ({
   const locationList = locations || modelData.get('locations');
 
   return (
-    <Container>
-      <Legend modelData={modelData}/>
-      <PanelSectionContainer smallMultipleWidth={sizes.width}>
-        {locationList
-          .map((location) => ({location, graph: graphType, sizes}))
-          .map((param) => (
-            <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData}/>
-            ))
-          }
-      </PanelSectionContainer>
-    </Container>
+    <div>
+      {canUseLogit.has(graphType) && <Toggle label="Logit transform" checked={logit} onChange={() => toggleLogit(!logit)}/>}
+      <Container>
+        <Legend modelData={modelData}/>
+        <PanelSectionContainer smallMultipleWidth={sizes.width}>
+          {locationList
+            .map((location) => ({location, graph: graphType, sizes}))
+            .map((param) => (
+              <SmallMultiple {...param} key={`${param.graph}_${param.location}`} modelData={modelData} logit={logit}/>
+              ))
+            }
+        </PanelSectionContainer>
+      </Container>
+    </div>
   )
 }
 

@@ -1,6 +1,7 @@
 import React, {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 import * as d3 from "d3";
+import { logitScale } from "../utils/logitScale";
 
 /**
  * A lot of these functions can be broken out into custom hooks / separate files.
@@ -46,7 +47,7 @@ const generalXAxis = (x, sizes, textFn) => {
 
 const simpleYAxis = (y, sizes, textFun = (d) => d) => (g) => g
   .attr("transform", `translate(${sizes.left},0)`)
-  .call(d3.axisLeft(y).tickSize(0).tickPadding(4))
+  .call(d3.axisLeft(y).tickSize(2).tickPadding(4))
   // .call(g => g.select(".domain").remove())
   .selectAll("text")
     .text(textFun)
@@ -74,7 +75,7 @@ const title = (svg, sizes, text) => {
     .style("fill", "#444");
 }
 
-const frequencyPlot = (dom, sizes, location, modelData) => {
+const frequencyPlot = (dom, sizes, location, modelData, logit) => {
   const svg = svgSetup(dom, sizes);
 
   const x = d3.scalePoint()
@@ -84,7 +85,7 @@ const frequencyPlot = (dom, sizes, location, modelData) => {
   svg.append("g")
       .call(generalXAxis(x, sizes, dateFormatter));
 
-  const y = d3.scaleLinear()
+  const y = (logit ? logitScale() : d3.scaleLinear())
     .domain([0, 1])
     .range([sizes.height-sizes.bottom, sizes.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
 
@@ -331,7 +332,9 @@ const categoryPointEstimate = (dom, sizes, location, modelData, dataKey, dashedL
   title(svg, sizes, location)
 }
 
-export const SmallMultiple = ({location, graph, sizes, modelData}) => {
+export const canUseLogit = new Set(['frequency']);
+
+export const SmallMultiple = ({location, graph, sizes, modelData, logit}) => {
 
   const d3Container = useRef(null);
 
@@ -341,7 +344,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData}) => {
 
       switch (graph) {
         case 'frequency':
-          frequencyPlot(dom, sizes, location, modelData);
+          frequencyPlot(dom, sizes, location, modelData, logit);
           break;
         case 'R':
           rtPlot(dom, sizes, location, modelData);
@@ -357,7 +360,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData}) => {
       }
 
     },
-    [modelData, graph, sizes, location]
+    [modelData, graph, sizes, location, logit]
   );
 
   return (
