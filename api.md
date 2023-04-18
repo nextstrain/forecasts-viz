@@ -98,7 +98,6 @@ Extra properties (e.g. "ga") are added in a data-dependent manner.
 | Name | Type |
 | --- | --- |
 | modelData | <code>ModelData</code> \| <code>undefined</code> | 
-| status | <code>string</code> | 
 | error | <code>Error</code> \| <code>undefined</code> | 
 
 <a name="module_@nextstrain/evofr-viz..DatasetConfig"></a>
@@ -114,7 +113,7 @@ made config-options so that this library is pathogen agnostic.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| modelName | <code>string</code> | Name of the model - used to improve clarity of status & error messages |
+| modelName | <code>string</code> | Name of the model - used to improve clarity of error messages |
 | modelUrl | <code>string</code> | Address to fetch the model JSON from |
 | sites | <code>Set</code> \| <code>undefined</code> | list of sites to extract from JSON. Undefined will use the sites set in the JSON metadata. |
 | variantColors | <code>Map.&lt;string, string&gt;</code> | colors for the variants specified in the model JSONs |

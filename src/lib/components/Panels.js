@@ -3,7 +3,9 @@ import styled from 'styled-components';
 import { SmallMultiple } from "./SmallMultiple";
 import { Legend, WINDOW_WIDTH_FOR_SIDEBAR_LEGEND } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
-import { Status } from "./Status";
+import { ErrorMessage } from "./ErrorMessage";
+import Spinner from "./Spinner";
+import "../styles/styles.css";
 
 /**
  * The intention is to (eventually) expose two components here
@@ -90,12 +92,15 @@ const Panel = ({
   locations=undefined, /* optional. Defaults to all available */
 }) => {
   const sizes = {...useResponsiveSizing(graphType), ...facetStyles};
-  const {modelData, error, status} = data;
+  const {modelData, error} = data;
+  if (error) {
+    return (<ErrorMessage error={error}/>);
+  }
 
   if (!modelData) {
-    return (<Status err={error}>{status}</Status>);
+    return <Spinner/>
   }
-  
+
   const locationList = locations || modelData.get('locations');
 
   return (
