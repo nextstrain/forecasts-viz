@@ -10,3 +10,28 @@
 @-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
 @-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
 @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+
+/* Katie's Atlas of Viral Adaption used as a starting point for tooltip styling
+https://github.com/blab/atlas-of-viral-adaptation/blob/9b942e3405e4683ff80ada9aa67ec1101a1c5322/index.html
+*/
+div.tooltip {    
+  position: fixed;
+  display: none;
+  padding: 12px 12px;
+  background: #f6f6f6;
+  border: 0.5px solid #888;
+  border-radius: 1px;
+  color: #333;
+  text-align: left;
+  font-size: 12px;
+  max-width: 320px;
+  padding: .2rem .4rem;
+  pointer-events: none;
+}
+.tooltip p {
+  margin: 0px 0px;
+}
+.tooltip p > b {
+  color: #888;
+  font-weight: 300;
+}

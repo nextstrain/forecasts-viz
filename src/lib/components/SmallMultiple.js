@@ -2,6 +2,7 @@ import React, {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 import * as d3 from "d3";
 import { logitScale } from "../utils/logitScale";
+import { Tooltip } from "../utils/tooltip";
 
 /**
  * A lot of these functions can be broken out into custom hooks / separate files.
@@ -11,14 +12,6 @@ import { logitScale } from "../utils/logitScale";
 
 const D3Container = styled.div`
   /* border: dashed blue; */
-  & > div { /* TOOLTIP */
-    position: fixed;
-    display: none;
-    padding: 12px 6px;
-    background: #fff;
-    border: 1px solid #333;
-    pointer-events: none;
-  }
 `;
 
 const dateFormatter = (dStr) => {
@@ -77,6 +70,7 @@ const title = (svg, sizes, text) => {
 
 const frequencyPlot = (dom, sizes, location, modelData, logit) => {
   const svg = svgSetup(dom, sizes);
+  const tooltip = new Tooltip(dom);
 
   const x = d3.scalePoint()
     .domain(modelData.get('dates'))
@@ -124,6 +118,10 @@ const frequencyPlot = (dom, sizes, location, modelData, logit) => {
         .attr("cy", (d) => y(d.get('freq')))
         .attr("r", tPx)
         .style("fill", color)
+        // potential todo - extract the following `on()` methods into a helper method (of Tooltip) you can call()
+        .on("mouseover", (event, d) => tooltip.display(frequencyTooltip, d, variant))
+        .on("mousemove", (event) => tooltip.move(event))
+        .on("mouseout", () => tooltip.hide())
   });
 
   /* vertical (dashed) line + text to convey nowcast/forecast */
@@ -373,4 +371,22 @@ function finalValidPoint(points, key) {
     if (!isNaN(points[i].get(key))) return points[i];
   }
   return null;
+}
+
+/**
+ * @param {Map} d Model data for a single timepoint ("d" for d3 datum)
+ * @param {string} variant 
+ * @returns {HtmlString}
+ * @private
+ */
+function frequencyTooltip(d, variant) {
+  const fmt = d3.format(".1%");
+  return `
+    <div>
+      <p><b>Variant:</b> ${variant}</p>
+      <p><b>Date:</b> ${d.get('date')}</p>
+      <p><b>Frequency:</b> ${fmt(d.get('freq'))}</p>
+      <p><b>95% HDI:</b> ${fmt(d.get('freq_HDI_95_lower'))} - ${fmt(d.get('freq_HDI_95_upper'))}</p>
+    </div>
+  `
 }
