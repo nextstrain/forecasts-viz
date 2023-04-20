@@ -1,5 +1,5 @@
 import React from 'react';
-import {Status} from "./Status";
+import {ErrorMessage} from "./ErrorMessage";
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -12,9 +12,7 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (this.state.errorCaught) {
       return (
-        <Status err={this.state.errorCaught}>
-          Something appears to have gone wrong while rendering the data. Please get in touch!
-        </Status>
+        <ErrorMessage error={this.state.errorCaught}/>
       )
     }
     return this.props.children; 

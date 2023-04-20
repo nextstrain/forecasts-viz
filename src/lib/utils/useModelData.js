@@ -3,10 +3,8 @@ import {parseModelData} from "./parse.js";
 
 
 /**
- * @typedef {Object} ContextData
- * The data made available via React Context
+ * @typedef {Object} ModelDataWrapper
  * @property {(ModelData|undefined)} modelData
- * @property {string} status
  * @property {(Error|undefined)} error
  * @inner
  * @memberof module:@nextstrain/evofr-viz
@@ -19,8 +17,9 @@ import {parseModelData} from "./parse.js";
  * and so there are hardcoded expectations. These will be lifted up and
  * made config-options so that this library is pathogen agnostic.
  *
- * @property {string} mlrUrl Address to fetch the MLR model JSON
- * @property {string} renewalUrl Address to fetch the Renewal model JSON
+ * @property {string} modelName Name of the model - used to improve clarity of error messages
+ * @property {string} modelUrl Address to fetch the model JSON from 
+ * @property {Set|undefined} sites list of sites to extract from JSON. Undefined will use the sites set in the JSON metadata.
  * @property {Map<string,string>} variantColors colors for the variants specified in the model JSONs
  * @property {Map<string,string>} variantDisplayNames display names for the variants specified in the model JSONs
  * @inner
@@ -29,45 +28,39 @@ import {parseModelData} from "./parse.js";
 
 
 /**
+ * Fetch and parse the model data (JSON)
  * @param {DatasetConfig} config 
- * @returns {ContextData}
- * @private
+ * @returns {ModelDataWrapper}
+ * @memberof module:@nextstrain/evofr-viz
  */
-export const useDataFetch = (config) => {
-  const [status, setStatus] = useState('Downloading model data JSONs (n=2)...');
+export const useModelData = (config) => {
   const [error, setError] = useState(undefined); // TODO
   const [modelData, setModelData] = useState(undefined);
 
   useEffect( () => {
-    // start both fetches immediately
-    const renewalJson = fetch(config.renewalUrl)
-      .then((res) => res.json())
-    const mlrJson = fetch(config.mlrUrl)
-      .then((res) => res.json())
-
     async function fetchAndParse() {
-      let renewalData, mlrData
+      console.log(`Downloading & parsing model data JSON for ${config.modelName} (${config.modelUrl})`)
+      let modelJson;
       try {
-        renewalData = await renewalJson;
-        mlrData = await mlrJson;
+        modelJson = await fetch(config.modelUrl)
+          .then((res) => res.json())
       } catch (err) {
-        setStatus('Downloading model data JSONs failed.')
-        setError(err);
+        console.error(err);
+        setError(new Error(`Downloading model data JSONs for ${config.modelName} (${config.modelUrl}) failed.`));
         return;
       }
-      setStatus("Data downloaded. Processing the data now...")
       try {
-        setModelData(parseModelData(renewalData, mlrData, config.variantColors, config.variantDisplayNames));
+        setModelData(parseModelData(config.modelName, modelJson, config.sites, config.variantColors, config.variantDisplayNames));
       } catch (err) {
-        setStatus('Downloading model data JSONs succeeded, but parsing the JSONs failed.');
-        setError(err);
+        console.error(err)
+        setError(new Error(`Downloading model data JSONs for ${config.modelName} succeeded, but parsing the JSONs failed.`));
+        return;
       }
-      setStatus("Data ready for visualisation.")
     }
 
     fetchAndParse();
   }, [config]);
 
 
-  return {modelData, status, error}
+  return {modelData, error}
 }

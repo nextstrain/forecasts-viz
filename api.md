@@ -4,132 +4,49 @@
 
 * [@nextstrain/evofr-viz](#module_@nextstrain/evofr-viz)
     * _static_
-        * _Components_
-            * [.exports.ModelDataProvider](#module_@nextstrain/evofr-viz.exports.ModelDataProvider)
-            * [.exports.PanelDisplay](#module_@nextstrain/evofr-viz.exports.PanelDisplay)
-            * [.exports.ModelDataStatus](#module_@nextstrain/evofr-viz.exports.ModelDataStatus)
-        * _Hooks_
-            * [.exports.useModelData](#module_@nextstrain/evofr-viz.exports.useModelData) ⇒ <code>ContextData</code>
+        * [.exports.PanelDisplay](#module_@nextstrain/evofr-viz.exports.PanelDisplay)
+        * [.exports.useModelData](#module_@nextstrain/evofr-viz.exports.useModelData) ⇒ <code>ModelDataWrapper</code>
     * _inner_
-        * [~ContextData](#module_@nextstrain/evofr-viz..ContextData) : <code>Object</code>
-        * [~DatasetConfig](#module_@nextstrain/evofr-viz..DatasetConfig) : <code>Object</code>
         * [~TimePoint](#module_@nextstrain/evofr-viz..TimePoint) : <code>Map</code>
         * [~VariantPoint](#module_@nextstrain/evofr-viz..VariantPoint) : <code>Map</code>
         * [~ModelData](#module_@nextstrain/evofr-viz..ModelData) : <code>Map</code>
+        * [~ModelDataWrapper](#module_@nextstrain/evofr-viz..ModelDataWrapper) : <code>Object</code>
+        * [~DatasetConfig](#module_@nextstrain/evofr-viz..DatasetConfig) : <code>Object</code>
 
-<a name="module_@nextstrain/evofr-viz.exports.ModelDataProvider"></a>
-
-### evofr.exports.ModelDataProvider
-A React component which fetches and parses forecast-model JSONs
-and exposes them via React context. This data can be accessed by
-using the `useModelData` hook. All display content which wants to
-use this data (e.g. panels) should be children of this component.
-
-**Kind**: static React Component of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
-**Category**: Components  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| config | <code>DatasetConfig</code> | Configuration of datasets |
-| children | <code>ReactComponent</code> | Child react components for rendering |
-
-**Example**  
-```js
-<ModelDataProvider ...>
-  <PanelDisplay.../>
-</ModelDataProvider
-```
 <a name="module_@nextstrain/evofr-viz.exports.PanelDisplay"></a>
 
 ### evofr.exports.PanelDisplay
 Display a panel of small-multiple graphs for different locations.
-This component must be a descendent of a `<ModelDataProvider>`
+This component must be provided data obtained via the `useModelData` hook
 
 **Kind**: static React Component of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
-**Category**: Components  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| graphType | <code>&#x27;growthAdvantage&#x27;</code> \| <code>&#x27;r\_t&#x27;</code> \| <code>&#x27;frequency&#x27;</code> \| <code>&#x27;stackedIncidence&#x27;</code> |  |
+| data | <code>ModelDataWrapper</code> |  |
+| graphType | <code>&#x27;growthAdvantage&#x27;</code> \| <code>&#x27;R&#x27;</code> \| <code>&#x27;frequency&#x27;</code> \| <code>&#x27;stackedIncidence&#x27;</code> |  |
 | locations | <code>Array</code> \| <code>undefined</code> | Defaults to `undefined` which will display all available locations |
 
 **Example**  
 ```js
 <PanelDisplay graphType="ga"/>
 ```
-<a name="module_@nextstrain/evofr-viz.exports.ModelDataStatus"></a>
-
-### evofr.exports.ModelDataStatus
-A React component which displays the status of the model data being
-fetched and parsed by `ModelDataProvider`. Once the data has been
-(successfully) parsed this component will return `null` and thus
-not render any elements to screen. If you wish to have custom display
-of progress then it's easy to write your own component which considers
-the `status` and `error` properties of `useModelData()`
-
-**Kind**: static React Component of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
-**Category**: Components  
-**Example**  
-```js
-<ModelDataProvider ...>
-  <ModelDataStatus/>
-</ModelDataProvider
-```
 <a name="module_@nextstrain/evofr-viz.exports.useModelData"></a>
 
-### evofr.exports.useModelData ⇒ <code>ContextData</code>
-Accesses data provided by `<ModelDataProvider>`
+### evofr.exports.useModelData ⇒ <code>ModelDataWrapper</code>
+Fetch and parse the model data (JSON)
 
-**Kind**: static React Hook of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
-**Returns**: <code>ContextData</code> - The data provided by `<ModelDataProvider>`  
-**Category**: Hooks  
-**Throws**:
+**Kind**: static constant of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 
-- Error
-
-**Example**  
-```js
-const MyReactComponent = ({}) => {
-  const {modelData, status, error} = useModelData();
-  ...
-}
-```
-<a name="module_@nextstrain/evofr-viz..ContextData"></a>
-
-### @nextstrain/evofr-viz~ContextData : <code>Object</code>
-The data made available via React Context
-
-**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
-**Properties**
-
-| Name | Type |
+| Param | Type |
 | --- | --- |
-| modelData | <code>ModelData</code> \| <code>undefined</code> | 
-| status | <code>string</code> | 
-| error | <code>Error</code> \| <code>undefined</code> | 
-
-<a name="module_@nextstrain/evofr-viz..DatasetConfig"></a>
-
-### @nextstrain/evofr-viz~DatasetConfig : <code>Object</code>
-Configuration for the datasets to fetch & parse
-Currently the library is only built for `forecasts-ncov` model data
-and so there are hardcoded expectations. These will be lifted up and
-made config-options so that this library is pathogen agnostic.
-
-**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| mlrUrl | <code>string</code> | Address to fetch the MLR model JSON |
-| renewalUrl | <code>string</code> | Address to fetch the Renewal model JSON |
-| variantColors | <code>Map.&lt;string, string&gt;</code> | colors for the variants specified in the model JSONs |
-| variantDisplayNames | <code>Map.&lt;string, string&gt;</code> | display names for the variants specified in the model JSONs |
+| config | <code>DatasetConfig</code> | 
 
 <a name="module_@nextstrain/evofr-viz..TimePoint"></a>
 
 ### @nextstrain/evofr-viz~TimePoint : <code>Map</code>
 An data point representing a model estimate at a certain date
+Extra properties (e.g. "freq") are added in a data-dependent manner.
 
 **Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
@@ -137,11 +54,6 @@ An data point representing a model estimate at a certain date
 | Name | Type |
 | --- | --- |
 | date | <code>string</code> \| <code>undefined</code> | 
-| freq | <code>number</code> \| <code>NaN</code> | 
-| I_smooth | <code>number</code> \| <code>NaN</code> | 
-| I_smooth_y0 | <code>number</code> \| <code>NaN</code> | 
-| I_smooth_y1 | <code>number</code> \| <code>NaN</code> | 
-| r_t | <code>number</code> \| <code>NaN</code> | 
 
 <a name="module_@nextstrain/evofr-viz..VariantPoint"></a>
 
@@ -149,6 +61,7 @@ An data point representing a model estimate at a certain date
 An data point representing a model estimate for a variant.
 The properties defined directly here are not specific to any date.
 Date-specific estimates are specified via `temporal`
+Extra properties (e.g. "ga") are added in a data-dependent manner.
 
 **Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
@@ -156,7 +69,6 @@ Date-specific estimates are specified via `temporal`
 | Name | Type | Description |
 | --- | --- | --- |
 | variant | <code>string</code> \| <code>undefined</code> | Variant name |
-| ga | <code>number</code> \| <code>undefined</code> | Growth Advantage |
 | temporal | <code>Array</code> \| <code>undefined</code> | Array of `TimePoint` estimates |
 
 <a name="module_@nextstrain/evofr-viz..ModelData"></a>
@@ -176,4 +88,34 @@ Date-specific estimates are specified via `temporal`
 | variantDisplayNames | <code>Map</code> |  |
 | pivot | <code>String</code> | (final entry in MLR model's list of variants) |
 | dateIdx | <code>Map</code> |  |
+
+<a name="module_@nextstrain/evofr-viz..ModelDataWrapper"></a>
+
+### @nextstrain/evofr-viz~ModelDataWrapper : <code>Object</code>
+**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
+**Properties**
+
+| Name | Type |
+| --- | --- |
+| modelData | <code>ModelData</code> \| <code>undefined</code> | 
+| error | <code>Error</code> \| <code>undefined</code> | 
+
+<a name="module_@nextstrain/evofr-viz..DatasetConfig"></a>
+
+### @nextstrain/evofr-viz~DatasetConfig : <code>Object</code>
+Configuration for the datasets to fetch & parse
+Currently the library is only built for `forecasts-ncov` model data
+and so there are hardcoded expectations. These will be lifted up and
+made config-options so that this library is pathogen agnostic.
+
+**Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| modelName | <code>string</code> | Name of the model - used to improve clarity of error messages |
+| modelUrl | <code>string</code> | Address to fetch the model JSON from |
+| sites | <code>Set</code> \| <code>undefined</code> | list of sites to extract from JSON. Undefined will use the sites set in the JSON metadata. |
+| variantColors | <code>Map.&lt;string, string&gt;</code> | colors for the variants specified in the model JSONs |
+| variantDisplayNames | <code>Map.&lt;string, string&gt;</code> | display names for the variants specified in the model JSONs |
 

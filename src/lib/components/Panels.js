@@ -3,8 +3,9 @@ import styled from 'styled-components';
 import { SmallMultiple } from "./SmallMultiple";
 import { Legend, WINDOW_WIDTH_FOR_SIDEBAR_LEGEND } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
-import { useModelData } from "./ModelDataProvider";
-
+import { ErrorMessage } from "./ErrorMessage";
+import Spinner from "./Spinner";
+import "../styles/styles.css";
 
 /**
  * The intention is to (eventually) expose two components here
@@ -16,7 +17,10 @@ import { useModelData } from "./ModelDataProvider";
  */
 
 
-/** Container has 2 children: the legend and the container of the small-multiples  */
+/**
+ * Container has 2 children: the legend and the container of the small-multiples
+ * @private 
+ */
 const Container = styled.div`
   /* border: dashed orange; */
   display: flex;
@@ -27,6 +31,9 @@ const Container = styled.div`
   }
 `;
 
+/**
+ * @private 
+ */
 const PanelSectionContainer = styled.div`
   /* border: dashed purple; */
   flex-grow: 1;
@@ -36,7 +43,9 @@ const PanelSectionContainer = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(${props => props.smallMultipleWidth}px, 1fr));
 `;
 
-
+/**
+ * @private 
+ */
 const useResponsiveSizing = (graphType) => {
   /* following are in pixel coordinates */
   const width = 250;
@@ -54,12 +63,12 @@ const useResponsiveSizing = (graphType) => {
 
 /**
  * Display a panel of small-multiple graphs for different locations.
- * This component must be a descendent of a `<ModelDataProvider>`
- * @param {('growthAdvantage'|'r_t'|'frequency'|'stackedIncidence')} graphType
+ * This component must be provided data obtained via the `useModelData` hook
+ * @param {ModelDataWrapper} data
+ * @param {('growthAdvantage'|'R'|'frequency'|'stackedIncidence')} graphType
  * @param {(Array|undefined)} locations Defaults to `undefined` which will display all available locations
  * @kind React Component
  * @memberof module:@nextstrain/evofr-viz
- * @category Components
  * @example
  * <PanelDisplay graphType="ga"/>
  */
@@ -77,22 +86,23 @@ export const PanelDisplay = (props) => {
  * @private 
  */
 const Panel = ({
+  data,
   graphType,
   facetStyles={},
   locations=undefined, /* optional. Defaults to all available */
 }) => {
   const sizes = {...useResponsiveSizing(graphType), ...facetStyles};
-  const {modelData} = useModelData();
-
-  /**
-   * The loading status and/or errors (available via `useModelData()`) are intended to be
-   * used by the <ModelDataStatus> component, or similar. For panel rendering we simply wait
-   * until the modelData is available. Improvements (loading spinners etc) are possible.
-   */ 
-  if (!modelData) {
-    return null;
+  const {modelData, error} = data;
+  if (error) {
+    return (<ErrorMessage error={error}/>);
   }
+
+  if (!modelData) {
+    return <Spinner/>
+  }
+
   const locationList = locations || modelData.get('locations');
+
   return (
     <Container>
       <Legend modelData={modelData}/>
