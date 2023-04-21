@@ -1,4 +1,4 @@
-import { max } from 'd3';
+import { max, schemeTableau10 } from 'd3';
 
 /**
  * Maps used instead of object as it's (seemingly) faster + consumes less
@@ -77,6 +77,8 @@ export const parseModelData = (modelName, modelJson, sites, variantColors, varia
     // TODO - ensure provided sites are a subset of JSON sites
   }
 
+  if (!modelName) modelName="Unknown";
+
   const [dates, nowcastFinalDate, dateSummary] = extractDatesFromModels(modelJson)
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
@@ -84,8 +86,8 @@ export const parseModelData = (modelName, modelJson, sites, variantColors, varia
     ["locations", modelJson.metadata.location],
     ["variants", modelJson.metadata.variants],
     ["dates", dates],
-    ["variantColors", variantColors],
-    ["variantDisplayNames", variantDisplayNames],
+    ["variantColors", variantColors || genericVariantColors(modelJson.metadata.variants)],
+    ["variantDisplayNames", variantDisplayNames || genericVariantDisplayNames(modelJson.metadata.variants)],
     ["dateIdx", dateIdx],
     ["nowcastFinalDate", nowcastFinalDate],
     ["points", undefined],
@@ -229,4 +231,22 @@ function extractDatesFromModels(modelJson) {
   const keepDates = dates.slice(INITIAL_DAY_CUTOFF);
   const summary = `After removing initial ${INITIAL_DAY_CUTOFF} days, model dates are: ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days). Forecast starts at ${nowcastFinalDate}`;
   return [keepDates, nowcastFinalDate, summary];
+}
+
+/**
+ * variantDisplayNames map variants (in the JSON) to their display names
+ * If this Map is not present we simply use the variant name itself
+ * @private
+ */
+function genericVariantDisplayNames(variants) {
+  return new Map(variants.map((name) => [name, name]));
+}
+
+/**
+ * Todo - sample from a continuous scale when we have more than 10 variants
+ * (e.g. collapsed pango lineages will have lots more!)
+ * @private
+ */
+function genericVariantColors(variants) {
+  return new Map(variants.map((name, idx) => [name, schemeTableau10[idx%10]]));
 }

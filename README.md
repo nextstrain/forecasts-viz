@@ -33,6 +33,10 @@ Note that this is temporary: once we publish this on npm it'll be a typical `npm
 ### How to run the test-app contained in this repo
 
 We use a basic test-app in this repo to help with development of the library.
+The test app has two pages:
+* http://localhost:3000 - visualises SARS-CoV-2 data (see [forecasts-ncov](github.com/nextstrain/forecasts-ncov/) for details).
+* http://localhost:3000/dragdrop - allows a model JSON to be dropped onto the window to visualise
+
 
 Firstly create a suitable environment with nodejs, e.g. by using conda:
 
@@ -44,20 +48,19 @@ Then install dependencies and run the test app:
 
 ```sh
 npm ci # install dependencies
-npm run start # open a browser at http://localhost:3000
+npm run start
 ```
 
-The model data JSONs are fetched from a Nextstrain S3 bucket at runtime.
-If you wish to use local files for dev purposes you can do the following:
+In the above configuration, http://localhost:3000 will fetch SARS-CoV-2 model JSONs from our S3 bucket.
+It can be a nicer experience to first download these files (or others!) to `./data` and use those instead:
 
 ```sh
 # provision the model JSONs
 mkdir -p data/
 curl --compressed "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/renewal/latest_results.json" --output data/renewal.json
 curl --compressed "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/mlr/latest_results.json" --output data/mlr.json
-# serve them over localhost:8000
-node scripts/data-server.js
-# in a separate terminal (or background the data server)
+# serve them over localhost:8000 in a background process
+node scripts/data-server.js &
 REACT_APP_RENEWAL_ENDPOINT="http://localhost:8000/renewal.json" \
   REACT_APP_MLR_ENDPOINT="http://localhost:8000/mlr.json" \
   npm run start
@@ -66,5 +69,14 @@ REACT_APP_RENEWAL_ENDPOINT="http://localhost:8000/renewal.json" \
 ### Linting
 
 `npm run lint`
+
+### To deploy to GitHub pages
+
+GitHub pages, at https://nextstrain.github.io/forecasts-viz/, runs the drag-and-drop page to facilitate previewing a model data JSON.
+To update:
+
+```sh
+npm run deploy # will automatically push assets to the gh-pages branch
+```
 
 
