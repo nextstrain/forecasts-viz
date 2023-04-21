@@ -70,4 +70,13 @@ REACT_APP_RENEWAL_ENDPOINT="http://localhost:8000/renewal.json" \
 
 `npm run lint`
 
+### To deploy to GitHub pages
+
+GitHub pages, at https://nextstrain.github.io/forecasts-viz/, runs the drag-and-drop page to facilitate previewing a model data JSON.
+To update:
+
+```sh
+npm run deploy # will automatically push assets to the gh-pages branch
+```
+
 

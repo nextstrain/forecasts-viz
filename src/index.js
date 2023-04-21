@@ -13,6 +13,7 @@ function Router() {
     case '/ncov':
       return <AppSC2/>;
     case "/dragdrop":
+    case "/forecasts-viz": // e.g. https://nextstrain.github.io/forecasts-viz/
       return <DragAndDropApp/>;
     default:
       return <NoPageHere/>
