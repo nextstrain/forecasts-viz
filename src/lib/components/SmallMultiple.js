@@ -86,42 +86,40 @@ const frequencyPlot = (dom, sizes, location, modelData, logit) => {
   svg.append("g")
     .call(simpleYAxis(y, sizes, d3.format(".0%")));
 
-  /* how many pixels are available for each time slice? */
-  let tPx = (sizes.width - sizes.left - sizes.right) / modelData.get('dates').length;
-  tPx = tPx<1 ? "1" : tPx.toFixed(1) // sizes in SVG are strings
+  /* coloured lines for each variant, with shaded areas for HDI. Note the similarities with R_t! */
+  const line = d3.line()
+    .defined(d => !isNaN(d.get('freq')) && !!d.get('date'))
+    .curve(d3.curveLinear)
+    .x((d) => x(d.get('date')))
+    .y((d) => y(d.get('freq')))
+  const area = d3.area()
+    .defined(d => d.get('freq_HDI_95_lower')!==undefined && d.get('freq_HDI_95_upper')!==undefined && !!d.get('date'))
+    .curve(d3.curveLinear)
+    .x((d) => x(d.get('date')))
+    .y0((d) => y(d.get('freq_HDI_95_lower')))
+    .y1((d) => y(d.get('freq_HDI_95_upper')))
 
-  const hdiLine = (d) => `M${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_lower')).toFixed(1)}L${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_upper')).toFixed(1)}`;
-
-  /* Frequency graphs currently use dots (i.e. one dot for each time entry), and lines for the HDI.
-     Lines + shared areas may be better */
-  /* note map.forEach() returns a tuple of (value, key, map) -- perhaps not the order you expect! */
   modelData.get('points').get(location).forEach((variantPoint, variant) => {
-    const temporalPoints = variantPoint.get('temporal')
-      .filter((point) => !!point.get('date'));
-    const hdiPoints = temporalPoints.filter((point) => point.get('freq_HDI_95_upper')!==undefined && point.get('freq_HDI_95_lower')!==undefined)
-    const color = modelData.get('variantColors').get(variant) ||  modelData.get('variantColors').get('other')
+    const temporalPoints = variantPoint.get('temporal');
+    const color = modelData.get('variantColors').get(variant) || modelData.get('variantColors').get('other');
+    const g = svg.append('g');
 
-    const selection = svg.append('g')
-      .selectAll("dot")
-    selection.data(hdiPoints) // HDI lines (effectively areas) behind
-      .enter()
-      .append("path")
-        .attr('d', hdiLine)
-        .style("stroke-width", tPx)
-        .style("stroke", color)
-        .style("opacity", 0.4)
-        .style("fill", 'none')
-    selection.data(temporalPoints) // Point estimates in front
-      .enter()
-      .append("circle")
-        .attr("cx", (d) => x(d.get('date')))
-        .attr("cy", (d) => y(d.get('freq')))
-        .attr("r", tPx)
-        .style("fill", color)
-        // potential todo - extract the following `on()` methods into a helper method (of Tooltip) you can call()
-        .on("mouseover", (event, d) => tooltip.display(frequencyTooltip, d, variant))
-        .on("mousemove", (event) => tooltip.move(event))
-        .on("mouseout", () => tooltip.hide())
+    g.append('path')
+      .attr("stroke", "none")
+      .attr("fill", color)
+      .attr("opacity", 0.2)
+      .attr("d", area(temporalPoints));
+
+    g.append('path')
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", 2)
+      .attr("stroke-opacity", 0.8)
+      .attr("d", line(temporalPoints))
+      // potential todo - extract the following `on()` methods into a helper method (of Tooltip) you can call()
+      .on("mouseover", (event, d) => tooltip.display(frequencyTooltip, d, variant)) // TODO XXX
+      .on("mousemove", (event) => tooltip.move(event))
+      .on("mouseout", () => tooltip.hide())
   });
 
   /* vertical (dashed) line + text to convey nowcast/forecast */
@@ -380,6 +378,7 @@ function finalValidPoint(points, key) {
  * @private
  */
 function frequencyTooltip(d, variant) {
+  console.log(d, variant)
   const fmt = d3.format(".1%");
   return `
     <div>
