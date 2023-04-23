@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/forecasts-viz/static/css/main.d727b0b0.css",
-    "main.js": "/forecasts-viz/static/js/main.d6f4c0f6.js",
+    "main.js": "/forecasts-viz/static/js/main.e3a6fe7e.js",
     "static/media/LatoLatin-Medium.woff2": "/forecasts-viz/static/media/LatoLatin-Medium.83f5bdbc8ae07e25b733.woff2",
     "static/media/LatoLatin-Light.woff2": "/forecasts-viz/static/media/LatoLatin-Light.02290aae2a70e2d8dc8d.woff2",
     "static/media/nextstrain-logo-small.png": "/forecasts-viz/static/media/nextstrain-logo-small.13fec0d41212fe68ae22.png",
     "index.html": "/forecasts-viz/index.html",
     "main.d727b0b0.css.map": "/forecasts-viz/static/css/main.d727b0b0.css.map",
-    "main.d6f4c0f6.js.map": "/forecasts-viz/static/js/main.d6f4c0f6.js.map"
+    "main.e3a6fe7e.js.map": "/forecasts-viz/static/js/main.e3a6fe7e.js.map"
   },
   "entrypoints": [
     "static/css/main.d727b0b0.css",
-    "static/js/main.d6f4c0f6.js"
+    "static/js/main.e3a6fe7e.js"
   ]
 }
