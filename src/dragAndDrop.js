@@ -54,7 +54,7 @@ export default App;
 function getGraphType(site) {
   if (site==="freq") return "frequency";
   if (site==="R") return "R";
-  if (site==="I_Smooth") return "stackedIncidence";
+  if (site==="I_smooth") return "stackedIncidence";
   if (site==="ga") return "growthAdvantage";
   return undefined;
 }
