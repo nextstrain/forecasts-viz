@@ -1,6 +1,10 @@
 {
   "presets": [
-    "@babel/preset-react",
-    "@babel/preset-env"
+    "@babel/preset-react"
+    // If we need to polyfill we should use
+    // https://babeljs.io/docs/babel-preset-env
+    // using "modules": false to ensure ES modules output
+    // and probably "targets": "> 0.5%, not dead"
+    // however this should be the remit of the parent app IMO
   ]
 }
