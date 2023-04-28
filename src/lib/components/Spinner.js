@@ -4,8 +4,7 @@
  */
 
 import React from "react";
-
-const nextstrainLogo = require("../assets/nextstrain-logo-small.png");
+import nextstrainLogo from '../assets/nextstrain-logo-small.png';
 
 /**
  * @private 
