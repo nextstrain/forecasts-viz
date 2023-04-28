@@ -75,6 +75,7 @@ const frequencyPlot = (dom, sizes, location, modelData, logit) => {
   const x = d3.scalePoint()
     .domain(modelData.get('dates'))
     .range([sizes.left, sizes.width-sizes.right]);
+  x.invert = invertScalePoint;
 
   svg.append("g")
       .call(generalXAxis(x, sizes, dateFormatter));
@@ -86,42 +87,50 @@ const frequencyPlot = (dom, sizes, location, modelData, logit) => {
   svg.append("g")
     .call(simpleYAxis(y, sizes, d3.format(".0%")));
 
-  /* how many pixels are available for each time slice? */
-  let tPx = (sizes.width - sizes.left - sizes.right) / modelData.get('dates').length;
-  tPx = tPx<1 ? "1" : tPx.toFixed(1) // sizes in SVG are strings
+  tooltip.createMouseCaptureArea(svg, x, y, false) // todo = update if x,y change!
+    .on("mousemove", (event) => tooltip.update(event, displayFrequencySummary, modelData.get('dateIdx'), modelData.get('points').get(location)))
+    .on("mouseout", () => tooltip.hide())
 
-  const hdiLine = (d) => `M${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_lower')).toFixed(1)}L${x(d.get('date')).toFixed(1)},${y(d.get('freq_HDI_95_upper')).toFixed(1)}`;
+  /* coloured lines for each variant, with shaded areas for HDI. Note the similarities with R_t! */
+  const line = d3.line()
+    .defined(d => !isNaN(d.get('freq')) && !!d.get('date'))
+    .curve(d3.curveLinear)
+    .x((d) => x(d.get('date')))
+    .y((d) => y(d.get('freq')))
+  const area = d3.area()
+    .defined(d => d.get('freq_HDI_95_lower')!==undefined && d.get('freq_HDI_95_upper')!==undefined && !!d.get('date'))
+    .curve(d3.curveLinear)
+    .x((d) => x(d.get('date')))
+    .y0((d) => y(d.get('freq_HDI_95_lower')))
+    .y1((d) => y(d.get('freq_HDI_95_upper')))
 
-  /* Frequency graphs currently use dots (i.e. one dot for each time entry), and lines for the HDI.
-     Lines + shared areas may be better */
-  /* note map.forEach() returns a tuple of (value, key, map) -- perhaps not the order you expect! */
   modelData.get('points').get(location).forEach((variantPoint, variant) => {
-    const temporalPoints = variantPoint.get('temporal')
-      .filter((point) => !!point.get('date'));
-    const hdiPoints = temporalPoints.filter((point) => point.get('freq_HDI_95_upper')!==undefined && point.get('freq_HDI_95_lower')!==undefined)
-    const color = modelData.get('variantColors').get(variant) ||  modelData.get('variantColors').get('other')
+    const temporalPoints = variantPoint.get('temporal');
+    const color = modelData.get('variantColors').get(variant) || modelData.get('variantColors').get('other');
+    const g = svg.append('g');
 
-    const selection = svg.append('g')
-      .selectAll("dot")
-    selection.data(hdiPoints) // HDI lines (effectively areas) behind
-      .enter()
-      .append("path")
-        .attr('d', hdiLine)
-        .style("stroke-width", tPx)
-        .style("stroke", color)
-        .style("opacity", 0.4)
-        .style("fill", 'none')
-    selection.data(temporalPoints) // Point estimates in front
-      .enter()
-      .append("circle")
-        .attr("cx", (d) => x(d.get('date')))
-        .attr("cy", (d) => y(d.get('freq')))
-        .attr("r", tPx)
-        .style("fill", color)
-        // potential todo - extract the following `on()` methods into a helper method (of Tooltip) you can call()
-        .on("mouseover", (event, d) => tooltip.display(frequencyTooltip, d, variant))
-        .on("mousemove", (event) => tooltip.move(event))
-        .on("mouseout", () => tooltip.hide())
+    g.append('path')
+      .attr("stroke", "none")
+      .attr("fill", color)
+      .attr("opacity", 0.2)
+      .attr("d", area(temporalPoints))
+      .style('pointer-events', 'none')
+
+    g.append('path')
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", 2)
+      .attr("stroke-opacity", 0.8)
+      .attr("d", line(temporalPoints))
+      .style('pointer-events', 'none')
+    /**
+     * Tooltips for lines (or areas) can be accomplished by attaching the following to the groups:
+     * .on("mousemove", (event) => tooltip.update(event, callback)
+     * .on("mouseout", () => tooltip.hide())
+     * See `displayFrequencySummary` for an example callback.
+     * Note that the order matters -- the 'top' (last rendered) element will capture the event
+     * (Don't forget to remove the pointer-events style of 'none'!)
+     */
   });
 
   /* vertical (dashed) line + text to convey nowcast/forecast */
@@ -135,12 +144,14 @@ const frequencyPlot = (dom, sizes, location, modelData, logit) => {
     .attr("stroke-opacity", 1)
     .attr("d", `M ${forecastX} ${y(0.0)} L ${forecastX} ${y(1.0)}`)
     .style("stroke-dasharray", "4 2")
+    .style('pointer-events', 'none')
   /* rotate text (translate rather than x/y as rotation is relative to the origin) */
     forecastGroup.append("text")
       .text(`forecast`)
       .attr("transform", `translate(${forecastX+3},${y(1.0)+3})rotate(90)`)
       .style("font-size", "12px")
       .style("fill", '#aaa')
+      .style('pointer-events', 'none')
 
 
   title(svg, sizes, location)
@@ -270,6 +281,7 @@ const stackedIncidence = (dom, sizes, location, modelData) => {
 
 const categoryPointEstimate = (dom, sizes, location, modelData, dataKey, dashedLineY) => {
   const svg = svgSetup(dom, sizes);
+  const tooltip = new Tooltip(dom);
 
   // Removes the pivot category that does not need to be plotted.
   const x = d3.scalePoint()
@@ -283,13 +295,9 @@ const categoryPointEstimate = (dom, sizes, location, modelData, dataKey, dashedL
       modelData.get('points').get(location),
       ([variant, variantMap]) => variantMap
     )
-    .filter((pt) => !isNaN(pt.get(dataKey)))
+    .filter((pt) => !isNaN(pt.get(dataKey.key)))
 
   const y = d3.scaleLinear()
-    // .domain([
-    //   d3.min(points.map((pt) => pt.get(dataKey))) * 0.9, // todo - should use CIs
-    //   d3.max(points.map((pt) => pt.get(dataKey))) * 1.1 // todo - should use CIs
-    // ])
     .domain(modelData.get('domains').get('ga'))
     .range([sizes.height-sizes.bottom, sizes.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
 
@@ -312,9 +320,12 @@ const categoryPointEstimate = (dom, sizes, location, modelData, dataKey, dashedL
     .enter()
     .append("circle")
       .attr("cx", (d) => x(d.get('variant')))
-      .attr("cy", (d) => y(d.get(dataKey)))
+      .attr("cy", (d) => y(d.get(dataKey.key)))
       .attr("r", 4)
       .style("fill", (d) => modelData.get('variantColors').get(d.get('variant')) ||  modelData.get('variantColors').get('other'))
+      .on("mouseover", (event, d) => tooltip.display(categoryPointTooltip, d, dataKey))
+      .on("mousemove", (event) => tooltip.move(event))
+      .on("mouseout", () => tooltip.hide())
 
   svg.append('g')
     .selectAll("HDI")
@@ -325,7 +336,10 @@ const categoryPointEstimate = (dom, sizes, location, modelData, dataKey, dashedL
       .attr("stroke", (d) => modelData.get('variantColors').get(d.get('variant')) ||  modelData.get('variantColors').get('other'))
       .attr("stroke-width", 3)
       .attr("stroke-opacity", 1)
-      .attr("d", (d) => `M ${x(d.get('variant'))} ${y(d.get(dataKey+"_HDI_95_lower"))} L ${x(d.get('variant'))} ${y(d.get(dataKey+"_HDI_95_upper"))}`)
+      .attr("d", (d) => `M ${x(d.get('variant'))} ${y(d.get(dataKey.key+"_HDI_95_lower"))} L ${x(d.get('variant'))} ${y(d.get(dataKey.key+"_HDI_95_upper"))}`)
+      .on("mouseover", (event, d) => tooltip.display(categoryPointTooltip, d, dataKey))
+      .on("mousemove", (event) => tooltip.move(event))
+      .on("mouseout", () => tooltip.hide())
 
   title(svg, sizes, location)
 }
@@ -351,7 +365,7 @@ export const SmallMultiple = ({location, graph, sizes, modelData, logit}) => {
           stackedIncidence(dom, sizes, location, modelData);
           break;
         case 'growthAdvantage':
-          categoryPointEstimate(dom, sizes, location, modelData, 'ga', 1.0);
+          categoryPointEstimate(dom, sizes, location, modelData, {key: 'ga', name: 'Growth Advantage'}, 1.0);
           break;
         default:
           console.error(`Unknown graph type ${graph}`)
@@ -374,19 +388,50 @@ function finalValidPoint(points, key) {
 }
 
 /**
- * @param {Map} d Model data for a single timepoint ("d" for d3 datum)
- * @param {string} variant 
+ * @param {Map} d ("d" for d3 datum)
+ * @param {object} dataKey {key, name} 
  * @returns {HtmlString}
  * @private
  */
-function frequencyTooltip(d, variant) {
-  const fmt = d3.format(".1%");
+function categoryPointTooltip(d, dataKey) {
+  const fmt = d3.format(".1f");
   return `
     <div>
-      <p><b>Variant:</b> ${variant}</p>
-      <p><b>Date:</b> ${d.get('date')}</p>
-      <p><b>Frequency:</b> ${fmt(d.get('freq'))}</p>
-      <p><b>95% HDI:</b> ${fmt(d.get('freq_HDI_95_lower'))} - ${fmt(d.get('freq_HDI_95_upper'))}</p>
+      <p><b>Variant:</b> ${d.get('variant')}</p>
+      <p><b>${dataKey.name}:</b> ${fmt(d.get(`${dataKey.key}`))}</p>
+      <p><b>95% HDI:</b> ${fmt(d.get(`${dataKey.key}_HDI_95_lower`))} - ${fmt(d.get(`${dataKey.key}_HDI_95_upper`))}</p>
     </div>
   `
+}
+
+function displayFrequencySummary(xy, dateIdx, locationData) {
+  const xIdx = dateIdx.get(xy[0]);
+  let freqs = [];
+  locationData.forEach((variantPoint, variant) => {
+    const d = variantPoint.get('temporal')[xIdx];
+    if (d.get('date') && d.get('freq')) {
+      freqs.push([variant, d.get('freq')])
+    }
+  });
+  const fmt = d3.format(".1%");
+  let top5 = ''
+  freqs.sort((a, b) => a[1]>b[1] ? -1 : 1)
+    .slice(0, 5) // take the top 5 variants (highest frequencies)
+    .forEach((d) => {
+      top5+=`<p><b>${d[0]}</b> ${fmt(d[1])}</p>`
+    })
+  return `
+    <div>
+      <p><b>Date:</b> ${xy[0]}</p>
+      <p><b>Top 5 variants:</p>
+      ${top5}
+    </div>
+  `
+}
+
+function invertScalePoint(xPx) {
+  /* xPx is a value within x.range() */
+  const range = this.range(), domain = this.domain();
+  const rangePoints = d3.range(range[0], range[1], this.step())
+  return  domain[d3.bisect(rangePoints, xPx) -1];
 }

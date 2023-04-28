@@ -39,6 +39,8 @@ const LegendContainer = styled.div`
     max-width: ${LEGEND_MIN_WIDTH}px;
     flex-wrap: nowrap;
     flex-direction: column;
+    max-height: 400px; /* temporary -- in lieu of responsive styling */
+    overflow-y: scroll; /* temporary -- in lieu of responsive styling */
     & > div {
       padding-right: 0px;
       padding-top: 10%
