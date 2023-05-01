@@ -11,6 +11,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:local": "rm -rf build && react-scripts build && mkdir build/forecasts-viz && mv build/static build/forecasts-viz",
+    "serve": "serve -s build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "test": "react-scripts test",
@@ -78,6 +80,7 @@
     "rollup-plugin-css-only": "^4.3.0",
     "rollup-plugin-gzip": "^3.1.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
+    "serve": "^14.2.0",
     "web-vitals": "^2.1.4"
   }
 }
