@@ -3,6 +3,7 @@ import {pointer} from 'd3';
 /**
  * Originally sourced from https://observablehq.com/@clhenrick/tooltip-component
  * and then used in a few of my own projects subsequent to this (with changes)
+ * @private
  */
 export class Tooltip {
   constructor(parentElement) {

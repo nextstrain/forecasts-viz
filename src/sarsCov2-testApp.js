@@ -1,11 +1,14 @@
 import React from 'react';
 import { PanelDisplay, useModelData} from './lib/index.js';
 import './styles.css';
+/* Following are not currently exported by the library itself */
+import { getDomainUsingKey } from "./lib/components/Graph.js";
+import { displayTopVariants } from "./lib/utils/tooltipDisplay.js";
 
 let locations = undefined;
-// uncomment the following line to limit the number of small multiples
-// locations = ["Australia", "Canada"];
-// locations = ["Australia", "Canada", "Denmark", "France"];
+/* It's helpful for dev purposes to not see _all_ the small multiples. Uncomment the
+following line to remove this filtering */
+// locations = ["Australia", "Canada", "Denmark", "France", "China", "USA"];
 
 const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global";
 const baseConfiguration = {
@@ -60,33 +63,45 @@ function App() {
 
       <div id="mainPanelsContainer" >
 
-        <h2>{`MLR Variant Frequencies`}</h2>
-        <div className="abstract">{`Data comes from objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-        {/*You can inject styles via a prop like `facetStyles={{top: 40}}`*/}
-        <PanelDisplay data={mlrData} locations={locations} graphType="frequency"/>
+        <h2>{`General line graph (preset: 'frequency')`}</h2>
+        <div className="abstract">{`Data comes from MLR model, objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+        {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
+        <PanelDisplay data={mlrData} locations={locations} params={{preset: "frequency"}}/>
 
-        <h2>{`Renewal Variant Frequencies`}</h2>
-        <div className="abstract">{`Data comes from objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-        <PanelDisplay data={renewalData} locations={locations} graphType="frequency"/>
+        <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
+        <div className="abstract">{`Data comes from MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+        <PanelDisplay data={mlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
 
-        <h2>{`MLR Growth Advantage`}</h2>
-        <div className="abstract">{`Data comes from objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-        <PanelDisplay data={mlrData} locations={locations} graphType="growthAdvantage"/>
+        <h2>{`Stream graph (preset: 'stackedIncidence')`}</h2>
+        <div className="abstract">
+          {`Custom styling to be 400px wide (default: 250px).
+          Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
+        </div>
+        <PanelDisplay data={renewalData} locations={locations}
+          styles={{width: 400}}
+          params={{preset: "stackedIncidence"}}
+        /> 
 
-        <h2>{`Renewal Growth Advantage`}</h2>
-        <div className="abstract">{`Data comes from objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-        <PanelDisplay data={renewalData} locations={locations} graphType="growthAdvantage"/>
-
-        <h2>{`Estimated Cases over time (Renewal Model)`}</h2>
-        <div className="abstract">{`Data comes from objects matching 'I_smooth' + 'median'`}</div>
-        <PanelDisplay data={renewalData} locations={locations} graphType="stackedIncidence"/>
-
+        <h2>{`Line graph using I_smooth`}</h2>
+        <div className="abstract">
+          {`An example of using the 'params' React prop in the calling app to completely define how the
+          graph looks -- we specify the graphType (lines), the data key (I_smooth),
+          the HPD interval keys, the yDomain and the tooltip function`}
+        </div>
+        <PanelDisplay data={renewalData} locations={locations} params={{
+          graphType: "lines",
+          key: 'I_smooth',
+          interval:  ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
+          intervalOpacity: 0.3,
+          yDomain: getDomainUsingKey('I_smooth_HDI_95_upper'),
+          tooltipXY: displayTopVariants(),
+        }}/>
 
         <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>
         <div className="abstract">
           {`Data comes from renewal model objects matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
         </div>
-        <PanelDisplay data={renewalData} locations={locations} graphType="R"/>
+        <PanelDisplay data={renewalData} locations={locations} params={{preset: "R_t"}}/>
 
       </div>
 
