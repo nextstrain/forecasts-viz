@@ -15,39 +15,27 @@ import * as d3 from "d3";
 
 const LegendContainer = styled.div`
   /* border: solid red; */
-  display: flex;
+  display: ${(props) => props.sizes.outerWidth===0 ? 'none' : 'flex'};
   min-width: ${(props) => props.sizes.legendMinWidthRHS}px;
   text-align: left;
   position: block;
-  flex-wrap: wrap;
-  flex-direction: row;
+  flex-wrap: ${(props) => props.sizes.legendRHS ? 'nowrap': 'wrap'};
+  flex-direction: ${(props) => props.sizes.legendRHS ? 'column': 'row'};
+  ${(props) => props.sizes.legendRHS && 'justify-content: space-between;'}
+  ${(props) => props.sizes.legendRHS && `max-width: ${(props) => props.sizes.legendMinWidthRHS}px;`}
+  ${(props) => props.sizes.legendRHS && `
+      max-height: ${props.sizes.outerHeight-20}px;
+      overflow-y: scroll;
+  `}
   margin: 10px 0px;
   font-size: ${props => props.sizes.legendFontSize}px;
 
   & > div { /* container for circle + text */
-    padding-right: 10px;
+    padding-right: ${(props) => props.sizes.legendRHS ? '0px': '10px'};
     padding-top: 0px 
   }
   & span { /* text */
-    margin-left: 3px;
-  }
-
-  @media screen and (min-width: ${(props) => props.sizes.legendBreakpoint}px) {
-    max-width: ${(props) => props.sizes.legendMinWidthRHS}px;
-    flex-wrap: nowrap;
-    flex-direction: column;
-    justify-content: space-between;
-
-    /* TODO XXX */
-    max-height: 400px; /* temporary -- in lieu of responsive styling */
-    overflow-y: scroll; /* temporary -- in lieu of responsive styling */
-
-    & > div { /* container for circle + text */
-      padding-right: 0px;
-    }
-    & span { /* text */
-      margin-left: 5px;
-    }
+    margin-left: ${(props) => props.sizes.legendRHS ? '5px': '3px'};
   }
 `;
 

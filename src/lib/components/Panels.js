@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useElementSize, useDebounce } from 'usehooks-ts';
 import styled from 'styled-components';
 import { Legend } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
@@ -29,10 +30,7 @@ const Container = styled.div`
   /* border: dashed orange; */
   display: flex;
   flex-wrap: nowrap;
-  flex-direction: column;
-  @media screen and (min-width: ${(props) => props.legendBreakpoint}px) {
-    flex-direction: row-reverse;
-  }
+  flex-direction: ${(props) => props.legendRHS ? 'row-reverse': 'column'};
 `;
 
 /**
@@ -54,23 +52,22 @@ const PanelSectionContainer = styled.div`
  * overridden by props from the parent component.
  * @private 
  */
-const responsiveSizing = (params, modelData, locationList) => {
+const responsiveSizing = (params, modelData, dimensions, locationList) => {
 
-  const legendBreakpoint = 1200; // window width where the legend will switch positions
-  const legendMinWidthRHS = 200;
+  const outerWidth = dimensions.width;
+  const outerHeight = dimensions.height;
+  const legendBreakpoint = 1200; // outer div width where we'll switch legend position
+  const legendMinWidthRHS = 200; // todo -- this could be dynamic & with >1 column
+  const legendRHS = outerWidth > legendBreakpoint;
 
   const numVariants = modelData?.get('variants')?.length;
-  const windowWidth = window.innerWidth
-    || document.documentElement.clientWidth
-    || document.body.clientWidth;
 
   let legendFontSize = 15;
   let legendRadius = 8;
 
   /** width/heights are in pixels (as they'll be used in the SVG).
-   * We try to make some sensible decisions about these widths,
-   * although the big missing piece is to listen to window resizes
-   * and use that information to inform these sizes!
+   * We try to make some sensible decisions about these widths
+   * depending on the data & window sizes
    */
   let width = 250;
   let height = params.preset==="growthAdvantage" ? 220 : 200;
@@ -80,9 +77,12 @@ const responsiveSizing = (params, modelData, locationList) => {
     legendFontSize = 11;
     legendRadius = 6;
   }
-  if (locationList?.length===1) { // TODO XXX
-    width = windowWidth - 100 - (windowWidth > legendBreakpoint ? legendMinWidthRHS : 0);
-    height = 400;
+
+  /* If there's only 1 or 2 locations make each full width */
+  if (locationList?.length<3) {
+    width = outerWidth - // outer div - including legend etc
+      (legendRHS ? legendMinWidthRHS : 0) - 
+      20; // allow some margin
   }
 
   /* control the spacing around graphs via the margin of each graph
@@ -96,7 +96,8 @@ const responsiveSizing = (params, modelData, locationList) => {
   return {
     width, height,
     top, right, bottom, left,
-    legendBreakpoint, legendMinWidthRHS, legendFontSize, legendRadius
+    legendMinWidthRHS, legendFontSize, legendRadius, legendRHS,
+    outerWidth, outerHeight
   };
 }
 
@@ -169,9 +170,13 @@ const Panel = ({
 }) => {
   const {modelData, error} = data;
   const [logit, toggleLogit] = useState(false);
+
+  const [outerDivRef, _dimensions] = useElementSize()
+  const dimensions = useDebounce(_dimensions, 500);
   const  locationList = locations || modelData?.get('locations');
-  const sizes = {...responsiveSizing(params, modelData, locationList), ...(styles ? styles : {})};
+  const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
+
 
   if (error) {
     return (<ErrorMessage error={error}/>);
@@ -182,9 +187,9 @@ const Panel = ({
   }
 
   return (
-    <div>
+    <div ref={outerDivRef}>
       {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
-      <Container legendBreakpoint={sizes.legendBreakpoint}>
+      <Container legendRHS={sizes.legendRHS}>
         <Legend modelData={modelData} sizes={sizes} />
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
           {locationList

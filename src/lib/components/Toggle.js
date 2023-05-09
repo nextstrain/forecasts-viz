@@ -10,10 +10,11 @@ import "../styles/rc-switch.css";
 const Container = styled.div`
   display: flex;
   justify-content: flex-end;
-  @media screen and (min-width: ${(props) => props.sizes.legendBreakpoint}px) {
-    /* enough padding so that the toggle isn't over the legend */
-    padding-right: ${(props) => props.sizes.legendMinWidthRHS+30}px;
-  }
+  padding-right: ${(props) => props.sizes.legendRHS ?
+    `${props.sizes.legendMinWidthRHS+30}px` :
+    '0px'
+  };
+
   & > span {
     color: #aaa;
     padding-right: 5px;

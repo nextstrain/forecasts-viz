@@ -7,7 +7,7 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
   const prevDeps = useRef(null);
 
   useEffect(() => {
-    if (!dom.current) {
+    if (!dom.current || sizes.outerWidth===0) {
       return;
     }
 
