@@ -7,7 +7,7 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
   const prevDeps = useRef(null);
 
   useEffect(() => {
-    if (!dom.current || sizes.outerWidth===0) {
+    if (!dom.current) {
       return;
     }
 
@@ -53,7 +53,6 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
     if (!isEqual(prevDeps.current.options, options)) {
       console.log("Updating graph as options have changed");
       if (!isEqual(prevDeps.current.options.logit, options.logit)) {
-        console.log("\tLOGIT")
         graph.current.updateScale(options)
       }
       prevDeps.current.options = options;

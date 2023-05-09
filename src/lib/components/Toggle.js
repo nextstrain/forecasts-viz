@@ -10,11 +10,7 @@ import "../styles/rc-switch.css";
 const Container = styled.div`
   display: flex;
   justify-content: flex-end;
-  padding-right: ${(props) => props.sizes.legendRHS ?
-    `${props.sizes.legendMinWidthRHS+30}px` :
-    '0px'
-  };
-
+  padding-right: 20px;
   & > span {
     color: #aaa;
     padding-right: 5px;

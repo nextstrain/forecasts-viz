@@ -21,16 +21,15 @@ import "../styles/styles.css";
 
 /**
  * <Container> is intended to have 2 children: <Legend> and <PanelSectionContainer>
- * On small screens the intention is for both to occupy the full width and the Legend
- * to be on top. On large screens the intention is for the Legend to sit on the RHS
- * and occupy the same vertical space as the PanelSectionContainer.
+ * The intention is for both to occupy the full width and the Legend
+ * to be on top.
  * @private 
  */
 const Container = styled.div`
   /* border: dashed orange; */
   display: flex;
   flex-wrap: nowrap;
-  flex-direction: ${(props) => props.legendRHS ? 'row-reverse': 'column'};
+  flex-direction: column;
 `;
 
 /**
@@ -41,7 +40,7 @@ const PanelSectionContainer = styled.div`
   /* border: dashed purple; */
   flex-grow: 1;
   display: grid;
-  gap: 20px;
+  gap: 0px;
   padding-top: 10px;
   grid-template-columns: repeat(auto-fill, minmax(${props => props.smallMultipleWidth}px, 1fr));
 `;
@@ -55,10 +54,6 @@ const PanelSectionContainer = styled.div`
 const responsiveSizing = (params, modelData, dimensions, locationList) => {
 
   const outerWidth = dimensions.width;
-  const outerHeight = dimensions.height;
-  const legendBreakpoint = 1200; // outer div width where we'll switch legend position
-  const legendMinWidthRHS = 200; // todo -- this could be dynamic & with >1 column
-  const legendRHS = outerWidth > legendBreakpoint;
 
   const numVariants = modelData?.get('variants')?.length;
 
@@ -69,8 +64,8 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
    * We try to make some sensible decisions about these widths
    * depending on the data & window sizes
    */
-  let width = 250;
-  let height = params.preset==="growthAdvantage" ? 220 : 200;
+  let width = 260;
+  let height = params.preset==="growthAdvantage" ? 230 : 210;
   if (numVariants > 20) {
     height = 300;
     width = 500;
@@ -80,24 +75,22 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
 
   /* If there's only 1 or 2 locations make each full width */
   if (locationList?.length<3) {
-    width = outerWidth - // outer div - including legend etc
-      (legendRHS ? legendMinWidthRHS : 0) - 
-      20; // allow some margin
+    width = outerWidth - 20 // outer div allowing for some margin
   }
 
   /* control the spacing around graphs via the margin of each graph
   We export these as individual keys so they can be easily overridden.
   The initial ones are generally ok. */
-  let [top, right, bottom, left] = [5, 0, 20, 35];
+  let [top, right, bottom, left] = [15, 10, 30, 45];
   if (params.preset==="growthAdvantage") {
-    [top, right, bottom, left] = [5, 30, 60, 30];
+    [top, right, bottom, left] = [15, 40, 70, 40];
   }
 
   return {
     width, height,
     top, right, bottom, left,
-    legendMinWidthRHS, legendFontSize, legendRadius, legendRHS,
-    outerWidth, outerHeight
+    legendFontSize, legendRadius,
+    outerWidth
   };
 }
 
@@ -189,7 +182,7 @@ const Panel = ({
   return (
     <div ref={outerDivRef}>
       {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
-      <Container legendRHS={sizes.legendRHS}>
+      <Container>
         <Legend modelData={modelData} sizes={sizes} />
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
           {locationList

@@ -15,27 +15,22 @@ import * as d3 from "d3";
 
 const LegendContainer = styled.div`
   /* border: solid red; */
-  display: ${(props) => props.sizes.outerWidth===0 ? 'none' : 'flex'};
+  display: flex;
   min-width: ${(props) => props.sizes.legendMinWidthRHS}px;
   text-align: left;
   position: block;
-  flex-wrap: ${(props) => props.sizes.legendRHS ? 'nowrap': 'wrap'};
-  flex-direction: ${(props) => props.sizes.legendRHS ? 'column': 'row'};
-  ${(props) => props.sizes.legendRHS && 'justify-content: space-between;'}
-  ${(props) => props.sizes.legendRHS && `max-width: ${(props) => props.sizes.legendMinWidthRHS}px;`}
-  ${(props) => props.sizes.legendRHS && `
-      max-height: ${props.sizes.outerHeight-20}px;
-      overflow-y: scroll;
-  `}
-  margin: 10px 0px;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: flex-start;
+  margin: 10px 10px;
   font-size: ${props => props.sizes.legendFontSize}px;
-
+  row-gap: 3px;
   & > div { /* container for circle + text */
-    padding-right: ${(props) => props.sizes.legendRHS ? '0px': '10px'};
+    padding-right: 10px;
     padding-top: 0px 
   }
   & span { /* text */
-    margin-left: ${(props) => props.sizes.legendRHS ? '5px': '3px'};
+    margin-left: 3px;
   }
 `;
 
