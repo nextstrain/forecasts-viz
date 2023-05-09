@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Legend, WINDOW_WIDTH_FOR_SIDEBAR_LEGEND } from "./Legend";
+import { Legend } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
 import { ErrorMessage } from "./ErrorMessage";
 import Spinner from "./Spinner";
@@ -19,7 +19,10 @@ import "../styles/styles.css";
 
 
 /**
- * Container has 2 children: the legend and the container of the small-multiples
+ * <Container> is intended to have 2 children: <Legend> and <PanelSectionContainer>
+ * On small screens the intention is for both to occupy the full width and the Legend
+ * to be on top. On large screens the intention is for the Legend to sit on the RHS
+ * and occupy the same vertical space as the PanelSectionContainer.
  * @private 
  */
 const Container = styled.div`
@@ -27,12 +30,13 @@ const Container = styled.div`
   display: flex;
   flex-wrap: nowrap;
   flex-direction: column;
-  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
+  @media screen and (min-width: ${(props) => props.legendBreakpoint}px) {
     flex-direction: row-reverse;
   }
 `;
 
 /**
+ * Container for the individual <Graph> elements
  * @private 
  */
 const PanelSectionContainer = styled.div`
@@ -45,21 +49,55 @@ const PanelSectionContainer = styled.div`
 `;
 
 /**
+ * This function should handle all styling parameters related to sizing -- graph sizes,
+ * legend sizes, text sizes etc. It is a work in progress. All styles defined here can be
+ * overridden by props from the parent component.
  * @private 
  */
-const responsiveSizing = (params) => {
-  /* following are in pixel coordinates */
-  const width = 250;
-  let height = 200;
+const responsiveSizing = (params, modelData, locationList) => {
+
+  const legendBreakpoint = 1200; // window width where the legend will switch positions
+  const legendMinWidthRHS = 200;
+
+  const numVariants = modelData?.get('variants')?.length;
+  const windowWidth = window.innerWidth
+    || document.documentElement.clientWidth
+    || document.body.clientWidth;
+
+  let legendFontSize = 15;
+  let legendRadius = 8;
+
+  /** width/heights are in pixels (as they'll be used in the SVG).
+   * We try to make some sensible decisions about these widths,
+   * although the big missing piece is to listen to window resizes
+   * and use that information to inform these sizes!
+   */
+  let width = 250;
+  let height = params.preset==="growthAdvantage" ? 220 : 200;
+  if (numVariants > 20) {
+    height = 300;
+    width = 500;
+    legendFontSize = 11;
+    legendRadius = 6;
+  }
+  if (locationList?.length===1) { // TODO XXX
+    width = windowWidth - 100 - (windowWidth > legendBreakpoint ? legendMinWidthRHS : 0);
+    height = 400;
+  }
+
   /* control the spacing around graphs via the margin of each graph
   We export these as individual keys so they can be easily overridden.
   The initial ones are generally ok. */
   let [top, right, bottom, left] = [5, 0, 20, 35];
   if (params.preset==="growthAdvantage") {
     [top, right, bottom, left] = [5, 30, 60, 30];
-    height = 220;
   }
-  return {width, height, top, right, bottom, left};
+
+  return {
+    width, height,
+    top, right, bottom, left,
+    legendBreakpoint, legendMinWidthRHS, legendFontSize, legendRadius
+  };
 }
 
 
@@ -131,7 +169,8 @@ const Panel = ({
 }) => {
   const {modelData, error} = data;
   const [logit, toggleLogit] = useState(false);
-  const sizes = {...responsiveSizing(params), ...(styles ? styles : {})};
+  const  locationList = locations || modelData?.get('locations');
+  const sizes = {...responsiveSizing(params, modelData, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
 
   if (error) {
@@ -142,13 +181,11 @@ const Panel = ({
     return <Spinner/>
   }
 
-  const locationList = locations || modelData.get('locations');
-
   return (
     <div>
-      {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={() => toggleLogit(!logit)}/>}
-      <Container>
-        <Legend modelData={modelData}/>
+      {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
+      <Container legendBreakpoint={sizes.legendBreakpoint}>
+        <Legend modelData={modelData} sizes={sizes} />
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
           {locationList
             .map((location) => (

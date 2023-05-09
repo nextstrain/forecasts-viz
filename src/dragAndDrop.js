@@ -40,7 +40,7 @@ function App() {
           return (
             <div key={site+preset}>
               <h2>{`Site ${site} / Graph preset ${preset}`}</h2>
-              <PanelDisplay data={modelData} params={{preset}} styles={graphSize(modelData)}/>
+              <PanelDisplay data={modelData} params={{preset}}/>
             </div>
           )
         })}
@@ -118,32 +118,3 @@ function readFile(file, isJSON=true) {
   });
 }
 
-
-/** Graph size should be dynamically calculated - and responsive based on screen size,
- * num variants, num locations etc etc.
- * This function basically acts as switch for clade-based analysis vs pango-based analysis.
- * We should build in a (properly) responsive best-guess in the library itself.
- * Note that this is _not_ responsive to screen size changes!
- */
-function graphSize(modelData) {
-  const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200;
-  const width = window.innerWidth
-    || document.documentElement.clientWidth
-    || document.body.clientWidth;
-  if (modelData && modelData.modelData.get("variants").length>50) {
-    if (width > WINDOW_WIDTH_FOR_SIDEBAR_LEGEND ) {
-      return {
-        width: width-300 > 800 ? 800 : (width-300), // ad-hoc
-        height: 250,
-        right: 50, // more space for labels etc
-        bottom: 80,
-        left: 50,
-      }
-    }
-    return {
-      width: width-50, // 400 to include legend + some padding, without it appearing too big
-      height: 250,
-    }
-  }
-  return {};
-}

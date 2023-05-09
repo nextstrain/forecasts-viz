@@ -2,11 +2,6 @@ import React, {useEffect, useRef} from 'react';
 import styled from 'styled-components';
 import * as d3 from "d3";
 
-/* Threshold to switch from legend sitting on top of the panels
-to it sitting on the RHS of the panels */
-export const WINDOW_WIDTH_FOR_SIDEBAR_LEGEND = 1200; 
-export const LEGEND_MIN_WIDTH = 200;
-
 /**
  * My original intention for the legend on wide-screens was to have it stay in a
  * fixed position on the RHS and not allow it to scroll off the screen. With a
@@ -21,34 +16,42 @@ export const LEGEND_MIN_WIDTH = 200;
 const LegendContainer = styled.div`
   /* border: solid red; */
   display: flex;
-  min-width: ${LEGEND_MIN_WIDTH}px;
+  min-width: ${(props) => props.sizes.legendMinWidthRHS}px;
   text-align: left;
   position: block;
   flex-wrap: wrap;
   flex-direction: row;
   margin: 10px 0px;
-  & > div {
+  font-size: ${props => props.sizes.legendFontSize}px;
+
+  & > div { /* container for circle + text */
     padding-right: 10px;
     padding-top: 0px 
   }
-  & p {
-    margin: 0px 0px;
+  & span { /* text */
+    margin-left: 3px;
   }
 
-  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
-    max-width: ${LEGEND_MIN_WIDTH}px;
+  @media screen and (min-width: ${(props) => props.sizes.legendBreakpoint}px) {
+    max-width: ${(props) => props.sizes.legendMinWidthRHS}px;
     flex-wrap: nowrap;
     flex-direction: column;
+    justify-content: space-between;
+
+    /* TODO XXX */
     max-height: 400px; /* temporary -- in lieu of responsive styling */
     overflow-y: scroll; /* temporary -- in lieu of responsive styling */
-    & > div {
+
+    & > div { /* container for circle + text */
       padding-right: 0px;
-      padding-top: 10%
+    }
+    & span { /* text */
+      margin-left: 5px;
     }
   }
 `;
 
-const useLegend = (d3Container, modelData) => {
+const useLegend = (d3Container, modelData, sizes) => {
   useEffect(() => {
     /* legend entries are arranged via the parent container's flexbox settings */
 
@@ -63,25 +66,25 @@ const useLegend = (d3Container, modelData) => {
 
     containers.append("svg")
       .style("flex-shrink", "0")
-      .attr("width", 30)
-      .attr("height", 30)
-      .attr("viewBox", `0 0 30 30`)
+      .attr("width", sizes.legendRadius*2)
+      .attr("height", sizes.legendRadius*2)
+      .attr("viewBox", `0 0 ${sizes.legendRadius*2} ${sizes.legendRadius*2}`)
       .append("circle")
-        .attr("cx", 15)
-        .attr("cy", 15)
-        .attr("r", 8)
+        .attr("cx", sizes.legendRadius)
+        .attr("cy", sizes.legendRadius)
+        .attr("r", sizes.legendRadius)
         .style("fill", (variant) => modelData.get('variantColors').get(variant) ||  modelData.get('variantColors').get('other'))
     
-    containers.append("p")
+    containers.append("span")
       .text((variant) => modelData.get('variantDisplayNames').get(variant) || variant)
 
-  }, [d3Container, modelData])
+  }, [d3Container, sizes, modelData])
 }
 
-export const Legend = ({modelData}) => {
+export const Legend = ({modelData, sizes}) => {
   const legendContainer = useRef(null);
-  useLegend(legendContainer, modelData); // renders the legend
+  useLegend(legendContainer, modelData, sizes); // renders the legend
   return (
-    <LegendContainer id="legend" ref={legendContainer}/>
+    <LegendContainer sizes={sizes} id="legend" ref={legendContainer}/>
   );
 }
