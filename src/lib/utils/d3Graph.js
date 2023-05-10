@@ -33,12 +33,12 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
 
 D3Graph.prototype.createScales = function({logit}) {
   const customXDomain = Array.isArray(this.params.xDomain) ?
-    this.params.xDomain :
+    [...this.params.xDomain] :
       typeof this.params.xDomain === "function" ?
       this.params.xDomain.call(this) :
         undefined;
   const customYDomain = Array.isArray(this.params.yDomain) ?
-    this.params.yDomain :
+    [...this.params.yDomain] :
       typeof this.params.yDomain === "function" ?
       this.params.yDomain.call(this) :
         undefined;

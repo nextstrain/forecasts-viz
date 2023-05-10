@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Legend, WINDOW_WIDTH_FOR_SIDEBAR_LEGEND } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
@@ -131,14 +131,8 @@ const Panel = ({
 }) => {
   const {modelData, error} = data;
   const [logit, toggleLogit] = useState(false);
-  const sizes = useMemo(
-    () => ({...responsiveSizing(params), ...(styles ? styles : {})}),
-    [params, styles]
-  );
-  const canUseLogit = useMemo(
-    () => (params.canUseLogit || params.preset==="frequency"),
-    [params]
-  )
+  const sizes = {...responsiveSizing(params), ...(styles ? styles : {})};
+  const canUseLogit = params.canUseLogit || params.preset==="frequency";
 
   if (error) {
     return (<ErrorMessage error={error}/>);

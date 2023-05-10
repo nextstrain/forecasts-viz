@@ -1,13 +1,11 @@
 import {useRef, useEffect} from 'react';
+import {isEqual} from 'lodash';
 import {D3Graph} from "./d3Graph";
 
 export const useGraph = (dom, sizes, modelData, params, options) => {
   const graph = useRef(null);
-  /* we store (references to) previous props to be able to
-  know which partial update (in d3-land) to perform */
-  const startFreshProps = useRef({});
-  const updateProps = useRef({});
-    
+  const prevDeps = useRef(null);
+
   useEffect(() => {
     if (!dom.current) {
       return;
@@ -18,40 +16,32 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
       return;
     }
 
-    function startFresh() {
-      /* Any changes in the following props result in the graph being
-      removed & regenerated, as we don't code in the update logic */
-      startFreshProps.current.modelData = modelData;
-      startFreshProps.current.params = params;
-      startFreshProps.current.sizes = sizes;
-      /* The following options, if changed, will update the graph */
-      updateProps.current.logit = options.logit;
-      graph.current = new D3Graph(dom, sizes, modelData, params, options);
-    }
-
     if (!graph.current) {
-      startFresh();
+      prevDeps.current = {sizes, params, options, modelData};
+      graph.current = new D3Graph(dom, sizes, modelData, params, options);
       return;
     }
+
     /**
      * If any props change for which we don't have the d3 code to nicely update the graph
-     * we just recreate it.
+     * we just recreate it. Because sizes & params are often re-created by parent components
+     * we use a deep equality check here to avoid unnecessary renders of the graph.
      * Note that this block runs in dev mode as the modelData changes as react unmounts and
      * remounts every component the first time, but in production this shouldn't run
      * at all with our current design.
+     * The model data is compare by reference, however in our intended usage of `useModelData`
+     * this reference shouldn't change.
      */
-    if (
-      modelData!==startFreshProps.current.modelData ||
-      params!==startFreshProps.current.params ||
-      sizes!==startFreshProps.current.sizes
-    ) {
-      // NOTE: following logging is useful for development why the hook is running
-      // const whatChanged = [];
-      // if (startFreshProps.current.modelData!==modelData) whatChanged.push('modelData')
-      // if (startFreshProps.current.params!==params) whatChanged.push('params')
-      // if (startFreshProps.current.sizes!==sizes) whatChanged.push('sizes')
-      // console.log(`Recreating graph because these props changed: ${whatChanged.join(', ')}`);
-      startFresh();
+    const sizesEqual = isEqual(prevDeps.current.sizes, sizes);
+    const paramsEqual = isEqual(prevDeps.current.params, params);
+    const modelDataEqual = prevDeps.current.modelData === modelData;
+    if (!sizesEqual || !paramsEqual || !modelDataEqual) {
+      // NOTE: following logging is useful to debug why the hook is running
+      // console.log(`Recreating graph because these props changed: ${sizesEqual ? '' : 'sizes'} ${paramsEqual ? '' : 'params'} ${modelDataEqual ? '' : 'modelData'}`);
+      prevDeps.current.sizes = sizes;
+      prevDeps.current.params = params;
+      prevDeps.current.modelData = modelData;
+      graph.current = new D3Graph(dom, sizes, modelData, params, options);
       return;
     }
     /**
@@ -59,10 +49,16 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
      * update function. In the future this could include hovering over a variant
      * in the legend & highlighting that (for example).
      */
-    if (options.logit!==updateProps.current.logit) {
-      updateProps.current.logit = options.logit;
-      graph.current.updateScale(options)
+
+    if (!isEqual(prevDeps.current.options, options)) {
+      console.log("Updating graph as options have changed");
+      if (!isEqual(prevDeps.current.options.logit, options.logit)) {
+        console.log("\tLOGIT")
+        graph.current.updateScale(options)
+      }
+      prevDeps.current.options = options;
     }
+
   }, [dom, sizes, modelData, params, options]);
 
   /**

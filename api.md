@@ -69,6 +69,10 @@ console (`console.error()`).
 The return value is designed to be passed to a <PanelDisplay> component's
 as its `data` prop.
 
+Warning: Ensure the config object is not (re-)created within your react
+component, as this will trigger a re-fetch of the data and subsequent
+re-rendering of the graphs.
+
 **Kind**: static constant of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 
 | Param | Type |
@@ -85,15 +89,22 @@ const mlrData = useModelData(
 <a name="module_@nextstrain/evofr-viz..GraphParameters"></a>
 
 ### @nextstrain/evofr-viz~GraphParameters : <code>Object</code>
-Configuration for how a graph is to be visualised. Many of these are required to be set, but they
-may be set by the preset expansion, so are not technically required here.
+Configuration for how a graph is to be visualised. All/any of these properties may be set by
+the <PanelDisplay> component. If a preset is set then it will be expanded into a meaningful
+set of these properties (see `expandParams()`).
+
+Note that a deep equality check will be used to decide when (if) the params for an individual
+small-multiple have changes and the graph should therefore re-draw. Because functions are
+compared by reference you must memoize any functions or provide a consistent reference to them.
+A common case to avoid is defining the function within a react component (or within the prop
+declaration), as that function will be re-created each time the component renders.
 
 **Kind**: inner typedef of [<code>@nextstrain/evofr-viz</code>](#module_@nextstrain/evofr-viz)  
 **Properties**
 
 | Name | Type | Description |
 | --- | --- | --- |
-| [preset] | <code>&quot;stackedIncidence&quot;</code> \| <code>&quot;R\_t&quot;</code> \| <code>&quot;growthAdvantage&quot;</code> \| <code>&quot;frequency&quot;</code> | Load a set of preset parameters. Any others defined here will overwrite those which come from the preset. |
+| [preset] | <code>&quot;stackedIncidence&quot;</code> \| <code>&quot;R\_t&quot;</code> \| <code>&quot;growthAdvantage&quot;</code> \| <code>&quot;frequency&quot;</code> | Load a set of preset parameters. Any parameters re-defined here will overwrite those which come from the preset. |
 | [graphType] | <code>&quot;points&quot;</code> \| <code>&quot;lines&quot;</code> \| <code>&quot;stream&quot;</code> |  |
 | [key] | <code>String</code> |  |
 | [interval] | <code>Array.&lt;String&gt;</code> |  |

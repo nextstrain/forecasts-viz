@@ -37,3 +37,7 @@ Currently the graphs widths/heights do not change.
 This isn't a problem most of the time -- on bigger screens the grid design just adds more small-multiples to each row.
 However there may be certain thresholds (e.g. mobile) where we do want to update these values, especially for the bigger graphs (e.g. for pango analyses).
 
+## Check config by deep equality within useModelData
+
+See the warning in the docstring.
+This should be possible to overcome by only running the useEffect hook if the contents of the config object have changed.

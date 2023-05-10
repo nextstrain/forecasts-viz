@@ -38,6 +38,10 @@ import {parseModelData} from "./parse.js";
  * console (`console.error()`).
  * The return value is designed to be passed to a <PanelDisplay> component's
  * as its `data` prop.
+ * 
+ * Warning: Ensure the config object is not (re-)created within your react
+ * component, as this will trigger a re-fetch of the data and subsequent
+ * re-rendering of the graphs.
  * @param {DatasetConfig} config 
  * @returns {ModelDataWrapper}
  * @memberof module:@nextstrain/evofr-viz

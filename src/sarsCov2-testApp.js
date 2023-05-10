@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { PanelDisplay, useModelData} from './lib/index.js';
 import './styles.css';
 /* Following are not currently exported by the library itself */
@@ -47,9 +47,20 @@ const renewalConfig = {
   ...baseConfiguration
 };
 
+/** Create certain functions for the custom incidence line graph so that
+ * they are not recreated each time <App> re-renders, as their recreation
+ * will cause the params to be different (at a deep-equality level) and thus
+ * will result in all the graphs re-drawing.
+ * We could achieve the same result inside App() via useMemo.
+ */
+const incidenceLinesTooltip = displayTopVariants();
+const incidenceDomain = getDomainUsingKey('I_smooth_HDI_95_upper');
+
 function App() {
   const mlrData = useModelData(mlrConfig);
   const renewalData = useModelData(renewalConfig);
+
+  const [count, setCount] = useState(1);
 
   return (
     <div id="AppContainer">
@@ -60,6 +71,13 @@ function App() {
       <div className="abstract">
         This page is used to test and develop the React Components which visualise evofr modelling datasets.
       </div>
+
+      <button onClick={() => {
+        console.log("*** Triggering <App> to re-render ***");
+        setCount(count+1);
+      }}>
+        {`Trigger <App> re-render. n=${count}`}
+      </button>
 
       <div id="mainPanelsContainer" >
 
@@ -93,8 +111,8 @@ function App() {
           key: 'I_smooth',
           interval:  ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
           intervalOpacity: 0.3,
-          yDomain: getDomainUsingKey('I_smooth_HDI_95_upper'),
-          tooltipXY: displayTopVariants(),
+          yDomain: incidenceDomain,
+          tooltipXY: incidenceLinesTooltip,
         }}/>
 
         <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>

@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "d3": ">=7",
+    "lodash": "^4.17.21",
     "rc-switch": ">=4",
     "react": ">=16",
     "react-dom": ">=16",
@@ -54,6 +55,7 @@
   },
   "peerDependencies": {
     "d3": ">=7",
+    "lodash": ">4.17",
     "rc-switch": ">=4",
     "react": ">=16",
     "react-dom": ">=16",
