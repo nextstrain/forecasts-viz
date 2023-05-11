@@ -21,9 +21,10 @@
  * https://github.com/nextstrain/nextstrain.org/blob/355c7d239fb848569a1d1c836e597546653542ae/static-site/src/components/layout.jsx
  */
 div#AppContainer {
-  /* default margin is for mobile / small displays */
   margin: 50px 0px;
   @media screen and (min-width: 1000px) {
+    /* TODO: this isn't working on Firefox 112 - "invalid property"
+    (this being the media query, not the margin). Works just fine on Chrome */
     margin: 50px 100px;
   }
   /* border: solid purple; */

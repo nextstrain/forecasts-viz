@@ -1,16 +1,16 @@
 import React from 'react';
 import Switch from 'rc-switch';
 import styled from 'styled-components';
-import { WINDOW_WIDTH_FOR_SIDEBAR_LEGEND, LEGEND_MIN_WIDTH} from "./Legend";
 import "../styles/rc-switch.css";
 
+/**
+ * Intention is for the Toggle to sit above the graphs
+ * @private
+ */
 const Container = styled.div`
   display: flex;
   justify-content: flex-end;
-  @media screen and (min-width: ${WINDOW_WIDTH_FOR_SIDEBAR_LEGEND}px) {
-    /* enough padding so that the toggle isn't over the legend */
-    padding-right: ${LEGEND_MIN_WIDTH+20}px;
-  }
+  padding-right: 20px;
   & > span {
     color: #aaa;
     padding-right: 5px;
@@ -18,8 +18,9 @@ const Container = styled.div`
 `;
 
 
-export const Toggle = ({label, checked, onChange}) => (
-  <Container>
+
+export const Toggle = ({label, checked, onChange, sizes}) => (
+  <Container sizes={sizes}>
     <span>{label}</span>
     <Switch
       className="switch"
