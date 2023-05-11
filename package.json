@@ -11,6 +11,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:local": "rm -rf build && react-scripts build && mkdir build/forecasts-viz && mv build/static build/forecasts-viz",
+    "serve": "serve -s build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "test": "react-scripts test",
@@ -45,6 +47,7 @@
   },
   "dependencies": {
     "d3": ">=7",
+    "lodash": "^4.17.21",
     "rc-switch": ">=4",
     "react": ">=16",
     "react-dom": ">=16",
@@ -52,10 +55,12 @@
   },
   "peerDependencies": {
     "d3": ">=7",
+    "lodash": ">4.17",
     "rc-switch": ">=4",
     "react": ">=16",
     "react-dom": ">=16",
-    "styled-components": ">=5.3"
+    "styled-components": ">=5.3",
+    "usehooks-ts": ">=2.9"
   },
   "devDependencies": {
     "@babel/cli": "^7.20.7",
@@ -78,6 +83,8 @@
     "rollup-plugin-css-only": "^4.3.0",
     "rollup-plugin-gzip": "^3.1.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
+    "serve": "^14.2.0",
+    "usehooks-ts": "^2.9.1",
     "web-vitals": "^2.1.4"
   }
 }

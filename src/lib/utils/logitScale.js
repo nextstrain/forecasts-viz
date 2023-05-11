@@ -4,9 +4,8 @@
  * This would be easier if we could import `transformer` etc,
  * however d3(-scale) doesn't expose them so we recreate a lot of the
  * code here (with much less error checking etc).
+ * @private
  */
-
-
 export function logitScale() {
   return transformer()
 }

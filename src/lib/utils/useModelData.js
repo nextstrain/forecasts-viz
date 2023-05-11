@@ -5,7 +5,7 @@ import {parseModelData} from "./parse.js";
 /**
  * @typedef {Object} ModelDataWrapper
  * @property {(ModelData|undefined)} modelData
- * @property {(Error|undefined)} error
+ * @property {(String|undefined)} error Errors encountered during JSON fetch / parse
  * @inner
  * @memberof module:@nextstrain/evofr-viz
  */
@@ -19,19 +19,37 @@ import {parseModelData} from "./parse.js";
  *
  * @property {string} modelName Name of the model - used to improve clarity of error messages
  * @property {string} modelUrl Address to fetch the model JSON from 
- * @property {Set|undefined} sites list of sites to extract from JSON. Undefined will use the sites set in the JSON metadata.
- * @property {Map<string,string>} variantColors colors for the variants specified in the model JSONs
- * @property {Map<string,string>} variantDisplayNames display names for the variants specified in the model JSONs
+ * @property {Set} [sites] list of sites to extract from JSON.
+ *                         If not provided we will use the sites set in the JSON metadata.
+ * @property {Map<string,string>} [variantColors] colors for the variants specified in the model JSONs.
+ *                                                A default colour scale is available.
+ * @property {Map<string,string>} [variantDisplayNames] display names for the variants specified in the model JSONs. 
+ *                                                      If not provided we use the keys as names.
  * @inner
  * @memberof module:@nextstrain/evofr-viz
  */
 
 
 /**
- * Fetch and parse the model data (JSON)
+ * Fetch and parse the model data (JSON).
+ * See the `config` type definition to understand the expected options.
+ * This returns an object containing the modelData (type: `modelData`) and
+ * any error messages. If an error is encountered we also print this to the
+ * console (`console.error()`).
+ * The return value is designed to be passed to a <PanelDisplay> component's
+ * as its `data` prop.
+ * 
+ * Warning: Ensure the config object is not (re-)created within your react
+ * component, as this will trigger a re-fetch of the data and subsequent
+ * re-rendering of the graphs.
  * @param {DatasetConfig} config 
  * @returns {ModelDataWrapper}
  * @memberof module:@nextstrain/evofr-viz
+ * @example
+ * const mlrData = useModelData(
+ *   modelName: "MLR",
+ *   modelUrl: "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/mlr/latest_results.json"
+ * );
  */
 export const useModelData = (config) => {
   const [error, setError] = useState(undefined); // TODO

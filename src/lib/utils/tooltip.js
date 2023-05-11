@@ -3,6 +3,7 @@ import {pointer} from 'd3';
 /**
  * Originally sourced from https://observablehq.com/@clhenrick/tooltip-component
  * and then used in a few of my own projects subsequent to this (with changes)
+ * @private
  */
 export class Tooltip {
   constructor(parentElement) {
@@ -57,10 +58,10 @@ export class Tooltip {
       x - width / 2,
       window.innerWidth - width - margin
     );
-    const top =
-      window.innerHeight > y + margin + height
-        ? y + margin
-        : y - height - margin;
+    const tooltipBelow = window.innerHeight > y + margin + height;
+    const top = tooltipBelow ?
+      (y + margin + 15) : // offset by ~15px so that cursor doesn't obscure info-box
+      (y - height - margin);
     this.selection.style("top", `${top}px`).style("left", `${left}px`);
   }
 

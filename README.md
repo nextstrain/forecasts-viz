@@ -66,6 +66,13 @@ REACT_APP_RENEWAL_ENDPOINT="http://localhost:8000/renewal.json" \
   npm run start
 ```
 
+To run the test app in a production mode:
+
+```sh
+npm run build:local
+npm run serve
+```
+
 ### Linting
 
 `npm run lint`

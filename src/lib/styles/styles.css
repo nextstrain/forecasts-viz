@@ -35,3 +35,6 @@ div.tooltip {
   color: #888;
   font-weight: 300;
 }
+.noCapture {
+  pointer-events: none;
+}
