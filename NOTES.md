@@ -22,6 +22,11 @@ This is somewhat left-over from a previous version where we parsed multiple mode
 As that requirement is no longer, I think it would make sense to defer the parsing of these points to the visualisation component itself.
 
 This is especially pertinent now that the visualisation component can define which sites it should visualise (via the `params` prop).
+The approach should be (I think):
+
+1. `useModelData()` parses the JSON metadata etc, as it currently does. It also scans `JSON.data` and creates a map of dates to censor (per variant) based on a frequency threshold (assuming frequencies exist). We don't parse the data more generally at this stage.
+2. Either the `<Panels>` or `<Graph>` component extracts the points required for its visualisation from `modelData.rawData`. I'd lean towards doing this in `<Panels>`. What data to extract is based on `params.key` and `params.interval`. How we store data would be decided by `params.graphType`: `lines` imply a temporal array of points, `points` imply one value per variant, `stream` is similar to `lines` with an additional data conversion into a stack (`y0`, `y1`).
+
 
 ## Forecasting date
 
