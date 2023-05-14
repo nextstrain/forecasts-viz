@@ -82,7 +82,7 @@ function App() {
       <div id="mainPanelsContainer" >
 
         <h2>{`General line graph (preset: 'frequency')`}</h2>
-        <div className="abstract">{`Data comes from MLR model, objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+        <div className="abstract">{`Data comes from MLR model (updated: ${mlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
         {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
         <PanelDisplay data={mlrData} locations={locations} params={{preset: "frequency"}}/>
 
@@ -117,7 +117,7 @@ function App() {
 
         <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>
         <div className="abstract">
-          {`Data comes from renewal model objects matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
+          {`Data comes from renewal model (updated: ${renewalData?.modelData?.get('updated')}) matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
         </div>
         <PanelDisplay data={renewalData} locations={locations} params={{preset: "R_t"}}/>
 
