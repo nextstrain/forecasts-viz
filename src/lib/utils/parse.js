@@ -67,6 +67,7 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  * @property {Map} variantDisplayNames provided via `DatasetConfig`. Keys used if not provided.
  * @property {String} pivot Currently the final entry in the model's list of variants
  * @property {string} nowcastFinalDate
+ * @property {string} updated
  * @property {Object} domains
  * 
  * @inner
@@ -88,7 +89,7 @@ export const parseModelData = (modelName, modelJson, sites, variantColors, varia
 
   if (!modelName) modelName="Unknown";
 
-  const [dates, nowcastFinalDate, dateSummary] = extractDatesFromModels(modelJson)
+  const [dates, updated, nowcastFinalDate, dateSummary] = extractDatesFromModels(modelJson)
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
   const data = new Map([
@@ -98,6 +99,7 @@ export const parseModelData = (modelName, modelJson, sites, variantColors, varia
     ["variantColors", variantColors || genericVariantColors(modelJson.metadata.variants)],
     ["variantDisplayNames", variantDisplayNames || genericVariantDisplayNames(modelJson.metadata.variants)],
     ["dateIdx", dateIdx],
+    ["updated", updated],
     ["nowcastFinalDate", nowcastFinalDate],
     ["points", undefined],
     ["domains", undefined],
@@ -232,14 +234,21 @@ function extractDatesFromModels(modelJson) {
 
   /* The forecast date is simply the crossover date between now-casting and forecasting. It's not that simple -- from
   Marlin: "There’s really two different lines that should be there, but I would start with the date of the model run I think."
-  But we don't currently encode the date of the model run! I'm using end of the JSON's `dates` but I expect this to be added to the JSON
-  shortly */
-  const nowcastFinalDate = jsonDates[jsonDates.length-1];
-
+  */
+  const updated = modelJson.metadata?.updated;
+  let nowcastFinalDate;
+  let updatedMsg = '';
+  if (updated) {
+    nowcastFinalDate = updated;
+    updatedMsg = `Forecast starts at ${nowcastFinalDate} (via model update date).`
+  } else {
+    nowcastFinalDate = jsonDates[jsonDates.length-1];
+    updatedMsg = `Forecast starts at ${nowcastFinalDate} (final entry in 'dates').`;
+  }
   /* Skip initial days of model estimates to avoid artifacts in plots */
   const keepDates = dates.slice(INITIAL_DAY_CUTOFF);
-  const summary = `After removing initial ${INITIAL_DAY_CUTOFF} days, model dates are: ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days). Forecast starts at ${nowcastFinalDate}`;
-  return [keepDates, nowcastFinalDate, summary];
+  const summary = `After removing initial ${INITIAL_DAY_CUTOFF} days, model dates are: ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days). ${updatedMsg}`;
+  return [keepDates, updated, nowcastFinalDate, summary];
 }
 
 /**

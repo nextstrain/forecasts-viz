@@ -46,6 +46,11 @@ function App() {
   return (
     <div id="AppContainer">
       <h1>{`Forecasting-viz preview for '${modelData.name}'`}</h1>
+      {modelData?.modelData?.get('updated') &&
+        <div className="abstract">
+          {`Model updated ${modelData?.modelData?.get('updated')}`}
+        </div>
+      }
       <div id="mainPanelsContainer" >
         {modelData.sites.filter((site) => !site.endsWith("_forecast")).map((site) => {
           const preset = getPreset(site);

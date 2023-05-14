@@ -28,10 +28,6 @@ The approach should be (I think):
 2. Either the `<Panels>` or `<Graph>` component extracts the points required for its visualisation from `modelData.rawData`. I'd lean towards doing this in `<Panels>`. What data to extract is based on `params.key` and `params.interval`. How we store data would be decided by `params.graphType`: `lines` imply a temporal array of points, `points` imply one value per variant, `stream` is similar to `lines` with an additional data conversion into a stack (`y0`, `y1`).
 
 
-## Forecasting date
-
-This is currently taken as the final date in the 'dates' array, but this should be explicitly defined by them model JSON.
-
 ## Pivot variant
 
 Currently we use last variant in the array, however this is soon to be explicitly provided in the model JSON.
