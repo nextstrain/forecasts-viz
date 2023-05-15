@@ -245,17 +245,14 @@ function extractDatesFromModels(modelJson) {
   return [keepDates, updated, nowcastFinalDate, summary];
 }
 
-/**
- * TODO XXX this function has a bug related to timezones
- * See https://bedfordlab.slack.com/archives/C036L7V615F/p1683763193419789
- */
 export function datesArray(startDate, endDate) {
   const dates = [];
-  let d = new Date(startDate);
-  const endDateForViz = new Date(endDate);
-  while (d <= endDateForViz) {
-    dates.push(d.toISOString().split("T")[0]); // YYYY-MM-DD
-    d.setDate(d.getDate()+1); // increment one day
+  // start at noon so that as we enter/exit daylight savings, the +/- 1 hour change doesn't
+  // change the day. See src/tests/date-parsing.js for more details
+  let d = new Date(`${startDate}T12:00:00Z`);
+  while (d.toISOString().split('T')[0] <= endDate) {
+    dates.push(d.toISOString().split('T')[0])
+    d.setDate(d.getDate()+1);
   }
   return dates
 }
