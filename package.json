@@ -15,7 +15,7 @@
     "serve": "serve -s build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "test": "react-scripts test",
+    "test": "node src/tests/date-parsing.js",
     "lint": "eslint src",
     "eject": "react-scripts eject",
     "docs": "jsdoc2md src/lib/index.js src/lib/**/*.js > api.md",
