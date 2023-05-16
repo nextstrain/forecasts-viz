@@ -224,13 +224,7 @@ function extractDatesFromModels(modelJson) {
   const jsonDatesForecast = (modelJson.metadata.forecast_dates || []).sort();
 
   /* because we use the dates as the domain for graphs, create the array ourselves to ensure no holes */
-  const dates = [];
-  let d = new Date(jsonDates[0]);
-  const endDateForViz = new Date(max([jsonDates[jsonDates.length-1], jsonDatesForecast[jsonDatesForecast.length-1]]));
-  while (d <= endDateForViz) {
-    dates.push(d.toISOString().split("T")[0]); // YYYY-MM-DD
-    d.setDate(d.getDate()+1); // increment one day
-  }
+  const dates = datesArray(jsonDates[0], max([jsonDates[jsonDates.length-1], jsonDatesForecast[jsonDatesForecast.length-1]]))
 
   /* The forecast date is simply the crossover date between now-casting and forecasting. It's not that simple -- from
   Marlin: "There’s really two different lines that should be there, but I would start with the date of the model run I think."
@@ -250,6 +244,19 @@ function extractDatesFromModels(modelJson) {
   const summary = `After removing initial ${INITIAL_DAY_CUTOFF} days, model dates are: ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days). ${updatedMsg}`;
   return [keepDates, updated, nowcastFinalDate, summary];
 }
+
+export function datesArray(startDate, endDate) {
+  const dates = [];
+  // start at noon so that as we enter/exit daylight savings, the +/- 1 hour change doesn't
+  // change the day. See src/tests/date-parsing.js for more details
+  let d = new Date(`${startDate}T12:00:00Z`);
+  while (d.toISOString().split('T')[0] <= endDate) {
+    dates.push(d.toISOString().split('T')[0])
+    d.setDate(d.getDate()+1);
+  }
+  return dates
+}
+
 
 /**
  * variantDisplayNames map variants (in the JSON) to their display names
