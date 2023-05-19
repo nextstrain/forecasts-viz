@@ -78,6 +78,11 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
     width = outerWidth - 20 // outer div allowing for some margin
   }
 
+  /* If growthAdvantage and lineages, always use full width */
+  if (params.preset==="growthAdvantage" && numVariants > 20) {
+    width = outerWidth - 20 // outer div allowing for some margin
+  }
+
   /* control the spacing around graphs via the margin of each graph
   We export these as individual keys so they can be easily overridden.
   The initial ones are generally ok. */
