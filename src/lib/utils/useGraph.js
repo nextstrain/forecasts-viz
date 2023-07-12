@@ -45,7 +45,7 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
       return;
     }
     /**
-     * Changes in options (currently only the logit toggle) have an associated
+     * Changes in options (e.g. the logit toggle) have an associated
      * update function. In the future this could include hovering over a variant
      * in the legend & highlighting that (for example).
      */
@@ -54,6 +54,9 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
       console.log("Updating graph as options have changed");
       if (!isEqual(prevDeps.current.options.logit, options.logit)) {
         graph.current.updateScale(options)
+      }
+      if (!isEqual(prevDeps.current.options.showRawData, options.showRawData)) {
+        graph.current.toggleRawDataPoints(options)
       }
       prevDeps.current.options = options;
     }

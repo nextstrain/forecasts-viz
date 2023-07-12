@@ -23,6 +23,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.drawArea();
   this.drawLines();
   this.drawPoints();
+  /* Note: raw data points never drawn on initial render */
 
   this.drawForecastLine();
   this.drawDashedLines();
@@ -260,7 +261,41 @@ D3Graph.prototype.updateScale = function(options) {
     g.selectAll('.area')
       .transition().duration(TRANSITION_DURATION)
       .attr("d", this.area(temporalPoints))
+
+    g.selectAll('.rawDataPoints') // may be empty - that's ok!
+      .transition().duration(TRANSITION_DURATION)
+      .attr("cy", (d) => this.y(d.get(`raw_${this.params.key}`) || false))
   });
+}
+
+/**
+ * Prototype called when the "show raw data" toggle is changed.
+ */
+D3Graph.prototype.toggleRawDataPoints = function(options) {
+  if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
+  if (!options.showRawData) {
+    this.svg.selectAll('.rawDataPoints').remove("*")
+    return;
+  }
+  const key = `raw_${this.params.key}`
+  this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
+    const temporalPoints = variantPoint.get('temporal')
+      .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
+
+    const color = this.getVariantColor(variant);
+
+    this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
+      .selectAll("rawDataPoints")
+      .data(temporalPoints)
+      .enter()
+      .append("circle")
+        .attr("class", "rawDataPoints")
+        .attr("cx", (d) => this.x(d.get('date')))
+        .attr("cy", (d) => this.y(d.get(key) || false))
+        .attr("r", 1.5)
+        .style("opacity", 0.3)
+        .style("fill", color)
+  })
 }
 
 /**

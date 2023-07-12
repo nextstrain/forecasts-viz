@@ -45,6 +45,13 @@ const PanelSectionContainer = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(${props => props.smallMultipleWidth}px, 1fr));
 `;
 
+const OptionsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: flex-end;
+`
+
 /**
  * This function should handle all styling parameters related to sizing -- graph sizes,
  * legend sizes, text sizes etc. It is a work in progress. All styles defined here can be
@@ -168,13 +175,14 @@ const Panel = ({
 }) => {
   const {modelData, error} = data;
   const [logit, toggleLogit] = useState(false);
+  const [showRawData, toggleShowRawData] = useState(false);
 
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);
   const  locationList = locations || modelData?.get('locations');
   const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
-
+  const canShowRawData = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('raw_freq');
 
   if (error) {
     return (<ErrorMessage error={error}/>);
@@ -186,7 +194,11 @@ const Panel = ({
 
   return (
     <div ref={outerDivRef}>
-      {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
+      <OptionsContainer>
+        {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
+        {canShowRawData && <Toggle label="Show raw data" checked={showRawData} sizes={sizes} onChange={() => toggleShowRawData(!showRawData)}/>}
+      </OptionsContainer>
+
       <Container>
         <Legend modelData={modelData} sizes={sizes} />
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
@@ -197,7 +209,7 @@ const Panel = ({
                 sizes={sizes}
                 location={location}
                 params={params}
-                options={{logit}}
+                options={{logit, showRawData}}
                 key={`${params.preset || params.key}_${location}`}
               />
             ))

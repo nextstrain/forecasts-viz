@@ -101,6 +101,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     ["nowcastFinalDate", nowcastFinalDate],
     ["points", undefined],
     ["domains", undefined],
+    ["sites", sites],
     // TODO: use the explicit pivot in the metadata instead of assuming the
     // pivot is the last variant in the array once it has been added to the evofr output
     ["pivot", modelJson.metadata.variants[modelJson.metadata.variants.length - 1]]
@@ -158,7 +159,11 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
           store.set(`${key}_HDI_95_lower`, d.value);
         } else if (d.ps==="HDI_95_upper") {
           store.set(`${key}_HDI_95_upper`, d.value);
+        } else if (site.startsWith('raw_')) {
+          // raw frequency points do not have a 'ps' property
+          store.set(key, d.value);
         }
+
       }
     })
 
