@@ -57,6 +57,11 @@ export const useModelData = (config) => {
 
   useEffect( () => {
     async function fetchAndParse() {
+      if (!config.modelUrl) {
+        console.log(`Skipping fetching for ${config.modelName} as modelUrl property is not set`)
+        return;
+      }
+
       console.log(`Downloading & parsing model data JSON for ${config.modelName} (${config.modelUrl})`)
       let modelJson;
       try {

@@ -47,23 +47,19 @@ conda activate node18
 Then install dependencies and run the test app:
 
 ```sh
-npm ci # install dependencies
+npm ci
+```
+
+Then you can either run the test app fetching canonical data JSONs from S3:
+```sh
 npm run start
 ```
 
-In the above configuration, http://localhost:3000 will fetch SARS-CoV-2 model JSONs from our S3 bucket.
-It can be a nicer experience to first download these files (or others!) to `./data` and use those instead:
+Or (recommended) pre-fetch the JSON files (to `./data`):
 
 ```sh
-# provision the model JSONs
-mkdir -p data/
-curl --compressed "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/renewal/latest_results.json" --output data/renewal.json
-curl --compressed "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global/mlr/latest_results.json" --output data/mlr.json
-# serve them over localhost:8000 in a background process
-node scripts/data-server.js &
-REACT_APP_RENEWAL_ENDPOINT="http://localhost:8000/renewal.json" \
-  REACT_APP_MLR_ENDPOINT="http://localhost:8000/mlr.json" \
-  npm run start
+npm run download
+npm run start:local
 ```
 
 To run the test app in a production mode:
