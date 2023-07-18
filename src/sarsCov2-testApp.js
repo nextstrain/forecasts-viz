@@ -53,7 +53,8 @@ const config = {
   'lineagesMlr': {
     modelName: "lineages/MLR",
     modelUrl: process.env.REACT_APP_LINEAGES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/pango_lineages/global/mlr/latest_results.json`,
-    ...baseConfiguration
+    // don't add baseConfiguration as the JSON defines the colours and we don't want the config to override this
+    sites: undefined,
   },
 }
 
