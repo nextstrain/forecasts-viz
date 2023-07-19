@@ -4,13 +4,15 @@ import './styles.css';
 /* Following are not currently exported by the library itself */
 import { getDomainUsingKey } from "./lib/components/Graph.js";
 import { displayTopVariants } from "./lib/utils/tooltipDisplay.js";
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
 
 let locations = undefined;
 /* It's helpful for dev purposes to not see _all_ the small multiples. Uncomment the
 following line to remove this filtering */
 // locations = ["Australia", "Canada", "Denmark", "France", "China", "USA"];
 
-const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov/gisaid/nextstrain_clades/global";
+const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov";
 const baseConfiguration = {
   sites: undefined,
   variantColors: new Map([
@@ -36,16 +38,24 @@ const baseConfiguration = {
     ["23A (Omicron)", "23A (XBB.1.5)"],
   ])
 }
-const mlrConfig = {
-  modelName: "MLR",
-  modelUrl: process.env.REACT_APP_MLR_ENDPOINT || `${DEFAULT_ENDPOINT_PREFIX}/mlr/latest_results.json`,
-  ...baseConfiguration
-};
-const renewalConfig = {
-  modelName: "Renewal",
-  modelUrl: process.env.REACT_APP_RENEWAL_ENDPOINT || `${DEFAULT_ENDPOINT_PREFIX}/renewal/latest_results.json`,
-  ...baseConfiguration
-};
+
+const config = {
+  'cladesMlr': {
+    modelName: "clades/MLR",
+    modelUrl: process.env.REACT_APP_CLADES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/mlr/latest_results.json`,
+    ...baseConfiguration
+  },
+  'cladesRenewal': {
+    modelName: "clades/renewal",
+    modelUrl: process.env.REACT_APP_CLADES_RENEWAL || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/renewal/latest_results.json`,
+    ...baseConfiguration
+  },
+  'lineagesMlr': {
+    modelName: "lineages/MLR",
+    modelUrl: process.env.REACT_APP_LINEAGES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/pango_lineages/global/mlr/latest_results.json`,
+    ...baseConfiguration
+  },
+}
 
 /** Create certain functions for the custom incidence line graph so that
  * they are not recreated each time <App> re-renders, as their recreation
@@ -57,8 +67,9 @@ const incidenceLinesTooltip = displayTopVariants();
 const incidenceDomain = getDomainUsingKey('I_smooth_HDI_95_upper');
 
 function App() {
-  const mlrData = useModelData(mlrConfig);
-  const renewalData = useModelData(renewalConfig);
+  const cladesMlrData = useModelData(config.cladesMlr);
+  const cladesRenewalData = useModelData(config.cladesRenewal);
+  const lineagesMlrData = useModelData(config.lineagesMlr);
 
   const [count, setCount] = useState(1);
 
@@ -79,47 +90,75 @@ function App() {
         {`Trigger <App> re-render. n=${count}`}
       </button>
 
+      <div style={{paddingBottom: '20px'}}/>
+
       <div id="mainPanelsContainer" >
 
-        <h2>{`General line graph (preset: 'frequency')`}</h2>
-        <div className="abstract">{`Data comes from MLR model (updated: ${mlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-        {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
-        <PanelDisplay data={mlrData} locations={locations} params={{preset: "frequency"}}/>
+        <Tabs>
+          <TabList>
+            <Tab>Clades / MLR</Tab>
+            <Tab>Lineages / MLR</Tab>
+            <Tab>Clades / Renewal</Tab>
+          </TabList>
 
-        <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
-        <div className="abstract">{`Data comes from MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-        <PanelDisplay data={mlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
+          {/* ----------------------------- CLADES / MLR ----------------------------- */}
+          <TabPanel>
+            <h2>{`General line graph (preset: 'frequency')`}</h2>
+            <div className="abstract">{`Data comes from Clades/MLR model (updated: ${cladesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+            {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
+            <PanelDisplay data={cladesMlrData} locations={locations} params={{preset: "frequency"}}/>
 
-        <h2>{`Stream graph (preset: 'stackedIncidence')`}</h2>
-        <div className="abstract">
-          {`Custom styling to be 400px wide (default: 250px).
-          Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
-        </div>
-        <PanelDisplay data={renewalData} locations={locations}
-          styles={{width: 400}}
-          params={{preset: "stackedIncidence"}}
-        /> 
+            <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
+            <div className="abstract">{`Data comes from MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+            <PanelDisplay data={cladesMlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
+          </TabPanel>
 
-        <h2>{`Line graph using I_smooth`}</h2>
-        <div className="abstract">
-          {`An example of using the 'params' React prop in the calling app to completely define how the
-          graph looks -- we specify the graphType (lines), the data key (I_smooth),
-          the HPD interval keys, the yDomain and the tooltip function`}
-        </div>
-        <PanelDisplay data={renewalData} locations={locations} params={{
-          graphType: "lines",
-          key: 'I_smooth',
-          interval:  ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
-          intervalOpacity: 0.3,
-          yDomain: incidenceDomain,
-          tooltipXY: incidenceLinesTooltip,
-        }}/>
+          {/* ----------------------------- LINEAGES / MLR ----------------------------- */}
+          <TabPanel>
+            <h2>{`General line graph (preset: 'frequency')`}</h2>
+            <div className="abstract">{`Data comes from Lineages/MLR model (updated: ${cladesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+            {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
+            <PanelDisplay data={lineagesMlrData} locations={locations} params={{preset: "frequency"}}/>
 
-        <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>
-        <div className="abstract">
-          {`Data comes from renewal model (updated: ${renewalData?.modelData?.get('updated')}) matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
-        </div>
-        <PanelDisplay data={renewalData} locations={locations} params={{preset: "R_t"}}/>
+            <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
+            <div className="abstract">{`Data comes from Lineages/MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
+            <PanelDisplay data={lineagesMlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
+          </TabPanel>
+
+          {/* ----------------------------- RENEWAL / MLR ----------------------------- */}
+          <TabPanel>
+            <h2>{`Stream graph (preset: 'stackedIncidence')`}</h2>
+            <div className="abstract">
+              {`Custom styling to be 400px wide (default: 250px).
+              Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
+            </div>
+            <PanelDisplay data={cladesRenewalData} locations={locations}
+              styles={{width: 400}}
+              params={{preset: "stackedIncidence"}}
+            /> 
+
+            <h2>{`Line graph using I_smooth`}</h2>
+            <div className="abstract">
+              {`An example of using the 'params' React prop in the calling app to completely define how the
+              graph looks -- we specify the graphType (lines), the data key (I_smooth),
+              the HPD interval keys, the yDomain and the tooltip function`}
+            </div>
+            <PanelDisplay data={cladesRenewalData} locations={locations} params={{
+              graphType: "lines",
+              key: 'I_smooth',
+              interval:  ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
+              intervalOpacity: 0.3,
+              yDomain: incidenceDomain,
+              tooltipXY: incidenceLinesTooltip,
+            }}/>
+
+            <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>
+            <div className="abstract">
+              {`Data comes from renewal model (updated: ${cladesRenewalData?.modelData?.get('updated')}) matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
+            </div>
+            <PanelDisplay data={cladesRenewalData} locations={locations} params={{preset: "R_t"}}/>
+          </TabPanel>
+        </Tabs>
 
       </div>
 
