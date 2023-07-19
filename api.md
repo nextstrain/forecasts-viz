@@ -167,10 +167,11 @@ visualisation component in the future. See NOTES.md for more.
 | dates | <code>Array</code> | sorted array of YYYY-MM-DD dates, guaranteed not to have any holes.                         These dates bridge both `modelJson.metadata.dates` and `modelJson.metadata.forecast_dates`. |
 | locations | <code>Array</code> | modelJson.metadata.location |
 | dateIdx | <code>Map</code> | lookup for date string -> idx in dates array |
-| variantColors | <code>Map</code> | provided via `DatasetConfig`. Default colors set if not provided. |
-| variantDisplayNames | <code>Map</code> | provided via `DatasetConfig`. Keys used if not provided. |
+| variantColors | <code>Map</code> | provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided. |
+| variantDisplayNames | <code>Map</code> | provided via `DatasetConfig`. Overrides data set in the JSON. Keys used if not provided. |
 | pivot | <code>String</code> | Currently the final entry in the model's list of variants |
 | nowcastFinalDate | <code>string</code> |  |
+| updated | <code>string</code> |  |
 | domains | <code>Object</code> |  |
 
 <a name="module_@nextstrain/evofr-viz..ModelDataWrapper"></a>

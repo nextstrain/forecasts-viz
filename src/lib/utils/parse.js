@@ -63,8 +63,8 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  *                         These dates bridge both `modelJson.metadata.dates` and `modelJson.metadata.forecast_dates`.
  * @property {Array} locations modelJson.metadata.location
  * @property {Map} dateIdx lookup for date string -> idx in dates array
- * @property {Map} variantColors provided via `DatasetConfig`. Default colors set if not provided. 
- * @property {Map} variantDisplayNames provided via `DatasetConfig`. Keys used if not provided.
+ * @property {Map} variantColors provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided. 
+ * @property {Map} variantDisplayNames provided via `DatasetConfig`. Overrides data set in the JSON. Keys used if not provided.
  * @property {String} pivot Currently the final entry in the model's list of variants
  * @property {string} nowcastFinalDate
  * @property {string} updated
@@ -79,7 +79,7 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  * @private
  * @throws Error
  */
-export const parseModelData = (modelName, modelJson, sites, variantColors, variantDisplayNames) => {
+export const parseModelData = (modelName, modelJson, sites, configProvidedVariantColors, configProvidedVariantDisplayNames) => {
 
   if (!sites){
     sites = new Set(modelJson.metadata.sites);
@@ -96,8 +96,6 @@ export const parseModelData = (modelName, modelJson, sites, variantColors, varia
     ["locations", modelJson.metadata.location],
     ["variants", modelJson.metadata.variants],
     ["dates", dates],
-    ["variantColors", variantColors || genericVariantColors(modelJson.metadata.variants)],
-    ["variantDisplayNames", variantDisplayNames || genericVariantDisplayNames(modelJson.metadata.variants)],
     ["dateIdx", dateIdx],
     ["updated", updated],
     ["nowcastFinalDate", nowcastFinalDate],
@@ -107,6 +105,22 @@ export const parseModelData = (modelName, modelJson, sites, variantColors, varia
     // pivot is the last variant in the array once it has been added to the evofr output
     ["pivot", modelJson.metadata.variants[modelJson.metadata.variants.length - 1]]
   ])
+
+  /* Set variant colors + display names from the config, or the JSON, or fallback to a default */
+  if (configProvidedVariantColors) {
+    data.set('variantColors', configProvidedVariantColors)
+  } else if (Array.isArray(modelJson.metadata?.variantColors)) {
+    data.set('variantColors', new Map(modelJson.metadata.variantColors))
+  } else {
+    data.set('variantColors', genericVariantColors(data.get('variants')))
+  }
+  if (configProvidedVariantDisplayNames) {
+    data.set('variantDisplayNames', configProvidedVariantDisplayNames)
+  } else if (Array.isArray(modelJson.metadata?.variantDisplayNames)) {
+    data.set('variantDisplayNames', new Map(modelJson.metadata.variantDisplayNames))
+  } else {
+    data.set('variantDisplayNames', genericVariantDisplayNames(data.get('variants')))
+  }
 
   let ga_min=100, ga_max=0;
 
