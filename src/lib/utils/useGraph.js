@@ -55,8 +55,11 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
       if (!isEqual(prevDeps.current.options.logit, options.logit)) {
         graph.current.updateScale(options)
       }
-      if (!isEqual(prevDeps.current.options.showRawData, options.showRawData)) {
-        graph.current.toggleRawDataPoints(options)
+      if (!isEqual(prevDeps.current.options.showDailyRawFreq, options.showDailyRawFreq)) {
+        graph.current.toggleDailyRawFreqPoints(options)
+      }
+      if (!isEqual(prevDeps.current.options.showWeeklyRawFreq, options.showWeeklyRawFreq)) {
+        graph.current.toggleWeeklyRawFreqPoints(options)
       }
       prevDeps.current.options = options;
     }

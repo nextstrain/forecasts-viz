@@ -262,39 +262,75 @@ D3Graph.prototype.updateScale = function(options) {
       .transition().duration(TRANSITION_DURATION)
       .attr("d", this.area(temporalPoints))
 
-    g.selectAll('.rawDataPoints') // may be empty - that's ok!
+    g.selectAll('.dailyRawFreqPoints') // may be empty - that's ok!
       .transition().duration(TRANSITION_DURATION)
-      .attr("cy", (d) => this.y(d.get(`raw_${this.params.key}`) || false))
+      .attr("cy", (d) => this.y(d.get(`daily_raw_freq`) || false))
+
+    g.selectAll('.weeklyRawFreqPoints') // may be empty - that's ok!
+      .transition().duration(TRANSITION_DURATION)
+      .attr("cy", (d) => this.y(d.get(`weekly_raw_freq`) || false))
   });
 }
 
 /**
- * Prototype called when the "show raw data" toggle is changed.
+ * Prototype called when the "Daily raw data" toggle is changed
  */
-D3Graph.prototype.toggleRawDataPoints = function(options) {
+D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
   if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
-  if (!options.showRawData) {
-    this.svg.selectAll('.rawDataPoints').remove("*")
+  if (!options.showDailyRawFreq) {
+    this.svg.selectAll('.dailyRawFreqPoints').remove("*")
     return;
   }
-  const key = `raw_${this.params.key}`
+  const key = `daily_raw_freq`
   this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
     const temporalPoints = variantPoint.get('temporal')
       .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
 
-    const color = this.getVariantColor(variant);
+    const variantColor = this.getVariantColor(variant);
+    const pointColor = d3.color(variantColor).darker(0.5).toString();
 
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
-      .selectAll("rawDataPoints")
+      .selectAll("dailyRawFreqPoints")
       .data(temporalPoints)
       .enter()
       .append("circle")
-        .attr("class", "rawDataPoints")
+        .attr("class", "dailyRawFreqPoints")
         .attr("cx", (d) => this.x(d.get('date')))
         .attr("cy", (d) => this.y(d.get(key) || false))
-        .attr("r", 1.5)
+        .attr("r", 1.1)
         .style("opacity", 0.3)
-        .style("fill", color)
+        .style("fill", pointColor)
+  })
+}
+
+/**
+ * Prototype called when the "7-day smoothed data" toggle is changed
+ */
+D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
+  if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
+  if (!options.showWeeklyRawFreq) {
+    this.svg.selectAll('.weeklyRawFreqPoints').remove("*")
+    return;
+  }
+  const key = `weekly_raw_freq`
+  this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
+    const temporalPoints = variantPoint.get('temporal')
+      .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
+
+    const variantColor = this.getVariantColor(variant);
+    const pointColor = d3.color(variantColor).brighter(0.2).toString();
+
+    this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
+      .selectAll("weeklyRawFreqPoints")
+      .data(temporalPoints)
+      .enter()
+      .append("circle")
+        .attr("class", "weeklyRawFreqPoints")
+        .attr("cx", (d) => this.x(d.get('date')))
+        .attr("cy", (d) => this.y(d.get(key) || false))
+        .attr("r", 1.6)
+        .style("opacity", 0.3)
+        .style("fill", pointColor)
   })
 }
 

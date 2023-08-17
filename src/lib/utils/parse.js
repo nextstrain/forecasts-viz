@@ -159,7 +159,10 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
           store.set(`${key}_HDI_95_lower`, d.value);
         } else if (d.ps==="HDI_95_upper") {
           store.set(`${key}_HDI_95_upper`, d.value);
-        } else if (site.startsWith('raw_')) {
+        } else if (site==='daily_raw_freq') {
+          // raw frequency points do not have a 'ps' property
+          store.set(key, d.value);
+        } else if (site==='weekly_raw_freq') {
           // raw frequency points do not have a 'ps' property
           store.set(key, d.value);
         }
