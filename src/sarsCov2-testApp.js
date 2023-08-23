@@ -43,7 +43,7 @@ const config = {
   'cladesMlr': {
     modelName: "clades/MLR",
     modelUrl: process.env.REACT_APP_CLADES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/mlr/latest_results.json`,
-    ...baseConfiguration
+    sites: undefined,
   },
   'cladesRenewal': {
     modelName: "clades/renewal",
