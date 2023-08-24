@@ -357,22 +357,46 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
   })
 }
 
-D3Graph.prototype.changeRawFreqPointsFocus = function(legendSwatchHovered) {
-  if (legendSwatchHovered===undefined) {
+D3Graph.prototype.singleVariantFocus = function(legendSwatchHovered) {
+  /**
+   * Calls to this method ultimately come from mouseover/mouseout events. It is
+   * _not_ guaranteed that a browser will fire a mouseout event (the faster the
+   * mouse move the more likely it is to be missed). For that reason we always
+   * ~reset the visual state in this method before highlighting the variant; this
+   * helps the case where we move from legend A to legend B and the browser doesn't
+   * fire a mouseout when leaving A. It will not address the case where we move from
+   * legend B to outside the legend; to address this we'd have to listen to mousemove
+   * events and manually check positions which I think is unnecessary complexity
+   * for the current state of the project.
+   */
+  if (this.params.graphType==="lines") {
     this.svg.selectAll('.dailyRawFreqPoints')
       .attr("r", this.rawFrequencyStyles.daily.r)
       .style("opacity", this.rawFrequencyStyles.daily.opacity)
     this.svg.selectAll('.weeklyRawFreqPoints')
       .attr("r", this.rawFrequencyStyles.weekly.r)
       .style("opacity", this.rawFrequencyStyles.weekly.opacity)
-  } else {
-    const s = this.svg.selectAll(`.${cssSafeName(`variant_${legendSwatchHovered}`)}`);
-    s.selectAll('.dailyRawFreqPoints')
-      .attr("r", this.rawFrequencyStyles.daily.rFocus)
-      .style("opacity", this.rawFrequencyStyles.daily.opacityFocus)
-    s.selectAll('.weeklyRawFreqPoints')
-      .attr("r", this.rawFrequencyStyles.weekly.rFocus)
-      .style("opacity", this.rawFrequencyStyles.weekly.opacityFocus)
+    this.svg.selectAll('.area')
+      .style('opacity', legendSwatchHovered===undefined ? 0.2 : 0)
+    this.svg.selectAll('.line')
+      .style('opacity', legendSwatchHovered===undefined ? 0.8 : 0.3)
+      .attr("stroke-width", 2)
+    if (legendSwatchHovered!==undefined) {
+      const s = this.svg.selectAll(`.${cssSafeName(`variant_${legendSwatchHovered}`)}`);
+      s.selectAll('.dailyRawFreqPoints')
+        .attr("r", this.rawFrequencyStyles.daily.rFocus)
+        .style("opacity", this.rawFrequencyStyles.daily.opacityFocus)
+      s.selectAll('.weeklyRawFreqPoints')
+        .attr("r", this.rawFrequencyStyles.weekly.rFocus)
+        .style("opacity", this.rawFrequencyStyles.weekly.opacityFocus)
+      /* The HPD opacity has been set to 0 - re-enable for the focus variant */
+      s.selectAll('.area')
+        .style('opacity', 0.2)
+      /* The lines opacity has been lowered - increase for the focus variant */
+      s.selectAll('.line')
+        .style('opacity', 1)
+        .attr("stroke-width", 3)
+    }
   }
 }
 
