@@ -12,6 +12,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.modelData = modelData;
   this.params = params;
   this.sizes = sizes;
+  this.setRawFrequencyStyles();
 
   this.createScales(options);
   this.drawAxes();
@@ -272,17 +273,26 @@ D3Graph.prototype.updateScale = function(options) {
   });
 }
 
-const rawFrequencyStyles = {
+D3Graph.prototype.setRawFrequencyStyles = function(options) {
+  /* The current responsiveSizing (Panels.js) sets the graph width. Common widths are 260px (small panels)
+  or ~the available page width */
+  const small = this.sizes.width < 300;
+  this.rawFrequencyStyles = {
     daily:  {
-      r: 1.1, rFocus: 3,
-      opacity: 0.3, opacityFocus: 1,
+      r: small ? 1.1 : 2,
+      rFocus: small ? 2 : 3,
+      opacity: 0.3,
+      opacityFocus: 1,
       colorModifier: (color) => d3.color(color).darker(0.5).toString()
     },
     weekly: {
-      r: 1.6, rFocus: 4,
-      opacity: 0.3, opacityFocus: 1,
+      r: small ? 1.6 : 2.5,
+      rFocus: small ? 2 : 3,
+      opacity: 0.3,
+      opacityFocus: 1,
       colorModifier: (color) => d3.color(color).brighter(0.2).toString()
     },
+  }
 }
 
 /**
@@ -300,7 +310,7 @@ D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
       .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
 
     const variantColor = this.getVariantColor(variant);
-    const pointColor = rawFrequencyStyles.daily.colorModifier(variantColor)
+    const pointColor = this.rawFrequencyStyles.daily.colorModifier(variantColor)
 
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
       .selectAll("dailyRawFreqPoints")
@@ -310,8 +320,8 @@ D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
         .attr("class", "dailyRawFreqPoints")
         .attr("cx", (d) => this.x(d.get('date')))
         .attr("cy", (d) => this.y(d.get(key) || false))
-        .attr("r", rawFrequencyStyles.daily.r)
-        .style("opacity", rawFrequencyStyles.daily.opacity)
+        .attr("r", this.rawFrequencyStyles.daily.r)
+        .style("opacity", this.rawFrequencyStyles.daily.opacity)
         .style("fill", pointColor)
   })
 }
@@ -331,7 +341,7 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
       .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
 
     const variantColor = this.getVariantColor(variant);
-    const pointColor = rawFrequencyStyles.weekly.colorModifier(variantColor)
+    const pointColor = this.rawFrequencyStyles.weekly.colorModifier(variantColor)
 
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
       .selectAll("weeklyRawFreqPoints")
@@ -341,8 +351,8 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
         .attr("class", "weeklyRawFreqPoints")
         .attr("cx", (d) => this.x(d.get('date')))
         .attr("cy", (d) => this.y(d.get(key) || false))
-        .attr("r", rawFrequencyStyles.weekly.r)
-        .style("opacity", rawFrequencyStyles.weekly.opacity)
+        .attr("r", this.rawFrequencyStyles.weekly.r)
+        .style("opacity", this.rawFrequencyStyles.weekly.opacity)
         .style("fill", pointColor)
   })
 }
@@ -350,19 +360,19 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
 D3Graph.prototype.changeRawFreqPointsFocus = function(legendSwatchHovered) {
   if (legendSwatchHovered===undefined) {
     this.svg.selectAll('.dailyRawFreqPoints')
-      .attr("r", rawFrequencyStyles.daily.r)
-      .style("opacity", rawFrequencyStyles.daily.opacity)
+      .attr("r", this.rawFrequencyStyles.daily.r)
+      .style("opacity", this.rawFrequencyStyles.daily.opacity)
     this.svg.selectAll('.weeklyRawFreqPoints')
-      .attr("r", rawFrequencyStyles.weekly.r)
-      .style("opacity", rawFrequencyStyles.weekly.opacity)
+      .attr("r", this.rawFrequencyStyles.weekly.r)
+      .style("opacity", this.rawFrequencyStyles.weekly.opacity)
   } else {
     const s = this.svg.selectAll(`.${cssSafeName(`variant_${legendSwatchHovered}`)}`);
     s.selectAll('.dailyRawFreqPoints')
-      .attr("r", rawFrequencyStyles.daily.rFocus)
-      .style("opacity", rawFrequencyStyles.daily.opacityFocus)
+      .attr("r", this.rawFrequencyStyles.daily.rFocus)
+      .style("opacity", this.rawFrequencyStyles.daily.opacityFocus)
     s.selectAll('.weeklyRawFreqPoints')
-      .attr("r", rawFrequencyStyles.weekly.rFocus)
-      .style("opacity", rawFrequencyStyles.weekly.opacityFocus)
+      .attr("r", this.rawFrequencyStyles.weekly.rFocus)
+      .style("opacity", this.rawFrequencyStyles.weekly.opacityFocus)
   }
 }
 
