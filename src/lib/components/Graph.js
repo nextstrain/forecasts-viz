@@ -58,16 +58,6 @@ export const Graph = ({modelData, sizes, location, params, options}) => {
 }
 
 
-/**
- * The params will be equality checked to decide when to update the graph.
- * Because `displayTopVariants() !== displayTopVariants()`, we want to calculate
- * them up-front so that we use the same reference each time expandParams() is
- * called. This has implications for components providing their own functions -
- * they must be memoised.
- * Some (but not all) of this could be removed if we didn't use factories
- * to create our tooltips, but factories do have their advantages!
- * @private
- */
 const tooltipFrequency = displayTopVariants({fmt: d3.format(".1%")});
 const tooltipGeneric = displayTopVariants();
 const percentageFormat = d3.format(".0%");
