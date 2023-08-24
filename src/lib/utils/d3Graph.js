@@ -272,6 +272,19 @@ D3Graph.prototype.updateScale = function(options) {
   });
 }
 
+const rawFrequencyStyles = {
+    daily:  {
+      r: 1.1, rFocus: 3,
+      opacity: 0.3, opacityFocus: 1,
+      colorModifier: (color) => d3.color(color).darker(0.5).toString()
+    },
+    weekly: {
+      r: 1.6, rFocus: 4,
+      opacity: 0.3, opacityFocus: 1,
+      colorModifier: (color) => d3.color(color).brighter(0.2).toString()
+    },
+}
+
 /**
  * Prototype called when the "Daily raw data" toggle is changed
  */
@@ -287,7 +300,7 @@ D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
       .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
 
     const variantColor = this.getVariantColor(variant);
-    const pointColor = d3.color(variantColor).darker(0.5).toString();
+    const pointColor = rawFrequencyStyles.daily.colorModifier(variantColor)
 
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
       .selectAll("dailyRawFreqPoints")
@@ -297,8 +310,8 @@ D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
         .attr("class", "dailyRawFreqPoints")
         .attr("cx", (d) => this.x(d.get('date')))
         .attr("cy", (d) => this.y(d.get(key) || false))
-        .attr("r", 1.1)
-        .style("opacity", 0.3)
+        .attr("r", rawFrequencyStyles.daily.r)
+        .style("opacity", rawFrequencyStyles.daily.opacity)
         .style("fill", pointColor)
   })
 }
@@ -318,7 +331,7 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
       .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
 
     const variantColor = this.getVariantColor(variant);
-    const pointColor = d3.color(variantColor).brighter(0.2).toString();
+    const pointColor = rawFrequencyStyles.weekly.colorModifier(variantColor)
 
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
       .selectAll("weeklyRawFreqPoints")
@@ -328,10 +341,29 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
         .attr("class", "weeklyRawFreqPoints")
         .attr("cx", (d) => this.x(d.get('date')))
         .attr("cy", (d) => this.y(d.get(key) || false))
-        .attr("r", 1.6)
-        .style("opacity", 0.3)
+        .attr("r", rawFrequencyStyles.weekly.r)
+        .style("opacity", rawFrequencyStyles.weekly.opacity)
         .style("fill", pointColor)
   })
+}
+
+D3Graph.prototype.changeRawFreqPointsFocus = function(legendSwatchHovered) {
+  if (legendSwatchHovered===undefined) {
+    this.svg.selectAll('.dailyRawFreqPoints')
+      .attr("r", rawFrequencyStyles.daily.r)
+      .style("opacity", rawFrequencyStyles.daily.opacity)
+    this.svg.selectAll('.weeklyRawFreqPoints')
+      .attr("r", rawFrequencyStyles.weekly.r)
+      .style("opacity", rawFrequencyStyles.weekly.opacity)
+  } else {
+    const s = this.svg.selectAll(`.${cssSafeName(`variant_${legendSwatchHovered}`)}`);
+    s.selectAll('.dailyRawFreqPoints')
+      .attr("r", rawFrequencyStyles.daily.rFocus)
+      .style("opacity", rawFrequencyStyles.daily.opacityFocus)
+    s.selectAll('.weeklyRawFreqPoints')
+      .attr("r", rawFrequencyStyles.weekly.rFocus)
+      .style("opacity", rawFrequencyStyles.weekly.opacityFocus)
+  }
 }
 
 /**

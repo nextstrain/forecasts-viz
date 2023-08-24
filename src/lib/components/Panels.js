@@ -177,6 +177,7 @@ const Panel = ({
   const [logit, toggleLogit] = useState(false);
   const [showDailyRawFreq, toggleShowDailyRawFreq] = useState(false);
   const [showWeeklyRawFreq, toggleShowWeeklyRawFreq] = useState(false);
+  const [legendSwatchHovered, setLegendSwatchHovered] = useState(undefined);
 
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);
@@ -203,7 +204,7 @@ const Panel = ({
       </OptionsContainer>
 
       <Container>
-        <Legend modelData={modelData} sizes={sizes} />
+        <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={(canShowDailyRawFreq || canShowWeeklyRawFreq) ? setLegendSwatchHovered : () => {}} />
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
           {locationList
             .map((location) => (
@@ -212,7 +213,7 @@ const Panel = ({
                 sizes={sizes}
                 location={location}
                 params={params}
-                options={{logit, showDailyRawFreq, showWeeklyRawFreq}}
+                options={{logit, showDailyRawFreq, showWeeklyRawFreq, legendSwatchHovered}}
                 key={`${params.preset || params.key}_${location}`}
               />
             ))

@@ -51,7 +51,7 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
      */
 
     if (!isEqual(prevDeps.current.options, options)) {
-      console.log("Updating graph as options have changed");
+
       if (!isEqual(prevDeps.current.options.logit, options.logit)) {
         graph.current.updateScale(options)
       }
@@ -60,6 +60,9 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
       }
       if (!isEqual(prevDeps.current.options.showWeeklyRawFreq, options.showWeeklyRawFreq)) {
         graph.current.toggleWeeklyRawFreqPoints(options)
+      }
+      if (!isEqual(prevDeps.current.options.legendSwatchHovered, options.legendSwatchHovered)) {
+        graph.current.changeRawFreqPointsFocus(options.legendSwatchHovered)
       }
       prevDeps.current.options = options;
     }
