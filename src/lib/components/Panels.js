@@ -204,7 +204,7 @@ const Panel = ({
       </OptionsContainer>
 
       <Container>
-        <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={(canShowDailyRawFreq || canShowWeeklyRawFreq) ? setLegendSwatchHovered : () => {}} />
+        <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={setLegendSwatchHovered} />
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
           {locationList
             .map((location) => (

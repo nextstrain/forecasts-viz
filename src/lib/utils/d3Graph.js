@@ -186,10 +186,11 @@ D3Graph.prototype.drawPoints = function() {
       .filter((pt) => !isNaN(pt.get(this.params.key)))
   }
   this.svg.append('g')
-    .selectAll("dot")
+    .selectAll(".dot")
     .data(this.points)
     .enter()
     .append("circle")
+      .attr("class", "dot")
       .attr("cx", (d) => this.x(d.get('variant')))
       .attr("cy", (d) => this.y(d.get(this.params.key)))
       .attr("r", 4)
@@ -202,14 +203,15 @@ D3Graph.prototype.drawPoints = function() {
       })
   if (this.params.interval) {
     this.svg.append('g')
-      .selectAll("HDI")
+      .selectAll(".hdi")
       .data(this.points)
       .enter()
       .append('path')
+        .attr('class', 'hdi')
         .attr("fill", "none")
         .attr("stroke", (d) => this.modelData.get('variantColors').get(d.get('variant')) ||  this.modelData.get('variantColors').get('other'))
         .attr("stroke-width", 3)
-        .attr("stroke-opacity", 1)
+        .style("stroke-opacity", 1)
         .attr("d", (d) => `M ${this.x(d.get('variant'))} ${this.y(d.get(this.params.interval[0]))} L ${this.x(d.get('variant'))} ${this.y(d.get(this.params.interval[1]))}`)
         .call((sel) => {
           if (typeof this.params.tooltipPt!=="function") return;
@@ -397,6 +399,18 @@ D3Graph.prototype.singleVariantFocus = function(legendSwatchHovered) {
         .style('opacity', 1)
         .attr("stroke-width", 3)
     }
+  } else if (this.params.graphType==='points') {
+    /* We don't modify circle opacities here as HPD lines with circles drawn over
+    them don't look nice if both opacities are <1 */
+    const value = (d, normalValue, focusValue, unfocusedValue) => {
+      if (legendSwatchHovered===undefined) return normalValue;
+      if (d.get('variant')===legendSwatchHovered) return focusValue;
+      return unfocusedValue;
+    }
+    this.svg.selectAll('.dot')
+      .attr('r', (d) => value(d, 4, 6, 3))
+    this.svg.selectAll('.hdi') /* empty selection if no interval data available */
+      .style("stroke-opacity", (d) => value(d, 1, 1, 0.4))
   }
 }
 
