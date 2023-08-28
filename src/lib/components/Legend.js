@@ -34,15 +34,20 @@ const LegendContainer = styled.div`
   }
 `;
 
-const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered) => {
+const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered, preset) => {
   useEffect(() => {
     /* legend entries are arranged via the parent container's flexbox settings */
+
+    let variants = modelData.get('variants')
+    if (preset==="growthAdvantage") {
+      variants = variants.filter((v) => v!==modelData.get('pivot'))
+    }
 
     const dom = d3.select(d3Container.current);
     dom.selectAll("*").remove();
 
     const containers = dom.selectAll("legendContainers")
-      .data(modelData.get('variants'))
+      .data(variants)
       .enter().append("div")
         .style("display", "flex")
         .style("align-items", "center") // legend swatches vertically centered with legend text
@@ -63,12 +68,12 @@ const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered) => {
     containers.append("span")
       .text((variant) => modelData.get('variantDisplayNames').get(variant) || variant)
 
-  }, [d3Container, sizes, modelData, setLegendSwatchHovered])
+  }, [d3Container, sizes, modelData, setLegendSwatchHovered, preset])
 }
 
-export const Legend = ({modelData, sizes, setLegendSwatchHovered}) => {
+export const Legend = ({modelData, sizes, setLegendSwatchHovered, preset}) => {
   const legendContainer = useRef(null);
-  useLegend(legendContainer, modelData, sizes, setLegendSwatchHovered); // renders the legend
+  useLegend(legendContainer, modelData, sizes, setLegendSwatchHovered, preset); // renders the legend
   return (
     <LegendContainer sizes={sizes} id="legend" ref={legendContainer}/>
   );

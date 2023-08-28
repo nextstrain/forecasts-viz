@@ -204,7 +204,7 @@ const Panel = ({
       </OptionsContainer>
 
       <Container>
-        <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={setLegendSwatchHovered} />
+        <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={setLegendSwatchHovered} preset={params.preset}/>
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
           {locationList
             .map((location) => (
