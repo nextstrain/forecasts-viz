@@ -12,6 +12,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.modelData = modelData;
   this.params = params;
   this.sizes = sizes;
+  this.setStyles();
 
   this.createScales(options);
   this.drawAxes();
@@ -23,6 +24,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.drawArea();
   this.drawLines();
   this.drawPoints();
+  /* Note: raw data points never drawn on initial render */
 
   this.drawForecastLine();
   this.drawDashedLines();
@@ -119,7 +121,7 @@ D3Graph.prototype.drawLines = function() {
         .attr("class", "area")
         .attr("stroke", "none")
         .attr("fill", color)
-        .attr("opacity", 0.2)
+        .attr("opacity", this.styles.lines.area.opacity.normal)
         .attr("d", this.area(temporalPoints))
         .style('pointer-events', 'none')
     }
@@ -128,8 +130,8 @@ D3Graph.prototype.drawLines = function() {
       .attr("class", "line")
       .attr("fill", "none")
       .attr("stroke", color)
-      .attr("stroke-width", 2)
-      .attr("stroke-opacity", 0.8)
+      .attr("stroke-width", this.styles.lines.line.strokeWidth.normal)
+      .attr("stroke-opacity", this.styles.lines.line.opacity.normal)
       .attr("d", this.line(temporalPoints))
       .style('pointer-events', 'none')
     /**
@@ -184,13 +186,14 @@ D3Graph.prototype.drawPoints = function() {
       .filter((pt) => !isNaN(pt.get(this.params.key)))
   }
   this.svg.append('g')
-    .selectAll("dot")
+    .selectAll(".dot")
     .data(this.points)
     .enter()
     .append("circle")
+      .attr("class", "dot")
       .attr("cx", (d) => this.x(d.get('variant')))
       .attr("cy", (d) => this.y(d.get(this.params.key)))
-      .attr("r", 4)
+      .attr("r", this.styles.points.circle.r.normal)
       .style("fill", (d) => this.modelData.get('variantColors').get(d.get('variant')) ||  this.modelData.get('variantColors').get('other'))
       .call((sel) => {
         if (typeof this.params.tooltipPt!=="function") return;
@@ -200,14 +203,15 @@ D3Graph.prototype.drawPoints = function() {
       })
   if (this.params.interval) {
     this.svg.append('g')
-      .selectAll("HDI")
+      .selectAll(".hdi")
       .data(this.points)
       .enter()
       .append('path')
+        .attr('class', 'hdi')
         .attr("fill", "none")
         .attr("stroke", (d) => this.modelData.get('variantColors').get(d.get('variant')) ||  this.modelData.get('variantColors').get('other'))
         .attr("stroke-width", 3)
-        .attr("stroke-opacity", 1)
+        .style("stroke-opacity", this.styles.points.confidence.opacity.normal)
         .attr("d", (d) => `M ${this.x(d.get('variant'))} ${this.y(d.get(this.params.interval[0]))} L ${this.x(d.get('variant'))} ${this.y(d.get(this.params.interval[1]))}`)
         .call((sel) => {
           if (typeof this.params.tooltipPt!=="function") return;
@@ -260,7 +264,170 @@ D3Graph.prototype.updateScale = function(options) {
     g.selectAll('.area')
       .transition().duration(TRANSITION_DURATION)
       .attr("d", this.area(temporalPoints))
+
+    g.selectAll('.dailyRawFreqPoints') // may be empty - that's ok!
+      .transition().duration(TRANSITION_DURATION)
+      .attr("cy", (d) => this.y(d.get(`daily_raw_freq`) || false))
+
+    g.selectAll('.weeklyRawFreqPoints') // may be empty - that's ok!
+      .transition().duration(TRANSITION_DURATION)
+      .attr("cy", (d) => this.y(d.get(`weekly_raw_freq`) || false))
   });
+}
+
+D3Graph.prototype.setStyles = function(options) {
+  /* The current responsiveSizing (Panels.js) sets the graph width. Common widths are 260px (small panels)
+  or ~the available page width */
+  const small = this.sizes.width < 300;
+
+  this.styles = {};
+  this.styles.rawFreqs = {
+    daily: {
+      r: small ? {normal: 1.1 , focusInactive: 1.1, focusActive: 2} : {normal: 2 , focusInactive: 2, focusActive: 3},
+      opacity: {normal: 0.3 , focusInactive: 0, focusActive: 1},
+      colorModifier: (color) => d3.color(color).darker(0.5).toString()
+    }
+  }
+  this.styles.rawFreqs.weekly = {
+    r: small ? {normal: 1.1 , focusInactive: 1.1, focusActive: 2} : {normal: 2 , focusInactive: 2, focusActive: 3},
+    opacity: this.styles.rawFreqs.daily.opacity,
+    colorModifier: (color) => d3.color(color).brighter(0.2).toString()
+  }
+  this.styles.lines = {
+    line: {
+      strokeWidth: {normal: 2 , focusInactive: 2, focusActive: 3},
+      opacity: {normal: 0.8 , focusInactive: 0.3, focusActive: 1},
+    },
+    area: {
+      opacity: {normal: 0.2 , focusInactive: 0, focusActive: 0.2},
+    },
+  }
+  this.styles.points = {
+    circle: {
+      r: {normal: 4 , focusInactive: 3, focusActive: 6},
+    },
+    confidence: {
+      opacity: {normal: 1 , focusInactive: 0.4, focusActive: 1},
+    }
+  }
+}
+
+/**
+ * Prototype called when the "Daily raw data" toggle is changed
+ */
+D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
+  if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
+  if (!options.showDailyRawFreq) {
+    this.svg.selectAll('.dailyRawFreqPoints').remove("*")
+    return;
+  }
+  const key = `daily_raw_freq`
+  this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
+    const temporalPoints = variantPoint.get('temporal')
+      .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
+
+    const variantColor = this.getVariantColor(variant);
+    const pointColor = this.styles.rawFreqs.daily.colorModifier(variantColor)
+
+    this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
+      .selectAll("dailyRawFreqPoints")
+      .data(temporalPoints)
+      .enter()
+      .append("circle")
+        .attr("class", "dailyRawFreqPoints")
+        .attr("cx", (d) => this.x(d.get('date')))
+        .attr("cy", (d) => this.y(d.get(key) || false))
+        .attr("r", this.styles.rawFreqs.daily.r.normal)
+        .style("opacity", this.styles.rawFreqs.daily.opacity.normal)
+        .style("fill", pointColor)
+  })
+}
+
+/**
+ * Prototype called when the "7-day smoothed data" toggle is changed
+ */
+D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
+  if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
+  if (!options.showWeeklyRawFreq) {
+    this.svg.selectAll('.weeklyRawFreqPoints').remove("*")
+    return;
+  }
+  const key = `weekly_raw_freq`
+  this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
+    const temporalPoints = variantPoint.get('temporal')
+      .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
+
+    const variantColor = this.getVariantColor(variant);
+    const pointColor = this.styles.rawFreqs.weekly.colorModifier(variantColor)
+
+    this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
+      .selectAll("weeklyRawFreqPoints")
+      .data(temporalPoints)
+      .enter()
+      .append("circle")
+        .attr("class", "weeklyRawFreqPoints")
+        .attr("cx", (d) => this.x(d.get('date')))
+        .attr("cy", (d) => this.y(d.get(key) || false))
+        .attr("r", this.styles.rawFreqs.weekly.r.normal)
+        .style("opacity", this.styles.rawFreqs.weekly.opacity.normal)
+        .style("fill", pointColor)
+  })
+}
+
+D3Graph.prototype.singleVariantFocus = function(legendSwatchHovered) {
+  /**
+   * Calls to this method ultimately come from mouseover/mouseout events. It is
+   * _not_ guaranteed that a browser will fire a mouseout event (the faster the
+   * mouse move the more likely it is to be missed). For that reason we always
+   * ~reset the visual state in this method before highlighting the variant; this
+   * helps the case where we move from legend A to legend B and the browser doesn't
+   * fire a mouseout when leaving A. It will not address the case where we move from
+   * legend B to outside the legend; to address this we'd have to listen to mousemove
+   * events and manually check positions which I think is unnecessary complexity
+   * for the current state of the project.
+   */
+  if (this.params.graphType==="lines") {
+    /* Initially set everything to normal | focusInactive styling, then select the focus variant
+    (if applicable) and modify the styles of that */
+    const focusState = legendSwatchHovered===undefined ? 'normal' : 'focusInactive';
+    this.svg.selectAll('.dailyRawFreqPoints')
+      .attr("r", this.styles.rawFreqs.daily.r[focusState])
+      .style("opacity", this.styles.rawFreqs.daily.opacity[focusState])
+    this.svg.selectAll('.weeklyRawFreqPoints')
+    .attr("r", this.styles.rawFreqs.weekly.r[focusState])
+    .style("opacity", this.styles.rawFreqs.weekly.opacity[focusState])
+    this.svg.selectAll('.area')
+      .style('opacity', this.styles.lines.area.opacity[focusState])
+    this.svg.selectAll('.line')
+      .style('opacity', this.styles.lines.line.opacity[focusState])
+      .attr("stroke-width", this.styles.lines.line.strokeWidth[focusState])
+    if (legendSwatchHovered!==undefined) {
+      const s = this.svg.selectAll(`.${cssSafeName(`variant_${legendSwatchHovered}`)}`);
+      s.selectAll('.dailyRawFreqPoints')
+        .attr("r", this.styles.rawFreqs.daily.r.focusActive)
+        .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
+      s.selectAll('.weeklyRawFreqPoints')
+        .attr("r", this.styles.rawFreqs.daily.r.focusActive)
+        .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
+      s.selectAll('.area')
+        .style('opacity', this.styles.lines.area.opacity.focusActive)
+      s.selectAll('.line')
+        .style('opacity', this.styles.lines.line.opacity.focusActive)
+        .attr("stroke-width", this.styles.lines.line.strokeWidth.focusActive)
+    }
+  } else if (this.params.graphType==='points') {
+    /* We don't modify circle opacities here as HPD lines with circles drawn over
+    them don't look nice if both opacities are <1 */
+    const focusState = (d) => {
+      if (legendSwatchHovered===undefined) return 'normal';
+      if (d.get('variant')===legendSwatchHovered) return 'focusActive';
+      return 'focusInactive';
+    }
+    this.svg.selectAll('.dot')
+      .attr('r', (d) => this.styles.points.circle.r[focusState(d)])
+    this.svg.selectAll('.hdi') /* empty selection if no interval data available */
+      .style("stroke-opacity", (d) => this.styles.points.confidence.opacity[focusState(d)])
+  }
 }
 
 /**

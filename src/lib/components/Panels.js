@@ -45,6 +45,13 @@ const PanelSectionContainer = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(${props => props.smallMultipleWidth}px, 1fr));
 `;
 
+const OptionsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: flex-end;
+`
+
 /**
  * This function should handle all styling parameters related to sizing -- graph sizes,
  * legend sizes, text sizes etc. It is a work in progress. All styles defined here can be
@@ -168,13 +175,17 @@ const Panel = ({
 }) => {
   const {modelData, error} = data;
   const [logit, toggleLogit] = useState(false);
+  const [showDailyRawFreq, toggleShowDailyRawFreq] = useState(false);
+  const [showWeeklyRawFreq, toggleShowWeeklyRawFreq] = useState(false);
+  const [legendSwatchHovered, setLegendSwatchHovered] = useState(undefined);
 
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);
   const  locationList = locations || modelData?.get('locations');
   const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
-
+  const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('daily_raw_freq');
+  const canShowWeeklyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('weekly_raw_freq');
 
   if (error) {
     return (<ErrorMessage error={error}/>);
@@ -186,9 +197,14 @@ const Panel = ({
 
   return (
     <div ref={outerDivRef}>
-      {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
+      <OptionsContainer>
+        {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
+        {canShowDailyRawFreq && <Toggle label="Daily raw data" checked={showDailyRawFreq} sizes={sizes} onChange={() => toggleShowDailyRawFreq(!showDailyRawFreq)}/>}
+        {canShowWeeklyRawFreq && <Toggle label="Weekly raw data" checked={showWeeklyRawFreq} sizes={sizes} onChange={() => toggleShowWeeklyRawFreq(!showWeeklyRawFreq)}/>}
+      </OptionsContainer>
+
       <Container>
-        <Legend modelData={modelData} sizes={sizes} />
+        <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={setLegendSwatchHovered} preset={params.preset}/>
         <PanelSectionContainer smallMultipleWidth={sizes.width}>
           {locationList
             .map((location) => (
@@ -197,7 +213,7 @@ const Panel = ({
                 sizes={sizes}
                 location={location}
                 params={params}
-                options={{logit}}
+                options={{logit, showDailyRawFreq, showWeeklyRawFreq, legendSwatchHovered}}
                 key={`${params.preset || params.key}_${location}`}
               />
             ))
