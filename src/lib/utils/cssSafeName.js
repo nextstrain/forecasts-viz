@@ -49,9 +49,7 @@ export const cssSafeName = str => {
 
   let encodedClassName = str.replace(nonCssSafeCharacters, encodeCharacter);
 
-  if (invalidBeginningOfClassname.test(encodedClassName)) {
-    encodedClassName = `_${encodedClassName}`;
-  }
-
-  return encodedClassName;
+  return invalidBeginningOfClassname.test(encodedClassName)
+    ? `_${encodedClassName}`
+    : encodedClassName
 };
