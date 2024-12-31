@@ -1,5 +1,38 @@
 # Visualisation of evofr model outputs
 
+**A [Web-Component](https://developer.mozilla.org/en-US/docs/Web/API/Web_components) to visualise [evofr](https://github.com/blab/evofr/) model outputs.**
+
+
+### Use this web component
+
+TKTK
+
+### Development
+
+You'll need to be in an environment with NodeJS, e.v. via conda:
+
+```bash
+conda create -n node20 -c conda-forge nodejs=20 # or similar
+conda activate node20
+```
+
+Install the dependencies & download model JSONs:
+
+```bash
+npm ci
+npm run download
+```
+
+Run:
+
+```bash
+npm run start
+```
+
+---
+
+# Old README
+
 > _This is a work in progress - all functionality, parameters etc are in flux_
 
 React components to parse [evofr](https://github.com/blab/evofr) model outputs and visualise them.
@@ -41,8 +74,7 @@ The test app has two pages:
 Firstly create a suitable environment with nodejs, e.g. by using conda:
 
 ```sh
-conda create -n node18 -c conda-forge nodejs=18 # or similar
-conda activate node18
+
 ```
 Then install dependencies and run the test app:
 
