@@ -73,12 +73,6 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
    */
   let width = 260;
   let height = params.preset==="growthAdvantage" ? 230 : 210;
-  if (numVariants > 20) {
-    height = 300;
-    width = 500;
-    legendFontSize = 11;
-    legendRadius = 6;
-  }
 
   /* If there's only 1 or 2 locations make each full width */
   if (locationList?.length<3) {
