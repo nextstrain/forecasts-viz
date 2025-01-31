@@ -65,7 +65,7 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  * @property {Map} dateIdx lookup for date string -> idx in dates array
  * @property {Map} variantColors provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided.
  * @property {Map} variantDisplayNames provided via `DatasetConfig`. Overrides data set in the JSON. Keys used if not provided.
- * @property {String} pivot Currently the final entry in the model's list of variants
+ * @property {String} pivot modelJson.metadata.pivot if available, else final entry in the model's list of variants
  * @property {string} nowcastFinalDate
  * @property {string} updated
  * @property {Object} domains
@@ -102,9 +102,9 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     ["points", undefined],
     ["domains", undefined],
     ["sites", sites],
-    // TODO: use the explicit pivot in the metadata instead of assuming the
-    // pivot is the last variant in the array once it has been added to the evofr output
-    ["pivot", modelJson.metadata.variants[modelJson.metadata.variants.length - 1]]
+    // Use the explicit pivot in the metadata if available, otherwise assume the
+    // pivot is the last variant in the array
+    ["pivot", modelJson.metadata.pivot || modelJson.metadata.variants[modelJson.metadata.variants.length - 1]]
   ])
 
   /* Set variant colors + display names from the config, or the JSON, or fallback to a default */
