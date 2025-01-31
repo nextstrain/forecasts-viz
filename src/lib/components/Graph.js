@@ -88,7 +88,7 @@ function expandParams(providedParams, location) {
       params.tooltipPt = categoryPointTooltip;
       params.yDomain = function() {return this.modelData.get('domains').get('ga');};
       params.xDomain = function() {
-        return ['', ...this.modelData.get('variants').filter(v => v !== this.modelData.get('pivot'))]
+        return ['', ...this.modelData.get('variants')]
       }
       params.dashedLines = [1.0]
       break;

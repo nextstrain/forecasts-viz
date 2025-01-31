@@ -39,9 +39,6 @@ const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered, preset
     /* legend entries are arranged via the parent container's flexbox settings */
 
     let variants = modelData.get('variants')
-    if (preset==="growthAdvantage") {
-      variants = variants.filter((v) => v!==modelData.get('pivot'))
-    }
 
     const dom = d3.select(d3Container.current);
     dom.selectAll("*").remove();
