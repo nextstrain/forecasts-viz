@@ -63,13 +63,13 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  *                         These dates bridge both `modelJson.metadata.dates` and `modelJson.metadata.forecast_dates`.
  * @property {Array} locations modelJson.metadata.location
  * @property {Map} dateIdx lookup for date string -> idx in dates array
- * @property {Map} variantColors provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided. 
+ * @property {Map} variantColors provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided.
  * @property {Map} variantDisplayNames provided via `DatasetConfig`. Overrides data set in the JSON. Keys used if not provided.
  * @property {String} pivot Currently the final entry in the model's list of variants
  * @property {string} nowcastFinalDate
  * @property {string} updated
  * @property {Object} domains
- * 
+ *
  * @inner
  * @memberof module:@nextstrain/evofr-viz
  */
@@ -144,7 +144,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
       const site = d.site;
       if (sites.has(site)) {
         const store = pointEstimates.has(site) ?
-          points.get(d.location).get(d.variant) : 
+          points.get(d.location).get(d.variant) :
           points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)];
 
         /* if it's not a point estimate enforce a date */
@@ -239,7 +239,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
 };
 
 /**
- * @private 
+ * @private
  */
 function extractDatesFromModels(modelJson) {
   const jsonDates = (modelJson.metadata.dates || []).sort(); // YYYY-MM-DD are sorted correctly
