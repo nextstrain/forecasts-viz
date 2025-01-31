@@ -92,9 +92,20 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
   const [dates, updated, nowcastFinalDate, dateSummary] = extractDatesFromModels(modelJson)
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
+  // Reorder variants so that the pivot is first for all displays
+  const variants = [...modelJson.metadata.variants];
+  // Use the explicit pivot in the metadata if available, otherwise assume the
+  // pivot is the last variant in the array
+  const pivot = modelJson.metadata.pivot || variants[variants.length - 1];
+  const pivotIndex = variants.indexOf(pivot);
+  if (pivotIndex >= 0) {
+    variants.splice(pivotIndex, 1);
+    variants.unshift(pivot);
+  }
+
   const data = new Map([
     ["locations", modelJson.metadata.location],
-    ["variants", modelJson.metadata.variants],
+    ["variants", variants],
     ["dates", dates],
     ["dateIdx", dateIdx],
     ["updated", updated],
@@ -102,9 +113,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     ["points", undefined],
     ["domains", undefined],
     ["sites", sites],
-    // Use the explicit pivot in the metadata if available, otherwise assume the
-    // pivot is the last variant in the array
-    ["pivot", modelJson.metadata.pivot || modelJson.metadata.variants[modelJson.metadata.variants.length - 1]]
+    ["pivot", pivot]
   ])
 
   /* Set variant colors + display names from the config, or the JSON, or fallback to a default */
