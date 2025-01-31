@@ -30,7 +30,8 @@ The approach should be (I think):
 
 ## Pivot variant
 
-Currently we use last variant in the array, however this is soon to be explicitly provided in the model JSON.
+Uses the `modelJson.metadata.pivot` value if it's available, otherwise defaults to
+the last variant in the array.
 
 ## Responsive graph sizes
 

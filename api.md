@@ -169,7 +169,7 @@ visualisation component in the future. See NOTES.md for more.
 | dateIdx | <code>Map</code> | lookup for date string -> idx in dates array |
 | variantColors | <code>Map</code> | provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided. |
 | variantDisplayNames | <code>Map</code> | provided via `DatasetConfig`. Overrides data set in the JSON. Keys used if not provided. |
-| pivot | <code>String</code> | Currently the final entry in the model's list of variants |
+| pivot | <code>String</code> | `modelJson.metadata.pivot` if it's available, otherwise defaults to the final entry in the model's list of variants |
 | nowcastFinalDate | <code>string</code> |  |
 | updated | <code>string</code> |  |
 | domains | <code>Object</code> |  |
