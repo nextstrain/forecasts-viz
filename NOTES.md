@@ -11,7 +11,7 @@ A related implementation detail used here is that d3 data (e.g. scales), as well
 There is an alternative approach which uses a series of useEffect hooks, and uses their inbuilt dependency comparisons to choose the d3 function to triggger.
 This is how [the measurements panel in auspice](https://github.com/nextstrain/auspice/blob/master/src/components/measurements/index.js#L129) is designed.
 
-There are pros and cons to each approach. 
+There are pros and cons to each approach.
 
 
 ## Where should the data points in the JSON be parsed?
@@ -30,7 +30,8 @@ The approach should be (I think):
 
 ## Pivot variant
 
-Currently we use last variant in the array, however this is soon to be explicitly provided in the model JSON.
+Uses the `modelJson.metadata.pivot` value if it's available, otherwise defaults to
+the last variant in the array.
 
 ## Responsive graph sizes
 

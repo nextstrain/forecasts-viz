@@ -63,13 +63,13 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  *                         These dates bridge both `modelJson.metadata.dates` and `modelJson.metadata.forecast_dates`.
  * @property {Array} locations modelJson.metadata.location
  * @property {Map} dateIdx lookup for date string -> idx in dates array
- * @property {Map} variantColors provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided. 
+ * @property {Map} variantColors provided via `DatasetConfig`. Overrides data set in the JSON. Default colors set if not provided.
  * @property {Map} variantDisplayNames provided via `DatasetConfig`. Overrides data set in the JSON. Keys used if not provided.
- * @property {String} pivot Currently the final entry in the model's list of variants
+ * @property {String} pivot modelJson.metadata.pivot if available, else final entry in the model's list of variants
  * @property {string} nowcastFinalDate
  * @property {string} updated
  * @property {Object} domains
- * 
+ *
  * @inner
  * @memberof module:@nextstrain/evofr-viz
  */
@@ -92,9 +92,20 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
   const [dates, updated, nowcastFinalDate, dateSummary] = extractDatesFromModels(modelJson)
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
+  // Reorder variants so that the pivot is first for all displays
+  const variants = [...modelJson.metadata.variants];
+  // Use the explicit pivot in the metadata if available, otherwise assume the
+  // pivot is the last variant in the array
+  const pivot = modelJson.metadata.pivot || variants[variants.length - 1];
+  const pivotIndex = variants.indexOf(pivot);
+  if (pivotIndex >= 0) {
+    variants.splice(pivotIndex, 1);
+    variants.unshift(pivot);
+  }
+
   const data = new Map([
     ["locations", modelJson.metadata.location],
-    ["variants", modelJson.metadata.variants],
+    ["variants", variants],
     ["dates", dates],
     ["dateIdx", dateIdx],
     ["updated", updated],
@@ -102,9 +113,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     ["points", undefined],
     ["domains", undefined],
     ["sites", sites],
-    // TODO: use the explicit pivot in the metadata instead of assuming the
-    // pivot is the last variant in the array once it has been added to the evofr output
-    ["pivot", modelJson.metadata.variants[modelJson.metadata.variants.length - 1]]
+    ["pivot", pivot]
   ])
 
   /* Set variant colors + display names from the config, or the JSON, or fallback to a default */
@@ -144,7 +153,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
       const site = d.site;
       if (sites.has(site)) {
         const store = pointEstimates.has(site) ?
-          points.get(d.location).get(d.variant) : 
+          points.get(d.location).get(d.variant) :
           points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)];
 
         /* if it's not a point estimate enforce a date */
@@ -239,7 +248,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
 };
 
 /**
- * @private 
+ * @private
  */
 function extractDatesFromModels(modelJson) {
   const jsonDates = (modelJson.metadata.dates || []).sort(); // YYYY-MM-DD are sorted correctly

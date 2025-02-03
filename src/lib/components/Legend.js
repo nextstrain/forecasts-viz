@@ -27,7 +27,7 @@ const LegendContainer = styled.div`
   row-gap: 3px;
   & > div { /* container for circle + text */
     padding-right: 10px;
-    padding-top: 0px 
+    padding-top: 0px
   }
   & span { /* text */
     margin-left: 3px;
@@ -39,9 +39,6 @@ const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered, preset
     /* legend entries are arranged via the parent container's flexbox settings */
 
     let variants = modelData.get('variants')
-    if (preset==="growthAdvantage") {
-      variants = variants.filter((v) => v!==modelData.get('pivot'))
-    }
 
     const dom = d3.select(d3Container.current);
     dom.selectAll("*").remove();
@@ -53,7 +50,7 @@ const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered, preset
         .style("align-items", "center") // legend swatches vertically centered with legend text
         .on("mouseover", (_, variant) => setLegendSwatchHovered(variant))
         .on("mouseout", () => setLegendSwatchHovered(undefined))
-  
+
     containers.append("svg")
       .style("flex-shrink", "0")
       .attr("width", sizes.legendRadius*2)
@@ -64,7 +61,7 @@ const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered, preset
         .attr("cy", sizes.legendRadius)
         .attr("r", sizes.legendRadius)
         .style("fill", (variant) => modelData.get('variantColors').get(variant) ||  modelData.get('variantColors').get('other'))
-    
+
     containers.append("span")
       .text((variant) => modelData.get('variantDisplayNames').get(variant) || variant)
 

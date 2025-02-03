@@ -13,13 +13,13 @@ const D3Container = styled.div`
  * Configuration for how a graph is to be visualised. All/any of these properties may be set by
  * the <PanelDisplay> component. If a preset is set then it will be expanded into a meaningful
  * set of these properties (see `expandParams()`).
- * 
+ *
  * Note that a deep equality check will be used to decide when (if) the params for an individual
  * small-multiple have changes and the graph should therefore re-draw. Because functions are
  * compared by reference you must memoize any functions or provide a consistent reference to them.
  * A common case to avoid is defining the function within a react component (or within the prop
  * declaration), as that function will be re-created each time the component renders.
- * 
+ *
  * @property {("stackedIncidence" | "R_t" | "growthAdvantage" | "frequency")} [preset]
  *      Load a set of preset parameters. Any parameters re-defined here will overwrite those which come from the preset.
  * @property {("points" | "lines" | "stream")} [graphType]
@@ -32,7 +32,7 @@ const D3Container = styled.div`
  * @property {(Function | Number[])} [yDomain] Function's `this` gives access to properties on the D3Graph instance
  * @property {Boolean} [forecastLine]
  * @property {Function} [yTickFmt]
- * @property {Function} [tooltipPt] Function to return HTML when tooltip is attached to a point. 
+ * @property {Function} [tooltipPt] Function to return HTML when tooltip is attached to a point.
  * @property {Function} [tooltipXY] Function to return HTML when tooltip is over any part of the graph.
  * @inner
  * @memberof module:@nextstrain/evofr-viz
@@ -44,7 +44,7 @@ const D3Container = styled.div`
  */
 export const Graph = ({modelData, sizes, location, params, options}) => {
   const d3Container = useRef(null);
-  
+
   /**
    * Add in certain params, as well as interpreting a preset
    */
@@ -88,7 +88,7 @@ function expandParams(providedParams, location) {
       params.tooltipPt = categoryPointTooltip;
       params.yDomain = function() {return this.modelData.get('domains').get('ga');};
       params.xDomain = function() {
-        return ['', ...this.modelData.get('variants').filter(v => v !== this.modelData.get('pivot'))]
+        return ['', ...this.modelData.get('variants')]
       }
       params.dashedLines = [1.0]
       break;
@@ -123,7 +123,7 @@ function expandParams(providedParams, location) {
 /**
  * Returns a function which will compute the y domain using observed values
  * (dependent on the current location). Currently lower bound is always zero.
- * @private 
+ * @private
  */
 export function getDomainUsingKey(key) {
   return function() {
