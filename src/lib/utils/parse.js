@@ -238,7 +238,6 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
 
   console.log(`${modelName} model data`)
   console.log(`\t${data.get('locations').length} locations x ${data.get('variants').length} variants x ${dates.length} dates`)
-  console.log(`\tNote: The earliest ${INITIAL_DAY_CUTOFF} days have been ignored`);
   console.log(`\t${censorCount} censored points as frequency<${THRESHOLD_FREQ}`);
   console.log(`\t${nanCount} points missing`);
   console.log("\t"+dateSummary);
@@ -254,8 +253,17 @@ function extractDatesFromModels(modelJson) {
   const jsonDates = (modelJson.metadata.dates || []).sort(); // YYYY-MM-DD are sorted correctly
   const jsonDatesForecast = (modelJson.metadata.forecast_dates || []).sort();
 
-  /* because we use the dates as the domain for graphs, create the array ourselves to ensure no holes */
-  const dates = datesArray(jsonDates[0], max([jsonDates[jsonDates.length-1], jsonDatesForecast[jsonDatesForecast.length-1]]))
+  /**
+   * If dates are sparse, then we use them as-is, however if the dates are not sparse we create an array ourselves
+   * so that all dates in the period are included. This affects how lines are drawn, as we will not draw lines (and CIs)
+   * over "holes" in the dates array.
+   */
+  const sparse = Object.hasOwn(modelJson.metadata, "sparseDates") ?
+    modelJson.metadata.sparseDates :
+    sparseDates(jsonDates);
+  const dates = sparse ?
+    [...jsonDates, ...jsonDatesForecast] : 
+    datesArray(jsonDates[0], max([jsonDates[jsonDates.length-1], jsonDatesForecast[jsonDatesForecast.length-1]]));
 
   /* The forecast date is simply the crossover date between now-casting and forecasting. It's not that simple -- from
   Marlin: "There’s really two different lines that should be there, but I would start with the date of the model run I think."
@@ -270,9 +278,17 @@ function extractDatesFromModels(modelJson) {
     nowcastFinalDate = jsonDates[jsonDates.length-1];
     updatedMsg = `Forecast starts at ${nowcastFinalDate} (final entry in 'dates').`;
   }
-  /* Skip initial days of model estimates to avoid artifacts in plots */
-  const keepDates = dates.slice(INITIAL_DAY_CUTOFF);
-  const summary = `After removing initial ${INITIAL_DAY_CUTOFF} days, model dates are: ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days). ${updatedMsg}`;
+
+  /* If we don't have sparse dates then skip initial days of model estimates to avoid artifacts in plots */
+  let keepDates, summary;
+  if (sparse) {
+    keepDates = dates;
+    summary = `Provided dates are sparse - there are ${keepDates.length} measurements which span the date range ${keepDates[0]} - ${keepDates[keepDates.length-1]}. ${updatedMsg}`;
+  } else {
+    keepDates = dates.slice(INITIAL_DAY_CUTOFF);
+    summary = `Dates are not sparse, so the earliest ${INITIAL_DAY_CUTOFF} days have been ignored.`;
+    summary += `\n\tDates now span ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days). ${updatedMsg}`;
+  }
   return [keepDates, updated, nowcastFinalDate, summary];
 }
 
@@ -286,6 +302,24 @@ export function datesArray(startDate, endDate) {
     d.setDate(d.getDate()+1);
   }
   return dates
+}
+
+
+/**
+ * Use a heuristic to check if the dates are sparse
+ * If over 80% of the dates are subsequent (i.e. date[x+1] = date[x] + 1 day)
+ * then the data is _not_ sparse.
+ * @private
+ */
+function sparseDates(dates) {
+  const n = dates.length;
+  const objects = dates.map((d) => new Date(d));
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const proportionSingleDaySpacing = objects.map((d, i) => {
+    if (i===0) return 0;
+    return Math.round((d - objects[i-1])/msPerDay);
+  }).filter((gap) => gap===1).length / n;
+  return proportionSingleDaySpacing < 0.8; 
 }
 
 
