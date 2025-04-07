@@ -1,5 +1,4 @@
 import React, {useEffect, useRef} from 'react';
-import styled from 'styled-components';
 import * as d3 from "d3";
 
 /**
@@ -12,27 +11,6 @@ import * as d3 from "d3";
  *                                                                james, jan 2023
  * @private
 */
-
-const LegendContainer = styled.div`
-  /* border: solid red; */
-  display: flex;
-  min-width: ${(props) => props.sizes.legendMinWidthRHS}px;
-  text-align: left;
-  position: block;
-  flex-wrap: wrap;
-  flex-direction: row;
-  justify-content: flex-start;
-  margin: 10px 10px;
-  font-size: ${props => props.sizes.legendFontSize}px;
-  row-gap: 3px;
-  & > div { /* container for circle + text */
-    padding-right: 10px;
-    padding-top: 0px
-  }
-  & span { /* text */
-    margin-left: 3px;
-  }
-`;
 
 const useLegend = (d3Container, modelData, sizes, setLegendSwatchHovered, preset) => {
   useEffect(() => {
@@ -72,6 +50,6 @@ export const Legend = ({modelData, sizes, setLegendSwatchHovered, preset}) => {
   const legendContainer = useRef(null);
   useLegend(legendContainer, modelData, sizes, setLegendSwatchHovered, preset); // renders the legend
   return (
-    <LegendContainer sizes={sizes} id="legend" ref={legendContainer}/>
+    <div className="legend" ref={legendContainer}/>
   );
 }
