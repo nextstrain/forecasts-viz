@@ -69,12 +69,67 @@ D3Graph.prototype.createScales = function({logit}, {log2}) {
 }
 
 D3Graph.prototype.drawAxes = function() {
-  // stream + lines are temporal, points are by variant
-  const xTickFmt = this.params.graphType==="points" ?
-    (variant) => this.modelData.get('variantDisplayNames').get(variant) || variant :
-    dateFormatter;
+  /**
+   * X-axis. Note the scale is always `scalePoint`, so we must control the ticks to
+   * show manually (i.e. can't use `axis.ticks()`)
+   */
+  // First work out which ticks to display and how to display them
+  // `xTicks` is a dict of tick value -> displayed text.
+  const xTicks = {};
+  if (this.params.graphType==="points") {
+    // display every variant (point in the domain)
+    this.x.domain().forEach((variant) => {
+      xTicks[variant] = this.modelData.get('variantDisplayNames').get(variant) || variant;
+    });
+  } else {
+    if (this.modelData.get('sparseDates')===false) {
+      // We have values for every day (i.e. no holes), so display a tick for
+      // the first day of each month
+      this.x.domain().forEach((dStr) => {
+        const date = d3.timeParse("%Y-%m-%d")(dStr);
+        if (d3.timeFormat("%d")(date)==='01') {
+          xTicks[dStr] = `${d3.timeFormat("%b")(date)}`;
+        }
+      });
+    } else {
+      // sparse data - plot the first tick for each month encountered
+      let _lastTick;
+      this.x.domain().forEach((dStr, i) => {
+        const date = d3.timeParse("%Y-%m-%d")(dStr);
+        const month = d3.timeFormat("%m")(date)
+        if (month!==_lastTick) {
+          // don't plot first tick (aesthetic reasons)
+          if (_lastTick) {
+            xTicks[dStr] = `${d3.timeFormat("%b %e")(date)}`;
+          }
+          _lastTick=month;
+        }
+      });
+    }
+  }
   this.svg.append("g")
-    .call(generalXAxis(this.x, this.sizes, xTickFmt));
+    .call((g) => g
+      .attr("transform", `translate(0,${this.sizes.height-this.sizes.bottom})`)
+      .call(
+        d3.axisBottom(this.x)
+          .tickSize(2) /* small (vertical) tick lines */
+          .tickValues(Object.keys(xTicks))
+      )
+      // .call(g => g.select(".domain").remove())
+      .selectAll("text")
+        .text((tickValue) => xTicks[tickValue])
+        // .attr("y", 0)
+        // .attr("x", (d) => x(d))
+        .attr("dy", "0.6em")
+        .attr("transform", "rotate(45)")
+        .style("text-anchor", "start")
+        .style("font-size", "12px")
+        .style("fill", "#aaa")
+    );
+
+  /**
+   * Y-axis
+   */
   this.svg.append("g")
     .attr("class", "yAxis")
     .call(simpleYAxis(this.y, this.sizes, this.params.yTickFmt));
@@ -503,29 +558,6 @@ function invertScalePoint(xPx) {
   return  domain[d3.bisect(rangePoints, xPx) -1];
 }
 
-function generalXAxis(x, sizes, textFn) {
-  return (g) => g
-    .attr("transform", `translate(0,${sizes.height - sizes.bottom})`)
-    .call(d3.axisBottom(x).tickSize(0))
-    // .call(g => g.select(".domain").remove())
-    .selectAll("text")
-      .text(textFn)
-      // .attr("y", 0)
-      // .attr("x", (d) => x(d))
-      .attr("dy", "0.6em")
-      .attr("transform", "rotate(45)")
-      .style("text-anchor", "start")
-      .style("font-size", "12px")
-      .style("fill", "#aaa");
-}
-
-function dateFormatter(dStr) {
-  const date = d3.timeParse("%Y-%m-%d")(dStr);
-  if (parseInt(d3.timeFormat("%d")(date), 10)===1) {
-    return `${d3.timeFormat("%b")(date)}`;
-  }
-  return '';
-}
 
 function simpleYAxis(y, sizes, textFun = (d) => d) {
   return (g) => g

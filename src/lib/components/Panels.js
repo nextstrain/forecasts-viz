@@ -53,7 +53,7 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
   /* control the spacing around graphs via the margin of each graph
   We export these as individual keys so they can be easily overridden.
   The initial ones are generally ok. */
-  let [top, right, bottom, left] = [15, 10, 30, 45];
+  let [top, right, bottom, left] = [15, 10, 35, 45];
   if (params.preset==="growthAdvantage") {
     [top, right, bottom, left] = [15, 40, 70, 40];
   }

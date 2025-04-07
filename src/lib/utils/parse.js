@@ -89,7 +89,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
 
   if (!modelName) modelName="Unknown";
 
-  const [dates, updated, nowcastFinalDate, dateSummary] = extractDatesFromModels(modelJson)
+  const [dates, updated, nowcastFinalDate, dateSummary, sparseDates] = extractDatesFromModels(modelJson)
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
   // Reorder variants so that the pivot is first for all displays
@@ -110,6 +110,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     ["variants", variants],
     ["dates", dates],
     ["dateIdx", dateIdx],
+    ["sparseDates", sparseDates],
     ["updated", updated],
     ["nowcastFinalDate", nowcastFinalDate],
     ["points", undefined],
@@ -327,7 +328,7 @@ function extractDatesFromModels(modelJson) {
     summary = `Dates are not sparse, so the earliest ${INITIAL_DAY_CUTOFF} days have been ignored.`;
     summary += `\n\tDates now span ${keepDates[0]} - ${keepDates[keepDates.length-1]} (${keepDates.length} days). ${updatedMsg}`;
   }
-  return [keepDates, updated, nowcastFinalDate, summary];
+  return [keepDates, updated, nowcastFinalDate, summary, sparse];
 }
 
 export function datesArray(startDate, endDate) {
