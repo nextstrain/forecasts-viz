@@ -14,7 +14,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.sizes = sizes;
   this.setStyles();
 
-  this.createScales(options);
+  this.createScales(options, params);
   this.drawAxes();
 
   this.setupTooltipXY();
@@ -33,7 +33,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
 }
 
 
-D3Graph.prototype.createScales = function({logit}) {
+D3Graph.prototype.createScales = function({logit}, {log2}) {
   const customXDomain = Array.isArray(this.params.xDomain) ?
     [...this.params.xDomain] :
       typeof this.params.xDomain === "function" ?
@@ -58,7 +58,7 @@ D3Graph.prototype.createScales = function({logit}) {
     case "points":
       this.x = d3.scalePoint()
         .domain(customXDomain || [...this.modelData.get('variants')])
-      this.y = d3.scaleLinear()
+      this.y = (log2 ? d3.scaleLog().base(2): d3.scaleLinear())
         .domain(customYDomain)
       break;
     default:
@@ -247,7 +247,7 @@ D3Graph.prototype.annotateFinalPoint = function() {
 D3Graph.prototype.updateScale = function(options) {
   if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
 
-  this.createScales(options); // updates this.x, this.y
+  this.createScales(options, this.params); // updates this.x, this.y
 
   this.svg.selectAll('.yAxis')
     .transition().duration(TRANSITION_DURATION)
