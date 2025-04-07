@@ -22,6 +22,7 @@
     "eject": "react-scripts eject",
     "docs": "jsdoc2md src/lib/index.js src/lib/**/*.js > api.md",
     "transpile": "rm -rf dist && NODE_ENV=production rollup -c",
+    "develop:library": "rollup -c --sourcemap --watch",
     "prepack": "npm run transpile"
   },
   "eslintConfig": {
