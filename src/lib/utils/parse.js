@@ -6,46 +6,6 @@ import { max, schemeTableau10 } from 'd3';
  * @private
  */
 
-/**
- * @typedef {Map} TimePoint
- * An data point representing a model estimate at a certain date
- * Extra keys (e.g. "freq") are added in a data-dependent manner.
- * Note that key suffixes _forecast are removed - i.e. a point associated
- * with "freq_forecast" is stores under the "freq" key in this Map.
- * @property {(string|undefined)} date
- * @inner
- * @memberof module:@nextstrain/evofr-viz
- */
-const TimePoint = new Map([
-  ['date', undefined],
-]);
-
-/**
- * @typedef {Map} VariantPoint
- * An data point representing a model estimate for a variant.
- * The keys defined directly here are not specific to any date.
- * Date-specific estimates are specified via `temporal`
- * Extra keys (e.g. "ga") are added in a data-dependent manner.
- * @property {(string|undefined)} variant Variant name
- * @property {(Array|undefined)} temporal Array of `TimePoint` estimates
- * @inner
- * @memberof module:@nextstrain/evofr-viz
- */
-const VariantPoint = new Map([
-  // ['ga', undefined],
-  ['temporal', undefined],
-  ['variant', undefined],
-])
-const initialisePointsPerVariant = (variant, dates) => {
-  const p = new Map(VariantPoint);
-  p.set('variant', variant)
-  p.set('temporal', dates.map((date) => {
-    const tp = new Map(TimePoint);
-    tp.set('date', date);
-    return tp;
-  }));
-  return p;
-}
 
 const THRESHOLD_FREQ = 0.005; /* half a percent */
 const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
@@ -80,6 +40,8 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  * @throws Error
  */
 export const parseModelData = (modelName, modelJson, sites, configProvidedVariantColors, configProvidedVariantDisplayNames) => {
+  if (!modelName) modelName="Unknown";
+  console.log(`${modelName} - parsing model data`)
 
   if (!sites){
     sites = new Set(modelJson.metadata.sites);
@@ -87,23 +49,12 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     // TODO - ensure provided sites are a subset of JSON sites
   }
 
-  if (!modelName) modelName="Unknown";
-
+  /** DATES */
   const [dates, updated, nowcastFinalDate, dateSummary, sparseDates] = extractDatesFromModels(modelJson)
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
-  // Reorder variants so that the pivot is first for all displays
-  const variants = [...modelJson.metadata.variants];
-  // Use the explicit pivot in the metadata if available, otherwise assume the
-  // pivot is the last variant in the array
-  const pivot = modelJson.metadata.pivot || variants[variants.length - 1];
-  const pivotIndex = variants.indexOf(pivot);
-  if (pivotIndex >= 0) {
-    variants.splice(pivotIndex, 1);
-    variants.unshift(pivot);
-  }
-
-  const ps_point_estimator = modelJson.metadata.ps_point_estimator || "median";
+  /** VARIANTS - e.g. clades, lineages etc. pivot will be first element */
+  const {variants, pivot} = extractVariants(modelJson)
 
   const data = new Map([
     ["locations", modelJson.metadata.location],
@@ -116,139 +67,48 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     ["points", undefined],
     ["domains", undefined],
     ["sites", sites],
-    ["pivot", pivot]
-  ])
+    ["pivot", pivot],
+    ['domains', new Map([])],
+    ["variantColors", variantColors(modelJson, variants, configProvidedVariantColors)],
+    ["variantDisplayNames", variantDisplayNames(modelJson, variants, configProvidedVariantDisplayNames)],
+  ]);
+  
+  console.log(`\t${data.get('locations').length} locations x ${data.get('variants').length} variants x ${dates.length} dates`)
+  console.log("\t"+dateSummary);
+  _validateVariantColors(data); // may throw
 
-  /* Set variant colors + display names from the config, or the JSON, or fallback to a default */
-  if (configProvidedVariantColors) {
-    data.set('variantColors', configProvidedVariantColors)
-  } else if (Array.isArray(modelJson.metadata?.variantColors)) {
-    data.set('variantColors', new Map(modelJson.metadata.variantColors))
-  } else {
-    data.set('variantColors', genericVariantColors(data.get('variants')))
-  }
-  if (configProvidedVariantDisplayNames) {
-    data.set('variantDisplayNames', configProvidedVariantDisplayNames)
-  } else if (Array.isArray(modelJson.metadata?.variantDisplayNames)) {
-    data.set('variantDisplayNames', new Map(modelJson.metadata.variantDisplayNames))
-  } else {
-    data.set('variantDisplayNames', genericVariantDisplayNames(data.get('variants')))
-  }
+  /** POINTS hold all the actual data for plotting in a hierarchical Map structure.
+   * We initialise to the following structure:
+   * 
+   * points → <location> → <variant> → "variant" → <variant>
+   *                                 → "temporal" → temporalArray
+   *                                              → [idx] → "date" → YYYY-MM-DD || undefined
+   *
+   * Note: temporal[idx] corresponds to dates[idx]
+   * We then add data dependent on the JSON contents, e.g. growth advantage sites add:
+   * 
+   * points → <location> → <variant> → "ga" → float
+   *                                 → "ga_HDI_95_lower" → float
+   *                                 → "ga_HDI_95_upper" → float
+   *
+   * and frequencies add:
+   * 
+   * points → <location> → <variant> → "temporal" → [idx] → "freq" → float[idx]
+   *                                                      → "freq_HDI_95_lower" → float[idx]
+   *                                                      → "freq_HDI_95_upper" → float[idx]
+   */
 
-  // Validate that all variants have colors assigned
-  const variantColors = data.get('variantColors');
-  const missingColors = [];
-  for (const variant of data.get('variants')) {
-    const color = variantColors.get(variant);
-    if (!color) {
-      missingColors.push(variant);
-    }
-  }
-  if (missingColors.length > 0) {
-    const availableColors = Array.from(variantColors.keys());
-    throw new Error(
-      `Missing colors for ${missingColors.length} variant(s): ${missingColors.join(', ')}\n\n` +
-      `All variants must have colors defined in metadata.variantColors.\n` +
-      `Variants with colors: ${availableColors.join(', ')}\n` +
-      `Variants without colors: ${missingColors.join(', ')}`
-    );
-  }
 
-  let ga_min=100, ga_max=0;
+  const points = initialisePoints(data.get('locations'), variants, dates)
+  const ps_point_estimator = modelJson.metadata.ps_point_estimator || "median";
 
-  const points = new Map(
-    data.get('locations').map((location) => [
-      location,
-      new Map(
-        data.get('variants').map((variant) => [
-          variant,
-          initialisePointsPerVariant(variant, dates)
-        ])
-      )
-    ])
-  );
-
-  const pointEstimates = new Set(['ga']);
-
-  modelJson.data
-    .forEach((d, idx) => {
-      const site = d.site;
-      if (sites.has(site)) {
-        // Check if location and variant exist in metadata
-        const locationMap = points.get(d.location);
-        if (!locationMap) {
-          console.error(`ERROR at data point ${idx}: Location "${d.location}" not found in metadata.location`);
-          console.error(`Available locations: ${Array.from(points.keys()).join(', ')}`);
-          console.error(`Problematic data point:`, d);
-          throw new Error(`Location "${d.location}" in data not found in metadata.location. Available locations: ${Array.from(points.keys()).join(', ')}`);
-        }
-
-        const variantPoint = locationMap.get(d.variant);
-        if (!variantPoint) {
-          console.error(`ERROR at data point ${idx}: Variant "${d.variant}" not found in metadata.variants`);
-          console.error(`Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
-          console.error(`Problematic data point:`, d);
-          throw new Error(`Variant "${d.variant}" in data not found in metadata.variants. Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
-        }
-
-        const store = pointEstimates.has(site) ?
-          variantPoint :
-          variantPoint.get('temporal')[dateIdx.get(d.date)];
-
-        /* if it's not a point estimate enforce a date */
-        if (!pointEstimates.has(site) && dateIdx.get(d.date) === undefined) return;
-
-        /* don't store forecasts under a different key, as they'll be plotted in the same graph */
-        const key = site.replace("_forecast", "");
-
-        if (d.ps===ps_point_estimator) {
-          store.set(key, d.value);
-        } else if (d.ps==="HDI_95_lower") {
-          store.set(`${key}_HDI_95_lower`, d.value);
-        } else if (d.ps==="HDI_95_upper") {
-          store.set(`${key}_HDI_95_upper`, d.value);
-        } else if (site==='daily_raw_freq') {
-          // raw frequency points do not have a 'ps' property
-          store.set(key, d.value);
-        } else if (site==='weekly_raw_freq') {
-          // raw frequency points do not have a 'ps' property
-          store.set(key, d.value);
-        }
-
-      }
-    })
+  processModelData(modelJson.data, points, dateIdx, sites, ps_point_estimator);
 
   /* Once everything's been added (including frequencies) - iterate over each point & censor certain frequencies */
-  let [nanCount, censorCount] = [0, 0];
-
   if (sites.has('freq')) {
-    /**
-     * for any timePoint where the frequency is either not provided (NaN) or
-     * under our threshold, we don't want to use any model output for this date
-     * (for the given variant, location))
-     */
-    const censorTimePoints = (point, idx, dateList) => {
-      const freq = point.get('freq');
-      if (isNaN(freq)) {
-        dateList[idx] = new Map(TimePoint);
-        nanCount++;
-      } else if (freq<THRESHOLD_FREQ) {
-        dateList[idx] = new Map(TimePoint);
-        censorCount++;
-      }
-    }
-    for (const variantMap of points.values()) {
-      for (const variantPoint of variantMap.values()) {
-        const dateList = variantPoint.get('temporal');
-        dateList.forEach(censorTimePoints)
-        // set non-temporal domains
-        if (variantPoint.get('ga_HDI_95_lower')<ga_min) {
-          ga_min = variantPoint.get('ga_HDI_95_lower');
-        } else if (variantPoint.get('ga_HDI_95_upper')>ga_max) {
-          ga_max = variantPoint.get('ga_HDI_95_upper')
-        }
-      }
-    }
+    const {nanCount, censorCount} = censorTimePoints(points);
+    console.log(`\t${censorCount} censored points as frequency<${THRESHOLD_FREQ}`);
+    console.log(`\t${nanCount} points missing`);
   } else {
     console.warn(`Frequencies were not parsed from the model, no censoring of time points has occurred. Model results which had freq<${THRESHOLD_FREQ} may be unreliable.`)
   }
@@ -256,32 +116,17 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
   /* create a stack for I_smooth to help with plotting - this could be in the previous set of
   loops but it's here for readability */
   if (sites.has('I_smooth')) {
-    for (const variantMap of points.values()) {
-      let runningTotalPerDay = new Array(dates.length).fill(0);
-      for (const variantPoint of variantMap.values()) {
-        const dateList = variantPoint.get('temporal');
-        dateList.forEach((point, idx) => {
-          point.set('I_smooth_y0', runningTotalPerDay[idx]);
-          runningTotalPerDay[idx] += point.get('I_smooth') || 0; // I_smooth may be NaN
-          point.set('I_smooth_y1', runningTotalPerDay[idx]);
-        })
-      }
-    }
+    computeStackedPoints(points, dates, 'I_smooth')
   }
 
+  /** Compute domains for point estimates */
   if (sites.has('ga')) {
-    data.set('domains', new Map([
-      ['ga', [ga_min, ga_max]],
-    ]));
+    data.get('domains').set('ga', computeBounds(points, 'ga'));
   }
-
-  console.log(`${modelName} model data`)
-  console.log(`\t${data.get('locations').length} locations x ${data.get('variants').length} variants x ${dates.length} dates`)
-  console.log(`\t${censorCount} censored points as frequency<${THRESHOLD_FREQ}`);
-  console.log(`\t${nanCount} points missing`);
-  console.log("\t"+dateSummary);
 
   data.set("points", points);
+
+  console.log("DATA", data)
   return data;
 };
 
@@ -363,19 +208,206 @@ function sparseDates(dates) {
 
 
 /**
- * variantDisplayNames map variants (in the JSON) to their display names
- * If this Map is not present we simply use the variant name itself
  * @private
  */
-function genericVariantDisplayNames(variants) {
+function extractVariants(modelJson) {
+  // Reorder variants so that the pivot is first for all displays
+  const variants = [...modelJson.metadata.variants];
+  // Use the explicit pivot in the metadata if available, otherwise assume the
+  // pivot is the last variant in the array
+  const pivot = modelJson.metadata.pivot || variants[variants.length - 1];
+  const pivotIndex = variants.indexOf(pivot);
+  if (pivotIndex >= 0) {
+    variants.splice(pivotIndex, 1);
+    variants.unshift(pivot);
+  }
+  return {variants, pivot};
+}
+
+/**
+ * @private
+ */
+function variantDisplayNames(modelJson, variants, configProvidedVariantDisplayNames) {
+  if (configProvidedVariantDisplayNames) {
+    return configProvidedVariantDisplayNames;
+  }
+  if (Array.isArray(modelJson.metadata?.variantDisplayNames)) {
+    return new Map(modelJson.metadata.variantDisplayNames);
+  }
   return new Map(variants.map((name) => [name, name]));
 }
 
 /**
- * Todo - sample from a continuous scale when we have more than 10 variants
- * (e.g. collapsed pango lineages will have lots more!)
  * @private
  */
-function genericVariantColors(variants) {
+function variantColors(modelJson, variants, configProvidedVariantColors) {
+  if (configProvidedVariantColors) {
+    return configProvidedVariantColors;
+  }
+  if (Array.isArray(modelJson.metadata?.variantColors)) {
+    return new Map(modelJson.metadata.variantColors);
+  }
+  // Todo - sample from a continuous scale when we have more than 10 variants
+  // (e.g. collapsed pango lineages will have lots more!)
   return new Map(variants.map((name, idx) => [name, schemeTableau10[idx%10]]));
+}
+
+/**
+ * Returns a TimePoint - a Map with a key of 'date' and the value
+ * set to the *date* argument.
+ */
+function timePoint(date=undefined) {
+  return new Map([
+    ['date', date],
+  ]);
+}
+
+function initialisePoints(locations, variants, dates) {
+  return new Map(
+    locations.map((location) => [
+      location,
+      new Map(
+        variants.map((variant) => [
+          variant,
+          new Map([
+            ['variant', variant],
+            ['temporal', dates.map(timePoint)]
+          ])
+        ])
+      )
+    ])
+  )
+}
+
+function computeBounds(points, key) {
+  let _min = 100;
+  let _max = 0;
+  const keyLower = `${key}_HDI_95_lower`;
+  const keyUpper = `${key}_HDI_95_upper`;
+  for (const variantMap of points.values()) {
+    for (const variantPoint of variantMap.values()) {
+      if (variantPoint.get(keyLower)<_min) {
+        _min = variantPoint.get(keyLower);
+      } else if (variantPoint.get(keyUpper)>_max) {
+        _max = variantPoint.get(keyUpper)
+      }
+    } 
+  }
+  return [_min,_max];
+}
+
+function censorTimePoints(points) {
+  let [nanCount, censorCount] = [0, 0];
+  /**
+   * for any timePoint where the frequency is either not provided (NaN) or
+   * under our threshold, we don't want to use any model output for this date
+   * (for the given variant, location))
+   */
+  const censor = (point, idx, dateList) => {
+    const freq = point.get('freq');
+    if (isNaN(freq)) {
+      dateList[idx] = timePoint();
+      nanCount++;
+    } else if (freq<THRESHOLD_FREQ) {
+      dateList[idx] = timePoint();
+      censorCount++;
+    }
+  }
+  for (const variantMap of points.values()) {
+    for (const variantPoint of variantMap.values()) {
+      const dateList = variantPoint.get('temporal');
+      dateList.forEach(censor)
+    }
+  }
+  return {nanCount, censorCount};
+}
+
+/**
+ * The *key* must already be set within points (and be temporal)
+ * This will add ${key}_y0 and ${key}_y1 values with the stacking order determined
+ * by the variant order
+ */
+function computeStackedPoints(points, dates, key) {
+  for (const variantMap of points.values()) {
+    let runningTotalPerDay = new Array(dates.length).fill(0);
+    for (const variantPoint of variantMap.values()) {
+      const dateList = variantPoint.get('temporal');
+      dateList.forEach((point, idx) => {
+        point.set(`${key}_y0`, runningTotalPerDay[idx]);
+        runningTotalPerDay[idx] += point.get(key) || 0; // I_smooth may be NaN
+        point.set(`${key}_y1`, runningTotalPerDay[idx]);
+      })
+    }
+  }
+}
+
+function processModelData(data, points, dateIdx, sites, ps_point_estimator) {
+  for (const d of data) {
+    const pointEstimates = new Set(['ga']);
+
+    const site = d.site;
+    if (sites.has(site)) {
+      // Check if location and variant exist in metadata
+      const locationMap = points.get(d.location);
+      if (!locationMap) {
+        console.error(`ERROR at data point: Location "${d.location}" not found in metadata.location`);
+        console.error(`Available locations: ${Array.from(points.keys()).join(', ')}`);
+        console.error(`Problematic data point:`, d);
+        throw new Error(`Location "${d.location}" in data not found in metadata.location. Available locations: ${Array.from(points.keys()).join(', ')}`);
+      }
+
+      const variantPoint = locationMap.get(d.variant);
+      if (!variantPoint) {
+        console.error(`ERROR at data point: Variant "${d.variant}" not found in metadata.variants`);
+        console.error(`Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
+        console.error(`Problematic data point:`, d);
+        throw new Error(`Variant "${d.variant}" in data not found in metadata.variants. Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
+      }
+
+      const store = pointEstimates.has(site) ?
+        variantPoint :
+        variantPoint.get('temporal')[dateIdx.get(d.date)];
+
+      /* if it's not a point estimate enforce a date */
+      if (!pointEstimates.has(site) && dateIdx.get(d.date) === undefined) continue;
+
+      /* don't store forecasts under a different key, as they'll be plotted in the same graph */
+      const key = site.replace("_forecast", "");
+
+      if (d.ps===ps_point_estimator) {
+        store.set(key, d.value);
+      } else if (d.ps==="HDI_95_lower") {
+        store.set(`${key}_HDI_95_lower`, d.value);
+      } else if (d.ps==="HDI_95_upper") {
+        store.set(`${key}_HDI_95_upper`, d.value);
+      } else if (site==='daily_raw_freq') {
+        // raw frequency points do not have a 'ps' property
+        store.set(key, d.value);
+      } else if (site==='weekly_raw_freq') {
+        // raw frequency points do not have a 'ps' property
+        store.set(key, d.value);
+      }
+
+    }
+  }
+}
+
+function _validateVariantColors(data) {
+  const variantColors = data.get('variantColors');
+    const missingColors = [];
+    for (const variant of data.get('variants')) {
+      const color = variantColors.get(variant);
+      if (!color) {
+        missingColors.push(variant);
+      }
+    }
+    if (missingColors.length > 0) {
+      const availableColors = Array.from(variantColors.keys());
+      throw new Error(
+        `Missing colors for ${missingColors.length} variant(s): ${missingColors.join(', ')}\n\n` +
+        `All variants must have colors defined in metadata.variantColors.\n` +
+        `Variants with colors: ${availableColors.join(', ')}\n` +
+        `Variants without colors: ${missingColors.join(', ')}`
+      );
+    }
 }
