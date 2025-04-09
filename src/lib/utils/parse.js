@@ -10,6 +10,21 @@ import { max, schemeTableau10 } from 'd3';
 const THRESHOLD_FREQ = 0.005; /* half a percent */
 const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
 
+const DEFAULT_SITES = {
+  // Future options: specify the ps values to use, whether to use `${key}_forecast` etc
+  ga: {
+    temporal: false,
+  },
+  I_smooth: {
+    temporal: true,
+    stacked: true,
+  },
+  freq: {
+    temporal: true,
+    raw: 'daily_raw_freq',
+    smoothed: 'weekly_raw_freq',
+  },
+}
 
 /**
  * @typedef {Map} ModelData
@@ -39,15 +54,12 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  * @private
  * @throws Error
  */
-export const parseModelData = (modelName, modelJson, sites, configProvidedVariantColors, configProvidedVariantDisplayNames) => {
+export const parseModelData = (modelName, modelJson, configSites, configProvidedVariantColors, configProvidedVariantDisplayNames) => {
   if (!modelName) modelName="Unknown";
   console.log(`${modelName} - parsing model data`)
 
-  if (!sites){
-    sites = new Set(modelJson.metadata.sites);
-  } else {
-    // TODO - ensure provided sites are a subset of JSON sites
-  }
+  /** SITES - which keys to parse from model (and how to parse them) */
+  const sitesInfo = collectSites(modelJson.metadata.sites, configSites);
 
   /** DATES */
   const [dates, updated, nowcastFinalDate, dateSummary, sparseDates] = extractDatesFromModels(modelJson)
@@ -66,7 +78,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     ["nowcastFinalDate", nowcastFinalDate],
     ["points", undefined],
     ["domains", undefined],
-    ["sites", sites],
+    ["sites", undefined], /* sites discovered in processModelData */
     ["pivot", pivot],
     ['domains', new Map([])],
     ["variantColors", variantColors(modelJson, variants, configProvidedVariantColors)],
@@ -102,10 +114,11 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
   const points = initialisePoints(data.get('locations'), variants, dates)
   const ps_point_estimator = modelJson.metadata.ps_point_estimator || "median";
 
-  processModelData(modelJson.data, points, dateIdx, sites, ps_point_estimator);
-
+  const sites = processModelData(modelJson.data, points, dateIdx, sitesInfo, ps_point_estimator);
+  data.set("sites", sites)
+  
   /* Once everything's been added (including frequencies) - iterate over each point & censor certain frequencies */
-  if (sites.has('freq')) {
+  if (sitesInfo['freq']) {
     const {nanCount, censorCount} = censorTimePoints(points);
     console.log(`\t${censorCount} censored points as frequency<${THRESHOLD_FREQ}`);
     console.log(`\t${nanCount} points missing`);
@@ -113,22 +126,45 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     console.warn(`Frequencies were not parsed from the model, no censoring of time points has occurred. Model results which had freq<${THRESHOLD_FREQ} may be unreliable.`)
   }
 
-  /* create a stack for I_smooth to help with plotting - this could be in the previous set of
-  loops but it's here for readability */
-  if (sites.has('I_smooth')) {
-    computeStackedPoints(points, dates, 'I_smooth')
-  }
+  /** compute stacked coordinates as needed */
+  Object.entries(sitesInfo).filter(([site, info]) => info.stacked===true)
+    .forEach(([site, _info]) => {
+      computeStackedPoints(points, dates, site)
+    });
 
   /** Compute domains for point estimates */
-  if (sites.has('ga')) {
-    data.get('domains').set('ga', computeBounds(points, 'ga'));
-  }
+  Object.entries(sitesInfo).filter(([site, info]) => info.temporal===false)
+    .forEach(([site, info]) => {
+      data.get('domains').set(site, computeBounds(points, site));
+    });
 
   data.set("points", points);
 
   console.log("DATA", data)
   return data;
 };
+
+function collectSites(modelSites, configSites) {
+  let sitesInfo = {...DEFAULT_SITES};
+
+  if (configSites) {
+    console.log("Merging config-defined sites with defaults");
+    if (typeof configSites !== 'object') {
+      throw new Error(`The config-defined 'sites' has changed to an object (you have provided a ${typeof configSites})`)
+    }
+    sitesInfo = {...sitesInfo, ...configSites};
+    console.log("Merging config-defined sites with defaults. Combined sites:", sitesInfo);
+  }
+
+  // Prune out any sites not in the model JSON
+  for (const s of Object.keys(sitesInfo)) {
+    if (!modelSites.includes(s)) {
+      delete sitesInfo[s];
+    }
+  }
+
+  return sitesInfo;
+}
 
 /**
  * @private
@@ -334,19 +370,65 @@ function computeStackedPoints(points, dates, key) {
       const dateList = variantPoint.get('temporal');
       dateList.forEach((point, idx) => {
         point.set(`${key}_y0`, runningTotalPerDay[idx]);
-        runningTotalPerDay[idx] += point.get(key) || 0; // I_smooth may be NaN
+        runningTotalPerDay[idx] += point.get(key) || 0; // may be NaN
         point.set(`${key}_y1`, runningTotalPerDay[idx]);
       })
     }
   }
 }
 
-function processModelData(data, points, dateIdx, sites, ps_point_estimator) {
-  for (const d of data) {
-    const pointEstimates = new Set(['ga']);
+/**
+ * Dynamically add points to the data store by looping over the JSON data elements
+ * The dynamic nature comes from the user being able to select what fields
+ * are parsed and how they should be parsed.
+ */
+function processModelData(data, points, dateIdx, sitesInfo, ps_point_estimator) {
+  const keysAdded = new Set();
+  const keyInfo = {};
+  const lookup = {};
 
-    const site = d.site;
-    if (sites.has(site)) {
+  for (const [siteName, siteInfo] of Object.entries(sitesInfo)) {
+    keyInfo[siteName] = siteInfo;
+    lookup[siteName] = defaultGetter(siteName);
+    if (siteInfo.raw) {
+      keyInfo[siteInfo.raw] = siteInfo;
+      lookup[siteInfo.raw] = simpleGetter('freq_raw');
+    }
+    if (siteInfo.smoothed) {
+      keyInfo[siteInfo.smoothed] = siteInfo;
+      lookup[siteInfo.smoothed] = simpleGetter('freq_smoothed');
+    }
+  }
+
+  function defaultGetter(baseKey) {
+    return (store, d) => {
+      const key = d.ps===ps_point_estimator ? baseKey
+        : d.ps==="HDI_95_lower" ? `${baseKey}_HDI_95_lower`
+        : d.ps==="HDI_95_upper" ? `${baseKey}_HDI_95_upper`
+        : undefined;
+      if (!key) return;
+      store.set(key, d.value);
+      return key;
+    }
+  }
+
+  function simpleGetter(baseKey) { // doesn't consider the ps value
+    return (store, d) => {
+      store.set(baseKey, d.value);
+      return baseKey;
+    }
+  }
+
+  const lookupKeys = new Set(Object.keys(lookup));
+
+  for (const d of data) {
+    /* The site in the JSON isn't necessarily the key we store data under as we don't store forecasts under a different key */
+    // TODO - allow the sitesInfo to enable this via `useForecast` boolean
+    const key = d.site.replace("_forecast", "");
+
+    if (lookupKeys.has(key)) {
+      if (keyInfo[key].temporal === true && dateIdx.get(d.date) === undefined) continue;
+      
       // Check if location and variant exist in metadata
       const locationMap = points.get(d.location);
       if (!locationMap) {
@@ -363,34 +445,18 @@ function processModelData(data, points, dateIdx, sites, ps_point_estimator) {
         console.error(`Problematic data point:`, d);
         throw new Error(`Variant "${d.variant}" in data not found in metadata.variants. Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
       }
+      
+      const store = keyInfo[key].temporal === true ?
+        variantPoint.get('temporal')[dateIdx.get(d.date)] :
+        variantPoint;
 
-      const store = pointEstimates.has(site) ?
-        variantPoint :
-        variantPoint.get('temporal')[dateIdx.get(d.date)];
-
-      /* if it's not a point estimate enforce a date */
-      if (!pointEstimates.has(site) && dateIdx.get(d.date) === undefined) continue;
-
-      /* don't store forecasts under a different key, as they'll be plotted in the same graph */
-      const key = site.replace("_forecast", "");
-
-      if (d.ps===ps_point_estimator) {
-        store.set(key, d.value);
-      } else if (d.ps==="HDI_95_lower") {
-        store.set(`${key}_HDI_95_lower`, d.value);
-      } else if (d.ps==="HDI_95_upper") {
-        store.set(`${key}_HDI_95_upper`, d.value);
-      } else if (site==='daily_raw_freq') {
-        // raw frequency points do not have a 'ps' property
-        store.set(key, d.value);
-      } else if (site==='weekly_raw_freq') {
-        // raw frequency points do not have a 'ps' property
-        store.set(key, d.value);
-      }
-
-    }
+      const storeKey = lookup[key](store, d);
+      keysAdded.add(storeKey);
+    }      
   }
+  return keysAdded;
 }
+
 
 function _validateVariantColors(data) {
   const variantColors = data.get('variantColors');

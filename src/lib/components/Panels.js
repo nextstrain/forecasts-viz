@@ -144,8 +144,8 @@ const Panel = ({
   const  locationList = locations || modelData?.get('locations');
   const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
-  const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('daily_raw_freq');
-  const canShowWeeklyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('weekly_raw_freq');
+  const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_raw');
+  const canShowWeeklyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_smoothed');
 
   if (error) {
     return (<ErrorMessage error={error}/>);
@@ -159,8 +159,8 @@ const Panel = ({
     <div className='panelContainer' ref={outerDivRef}>
       <div className='optionsContainer'>
         {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={() => toggleLogit(!logit)}/>}
-        {canShowDailyRawFreq && <Toggle label="Daily raw data" checked={showDailyRawFreq} onChange={() => toggleShowDailyRawFreq(!showDailyRawFreq)}/>}
-        {canShowWeeklyRawFreq && <Toggle label="Weekly raw data" checked={showWeeklyRawFreq} onChange={() => toggleShowWeeklyRawFreq(!showWeeklyRawFreq)}/>}
+        {canShowDailyRawFreq && <Toggle label={params.rawDataToggleName || "Daily raw data"} checked={showDailyRawFreq} onChange={() => toggleShowDailyRawFreq(!showDailyRawFreq)}/>}
+        {canShowWeeklyRawFreq && <Toggle label={params.smoothedDataToggleName || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={() => toggleShowWeeklyRawFreq(!showWeeklyRawFreq)}/>}
       </div>
 
       <div className='legendAndSmallMultiplesContainer'>
