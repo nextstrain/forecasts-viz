@@ -285,13 +285,27 @@ D3Graph.prototype.setStyles = function(options) {
     daily: {
       r: small ? {normal: 1.1 , focusInactive: 1.1, focusActive: 2} : {normal: 2 , focusInactive: 2, focusActive: 3},
       opacity: {normal: 0.3 , focusInactive: 0, focusActive: 1},
-      colorModifier: (color) => d3.color(color).darker(0.5).toString()
+      colorModifier: (color) => {
+        const d3Color = d3.color(color);
+        if (!d3Color) {
+          console.error(`Invalid color value: "${color}"`);
+          throw new Error(`Invalid color value: "${color}". This likely means a variant is missing from metadata.variantColors.`);
+        }
+        return d3Color.darker(0.5).toString();
+      }
     }
   }
   this.styles.rawFreqs.weekly = {
     r: small ? {normal: 1.1 , focusInactive: 1.1, focusActive: 2} : {normal: 2 , focusInactive: 2, focusActive: 3},
     opacity: this.styles.rawFreqs.daily.opacity,
-    colorModifier: (color) => d3.color(color).brighter(0.2).toString()
+    colorModifier: (color) => {
+      const d3Color = d3.color(color);
+      if (!d3Color) {
+        console.error(`Invalid color value: "${color}"`);
+        throw new Error(`Invalid color value: "${color}". This likely means a variant is missing from metadata.variantColors.`);
+      }
+      return d3Color.brighter(0.2).toString();
+    }
   }
   this.styles.lines = {
     line: {

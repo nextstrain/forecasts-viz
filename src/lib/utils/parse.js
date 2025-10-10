@@ -132,6 +132,25 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     data.set('variantDisplayNames', genericVariantDisplayNames(data.get('variants')))
   }
 
+  // Validate that all variants have colors assigned
+  const variantColors = data.get('variantColors');
+  const missingColors = [];
+  for (const variant of data.get('variants')) {
+    const color = variantColors.get(variant);
+    if (!color) {
+      missingColors.push(variant);
+    }
+  }
+  if (missingColors.length > 0) {
+    const availableColors = Array.from(variantColors.keys());
+    throw new Error(
+      `Missing colors for ${missingColors.length} variant(s): ${missingColors.join(', ')}\n\n` +
+      `All variants must have colors defined in metadata.variantColors.\n` +
+      `Variants with colors: ${availableColors.join(', ')}\n` +
+      `Variants without colors: ${missingColors.join(', ')}`
+    );
+  }
+
   let ga_min=100, ga_max=0;
 
   const points = new Map(
