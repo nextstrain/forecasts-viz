@@ -81,6 +81,10 @@ const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
  */
 export const parseModelData = (modelName, modelJson, sites, configProvidedVariantColors, configProvidedVariantDisplayNames) => {
 
+  console.log('[parseModelData] Starting with modelName:', modelName);
+  console.log('[parseModelData] Sites param:', sites);
+  console.log('[parseModelData] modelJson.metadata.sites:', modelJson.metadata.sites);
+
   if (!sites){
     sites = new Set(modelJson.metadata.sites);
   } else {
@@ -89,7 +93,9 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
 
   if (!modelName) modelName="Unknown";
 
+  console.log('[parseModelData] Extracting dates...');
   const [dates, updated, nowcastFinalDate, dateSummary] = extractDatesFromModels(modelJson)
+  console.log('[parseModelData] Dates extracted:', dates.length, 'dates');
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
 
   // Reorder variants so that the pivot is first for all displays
@@ -148,13 +154,33 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
 
   const pointEstimates = new Set(['ga']);
 
+  console.log('[parseModelData] Starting to process data points...');
+  console.log('[parseModelData] Total data points:', modelJson.data.length);
+
   modelJson.data
-    .forEach((d) => {
+    .forEach((d, idx) => {
       const site = d.site;
       if (sites.has(site)) {
+        // Debug: Check if location and variant exist
+        const locationMap = points.get(d.location);
+        if (!locationMap) {
+          console.error(`[parseModelData] ERROR at data point ${idx}: Location "${d.location}" not found in points!`);
+          console.error(`[parseModelData] Available locations:`, Array.from(points.keys()));
+          console.error(`[parseModelData] Data point:`, d);
+          throw new Error(`Location "${d.location}" in data not found in metadata.location. Available locations: ${Array.from(points.keys()).join(', ')}`);
+        }
+
+        const variantPoint = locationMap.get(d.variant);
+        if (!variantPoint) {
+          console.error(`[parseModelData] ERROR at data point ${idx}: Variant "${d.variant}" not found for location "${d.location}"!`);
+          console.error(`[parseModelData] Available variants for this location:`, Array.from(locationMap.keys()));
+          console.error(`[parseModelData] Data point:`, d);
+          throw new Error(`Variant "${d.variant}" in data not found in metadata.variants. Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
+        }
+
         const store = pointEstimates.has(site) ?
-          points.get(d.location).get(d.variant) :
-          points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)];
+          variantPoint :
+          variantPoint.get('temporal')[dateIdx.get(d.date)];
 
         /* if it's not a point estimate enforce a date */
         if (!pointEstimates.has(site) && dateIdx.get(d.date) === undefined) return;
@@ -182,6 +208,9 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
   /* Once everything's been added (including frequencies) - iterate over each point & censor certain frequencies */
   let [nanCount, censorCount] = [0, 0];
 
+  console.log('[parseModelData] Processing frequencies and censoring...');
+  console.log('[parseModelData] Sites has freq?', sites.has('freq'));
+
   if (sites.has('freq')) {
     /**
      * for any timePoint where the frequency is either not provided (NaN) or
@@ -198,17 +227,28 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
         censorCount++;
       }
     }
+    console.log('[parseModelData] Iterating over points.values()...');
+    let locationIdx = 0;
     for (const variantMap of points.values()) {
+      console.log(`[parseModelData] Processing location ${locationIdx}, variantMap:`, variantMap);
+      let variantIdx = 0;
       for (const variantPoint of variantMap.values()) {
+        console.log(`[parseModelData]   Processing variant ${variantIdx}, variantPoint:`, variantPoint);
         const dateList = variantPoint.get('temporal');
+        console.log(`[parseModelData]   dateList:`, dateList);
         dateList.forEach(censorTimePoints)
         // set non-temporal domains
-        if (variantPoint.get('ga_HDI_95_lower')<ga_min) {
-          ga_min = variantPoint.get('ga_HDI_95_lower');
-        } else if (variantPoint.get('ga_HDI_95_upper')>ga_max) {
-          ga_max = variantPoint.get('ga_HDI_95_upper')
+        const ga_lower = variantPoint.get('ga_HDI_95_lower');
+        const ga_upper = variantPoint.get('ga_HDI_95_upper');
+        console.log(`[parseModelData]   ga_HDI_95_lower: ${ga_lower}, ga_HDI_95_upper: ${ga_upper}`);
+        if (ga_lower<ga_min) {
+          ga_min = ga_lower;
+        } else if (ga_upper>ga_max) {
+          ga_max = ga_upper;
         }
+        variantIdx++;
       }
+      locationIdx++;
     }
   } else {
     console.warn(`Frequencies were not parsed from the model, no censoring of time points has occurred. Model results which had freq<${THRESHOLD_FREQ} may be unreliable.`)
