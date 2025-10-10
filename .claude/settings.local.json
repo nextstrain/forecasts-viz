@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(npm ci:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

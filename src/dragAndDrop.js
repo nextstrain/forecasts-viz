@@ -123,29 +123,17 @@ function useListeners(setModelData, setErrorState) {
           return;
         }
 
-        console.log('===== STARTING PARSE =====');
-        console.log('File name:', fileName);
-        console.log('JSON metadata:', modelJson.metadata);
-        console.log('Data array length:', modelJson.data?.length);
-
         let modelData;
         try {
-          console.log('Calling parseModelData...');
           modelData = parseModelData(fileName, modelJson, undefined, undefined, undefined);
-          console.log('parseModelData completed successfully');
         } catch (parseError) {
           // Parsing failed - provide helpful context
-          console.error('===== PARSE ERROR =====');
-          console.error('Error:', parseError);
-          console.error('Error message:', parseError.message);
-          console.error('Error stack:', parseError.stack);
-          console.error('JSON structure:', modelJson);
+          console.error('Parse error:', parseError);
           const contextInfo = getJsonContext(modelJson);
           setErrorState(formatError(parseError, contextInfo, fileName));
           return;
         }
 
-        console.log('Setting model data with sites:', modelJson.metadata.sites);
         modelData.sites = modelJson.metadata.sites;
         setModelData({modelData, sites: modelJson.metadata.sites, name: fileName, error: undefined});
       } catch (err) {
@@ -248,29 +236,17 @@ function useFileSelect(setModelData, setErrorState) {
           return;
         }
 
-        console.log('===== STARTING PARSE =====');
-        console.log('File name:', fileName);
-        console.log('JSON metadata:', modelJson.metadata);
-        console.log('Data array length:', modelJson.data?.length);
-
         let modelData;
         try {
-          console.log('Calling parseModelData...');
           modelData = parseModelData(fileName, modelJson, undefined, undefined, undefined);
-          console.log('parseModelData completed successfully');
         } catch (parseError) {
           // Parsing failed - provide helpful context
-          console.error('===== PARSE ERROR =====');
-          console.error('Error:', parseError);
-          console.error('Error message:', parseError.message);
-          console.error('Error stack:', parseError.stack);
-          console.error('JSON structure:', modelJson);
+          console.error('Parse error:', parseError);
           const contextInfo = getJsonContext(modelJson);
           setErrorState(formatError(parseError, contextInfo, fileName));
           return;
         }
 
-        console.log('Setting model data with sites:', modelJson.metadata.sites);
         modelData.sites = modelJson.metadata.sites;
         setModelData({modelData, sites: modelJson.metadata.sites, name: fileName, error: undefined});
       } catch (err) {
