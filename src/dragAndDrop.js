@@ -10,6 +10,7 @@ function App() {
   /* TODO - if we use this in production, there's a race condition if
   you try to fetch & drag-on a JSON at the ~same time */
   useListeners(setModelData, setErrorState);
+  const handleFileSelect = useFileSelect(setModelData, setErrorState);
 
   if (errorState) {
     /* Slightly different error handling than the expected usage */
@@ -36,6 +37,8 @@ function App() {
         <h1>Drag & drop a model JSON to visualise</h1>
         <div className="abstract">
           This is intended as a simple way to preview JSONs,
+          <p/>
+          Or <button onClick={handleFileSelect} style={{padding: '10px 20px', cursor: 'pointer'}}>Choose a file from Finder</button>
           <p/>
           Alternatively, if your dataset is available via a URL, you can load it by adding the
           URL query parameter <code>?dataset=https://...</code> to the URL and reloading the page.
@@ -159,6 +162,55 @@ function useUrlDefinedDataset(setModelData, setErrorState) {
     }, [setModelData, setErrorState]
   )
   return fetchProgress;
+}
+
+function useFileSelect(setModelData, setErrorState) {
+  const fileInputRef = React.useRef(null);
+
+  const handleFileChange = useCallback(
+    async (event) => {
+      setErrorState("");
+      const files = event.target.files;
+      if (files.length !== 1) {
+        setErrorState(`Only one JSON can be used at a time, not ${files.length}.`);
+        return;
+      }
+      try {
+        const modelJson = await readFile(files[0]);
+        const fileName = files[0].name;
+        const modelData = parseModelData(fileName, modelJson, undefined, undefined, undefined);
+        modelData.sites = modelJson.metadata.sites;
+        setModelData({modelData, sites: modelJson.metadata.sites, name: fileName, error: undefined});
+      } catch (err) {
+        setErrorState(`Error during file reading / parsing: ${err.message}`);
+      }
+      // Reset the input so the same file can be selected again
+      event.target.value = '';
+    },
+    [setErrorState, setModelData]
+  );
+
+  useEffect(() => {
+    // Create a hidden file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json,application/json';
+    fileInput.style.display = 'none';
+    fileInput.addEventListener('change', handleFileChange);
+    document.body.appendChild(fileInput);
+    fileInputRef.current = fileInput;
+
+    return () => {
+      fileInput.removeEventListener('change', handleFileChange);
+      document.body.removeChild(fileInput);
+    };
+  }, [handleFileChange]);
+
+  const triggerFileSelect = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  return triggerFileSelect;
 }
 
 // https://github.com/nextstrain/auspice.us/blob/fd5a7d4aff8101077d4ae9a4075139d71fc7af52/auspice_client_customisation/handleDroppedFiles.js
