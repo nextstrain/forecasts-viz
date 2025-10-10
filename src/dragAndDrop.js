@@ -129,8 +129,7 @@ function useListeners(setModelData, setErrorState) {
         } catch (parseError) {
           // Parsing failed - provide helpful context
           console.error('Parse error:', parseError);
-          const contextInfo = getJsonContext(modelJson);
-          setErrorState(formatError(parseError, contextInfo, fileName));
+          setErrorState(formatError(parseError, fileName));
           return;
         }
 
@@ -197,8 +196,7 @@ function useUrlDefinedDataset(setModelData, setErrorState) {
           modelData = parseModelData(datasetUrl, modelJson, undefined, undefined, undefined);
         } catch (parseError) {
           // Parsing failed - provide helpful context
-          const contextInfo = getJsonContext(modelJson);
-          setErrorState(formatError(parseError, contextInfo, datasetUrl));
+          setErrorState(formatError(parseError, datasetUrl));
           return;
         }
 
@@ -242,8 +240,7 @@ function useFileSelect(setModelData, setErrorState) {
         } catch (parseError) {
           // Parsing failed - provide helpful context
           console.error('Parse error:', parseError);
-          const contextInfo = getJsonContext(modelJson);
-          setErrorState(formatError(parseError, contextInfo, fileName));
+          setErrorState(formatError(parseError, fileName));
           return;
         }
 
@@ -282,9 +279,9 @@ function useFileSelect(setModelData, setErrorState) {
 }
 
 /**
- * Formats an error message with context information for display
+ * Formats an error message for display
  */
-function formatError(error, contextInfo, fileName) {
+function formatError(error, fileName) {
   const lines = [];
 
   lines.push("╔════════════════════════════════════════════════════════════════╗");
@@ -293,21 +290,12 @@ function formatError(error, contextInfo, fileName) {
   lines.push("");
   lines.push(`File: ${fileName}`);
   lines.push("");
-  lines.push("─────────────────────────────────────────────────────────────────");
-  lines.push("ERROR MESSAGE:");
-  lines.push("─────────────────────────────────────────────────────────────────");
   lines.push(error.message);
   lines.push("");
   lines.push("─────────────────────────────────────────────────────────────────");
-  lines.push("YOUR JSON STRUCTURE:");
-  lines.push("─────────────────────────────────────────────────────────────────");
-  lines.push(contextInfo);
-  lines.push("");
-  lines.push("─────────────────────────────────────────────────────────────────");
-  lines.push("STACK TRACE:");
+  lines.push("Stack trace:");
   lines.push("─────────────────────────────────────────────────────────────────");
   lines.push(error.stack);
-  lines.push("");
 
   return lines.join('\n');
 }
@@ -324,64 +312,14 @@ function formatSimpleError(error, title) {
   lines.push("");
   lines.push(title);
   lines.push("");
-  lines.push("─────────────────────────────────────────────────────────────────");
-  lines.push("ERROR MESSAGE:");
-  lines.push("─────────────────────────────────────────────────────────────────");
   lines.push(error.message);
   lines.push("");
   lines.push("─────────────────────────────────────────────────────────────────");
-  lines.push("STACK TRACE:");
+  lines.push("Stack trace:");
   lines.push("─────────────────────────────────────────────────────────────────");
   lines.push(error.stack);
-  lines.push("");
 
   return lines.join('\n');
-}
-
-/**
- * Provides context information about the JSON to help with debugging
- */
-function getJsonContext(modelJson) {
-  const info = [];
-
-  info.push("=== JSON Structure Summary ===");
-
-  if (modelJson.metadata) {
-    info.push("\nMetadata fields:");
-    info.push(`  - sites: ${JSON.stringify(modelJson.metadata.sites)}`);
-    info.push(`  - variants: ${JSON.stringify(modelJson.metadata.variants)}`);
-    info.push(`  - location: ${JSON.stringify(modelJson.metadata.location)}`);
-    info.push(`  - dates: ${Array.isArray(modelJson.metadata.dates) ? `${modelJson.metadata.dates.length} dates (${modelJson.metadata.dates[0]} to ${modelJson.metadata.dates[modelJson.metadata.dates.length-1]})` : 'not provided'}`);
-    info.push(`  - forecast_dates: ${Array.isArray(modelJson.metadata.forecast_dates) ? `${modelJson.metadata.forecast_dates.length} dates` : 'not provided'}`);
-    info.push(`  - pivot: ${modelJson.metadata.pivot || 'not specified (will use last variant)'}`);
-    info.push(`  - updated: ${modelJson.metadata.updated || 'not provided'}`);
-  }
-
-  if (Array.isArray(modelJson.data)) {
-    info.push(`\nData array: ${modelJson.data.length} data points`);
-
-    // Show sample data points
-    if (modelJson.data.length > 0) {
-      info.push("\nFirst data point:");
-      info.push(`  ${JSON.stringify(modelJson.data[0], null, 2).split('\n').join('\n  ')}`);
-
-      // Count data points by site
-      const siteCounts = {};
-      modelJson.data.forEach(d => {
-        siteCounts[d.site] = (siteCounts[d.site] || 0) + 1;
-      });
-      info.push("\nData points per site:");
-      Object.entries(siteCounts).forEach(([site, count]) => {
-        info.push(`  - ${site}: ${count} points`);
-      });
-
-      // Check for missing required fields in data
-      const fieldsInFirstPoint = Object.keys(modelJson.data[0]);
-      info.push(`\nFields in first data point: ${fieldsInFirstPoint.join(', ')}`);
-    }
-  }
-
-  return info.join('\n');
 }
 
 /**
