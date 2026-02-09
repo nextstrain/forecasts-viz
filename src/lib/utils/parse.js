@@ -103,6 +103,8 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     variants.unshift(pivot);
   }
 
+  const ps_point_estimator = modelJson.metadata.ps_point_estimator || "median";
+
   const data = new Map([
     ["locations", modelJson.metadata.location],
     ["variants", variants],
@@ -162,7 +164,7 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
         /* don't store forecasts under a different key, as they'll be plotted in the same graph */
         const key = site.replace("_forecast", "");
 
-        if (d.ps==="median") {
+        if (d.ps===ps_point_estimator) {
           store.set(key, d.value);
         } else if (d.ps==="HDI_95_lower") {
           store.set(`${key}_HDI_95_lower`, d.value);
