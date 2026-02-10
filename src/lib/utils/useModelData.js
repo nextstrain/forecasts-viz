@@ -1,5 +1,21 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
+import { isEqual } from 'lodash';
 import {parseModelData} from "./parse.js";
+
+/**
+ * A custom React Hook that returns a memoized value that will only change
+ * if a deep comparison using lodash.isEqual determines the value is not
+ * equivalent to the previous value.
+ * Copied from Auspice
+ * <https://github.com/nextstrain/auspice/blob/6370cc5a682824b607dcd0314c1821e99bd636f7/src/components/measurements/index.tsx#L65-L76>
+ */
+function useDeepCompareMemo(value) {
+  const ref = useRef();
+  if (!isEqual(value, ref.current)) {
+    ref.current = value;
+  }
+  return ref.current;
+}
 
 
 /**
@@ -39,9 +55,6 @@ import {parseModelData} from "./parse.js";
  * The return value is designed to be passed to a <PanelDisplay> component's
  * as its `data` prop.
  * 
- * Warning: Ensure the config object is not (re-)created within your react
- * component, as this will trigger a re-fetch of the data and subsequent
- * re-rendering of the graphs.
  * @param {DatasetConfig} config 
  * @returns {ModelDataWrapper}
  * @memberof module:@nextstrain/evofr-viz
@@ -55,34 +68,38 @@ export const useModelData = (config) => {
   const [error, setError] = useState(undefined); // TODO
   const [modelData, setModelData] = useState(undefined);
 
+  // Memoize the config param so that the effect below only runs when the
+  // object _value_ has changed and not just the object reference
+  const memoizedConfig = useDeepCompareMemo(config);
+  
   useEffect( () => {
     async function fetchAndParse() {
-      if (!config.modelUrl) {
-        console.log(`Skipping fetching for ${config.modelName} as modelUrl property is not set`)
+      if (!memoizedConfig.modelUrl) {
+        console.log(`Skipping fetching for ${memoizedConfig.modelName} as modelUrl property is not set`)
         return;
       }
 
-      console.log(`Downloading & parsing model data JSON for ${config.modelName} (${config.modelUrl})`)
+      console.log(`Downloading & parsing model data JSON for ${memoizedConfig.modelName} (${memoizedConfig.modelUrl})`)
       let modelJson;
       try {
-        modelJson = await fetch(config.modelUrl)
+        modelJson = await fetch(memoizedConfig.modelUrl)
           .then((res) => res.json())
       } catch (err) {
         console.error(err);
-        setError(new Error(`Downloading model data JSONs for ${config.modelName} (${config.modelUrl}) failed.`));
+        setError(new Error(`Downloading model data JSONs for ${memoizedConfig.modelName} (${memoizedConfig.modelUrl}) failed.`));
         return;
       }
       try {
-        setModelData(parseModelData(config.modelName, modelJson, config.sites, config.variantColors, config.variantDisplayNames));
+        setModelData(parseModelData(memoizedConfig.modelName, modelJson, memoizedConfig.sites, memoizedConfig.variantColors, memoizedConfig.variantDisplayNames));
       } catch (err) {
         console.error(err)
-        setError(new Error(`Downloading model data JSONs for ${config.modelName} succeeded, but parsing the JSONs failed.`));
+        setError(new Error(`Downloading model data JSONs for ${memoizedConfig.modelName} succeeded, but parsing the JSONs failed.`));
         return;
       }
     }
 
     fetchAndParse();
-  }, [config]);
+  }, [memoizedConfig]);
 
 
   return {modelData, error}
