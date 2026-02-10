@@ -9,8 +9,8 @@ import {parseModelData} from "./parse.js";
  * Copied from Auspice
  * <https://github.com/nextstrain/auspice/blob/6370cc5a682824b607dcd0314c1821e99bd636f7/src/components/measurements/index.tsx#L65-L76>
  */
-function useDeepCompareMemo<T>(value: T): T {
-  const ref: MutableRefObject<T> = useRef();
+function useDeepCompareMemo(value) {
+  const ref = useRef();
   if (!isEqual(value, ref.current)) {
     ref.current = value;
   }
