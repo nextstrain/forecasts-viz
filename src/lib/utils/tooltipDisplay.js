@@ -8,7 +8,7 @@ export function displayTopVariants({n=5, fmt=d3.format(".1f")}={}) {
     let values = [];
     locationData.forEach((variantPoint, variant) => {
       const d = variantPoint.get('temporal')[xIdx];
-      if (d.get('date') && d.get(params.key)) {
+      if (d && d.get('date') && d.get(params.key)) {
         values.push([variant, d.get(params.key)])
       }
     });

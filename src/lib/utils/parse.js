@@ -134,6 +134,25 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
     data.set('variantDisplayNames', genericVariantDisplayNames(data.get('variants')))
   }
 
+  // Validate that all variants have colors assigned
+  const variantColors = data.get('variantColors');
+  const missingColors = [];
+  for (const variant of data.get('variants')) {
+    const color = variantColors.get(variant);
+    if (!color) {
+      missingColors.push(variant);
+    }
+  }
+  if (missingColors.length > 0) {
+    const availableColors = Array.from(variantColors.keys());
+    throw new Error(
+      `Missing colors for ${missingColors.length} variant(s): ${missingColors.join(', ')}\n\n` +
+      `All variants must have colors defined in metadata.variantColors.\n` +
+      `Variants with colors: ${availableColors.join(', ')}\n` +
+      `Variants without colors: ${missingColors.join(', ')}`
+    );
+  }
+
   let ga_min=100, ga_max=0;
 
   const points = new Map(
@@ -151,12 +170,29 @@ export const parseModelData = (modelName, modelJson, sites, configProvidedVarian
   const pointEstimates = new Set(['ga']);
 
   modelJson.data
-    .forEach((d) => {
+    .forEach((d, idx) => {
       const site = d.site;
       if (sites.has(site)) {
+        // Check if location and variant exist in metadata
+        const locationMap = points.get(d.location);
+        if (!locationMap) {
+          console.error(`ERROR at data point ${idx}: Location "${d.location}" not found in metadata.location`);
+          console.error(`Available locations: ${Array.from(points.keys()).join(', ')}`);
+          console.error(`Problematic data point:`, d);
+          throw new Error(`Location "${d.location}" in data not found in metadata.location. Available locations: ${Array.from(points.keys()).join(', ')}`);
+        }
+
+        const variantPoint = locationMap.get(d.variant);
+        if (!variantPoint) {
+          console.error(`ERROR at data point ${idx}: Variant "${d.variant}" not found in metadata.variants`);
+          console.error(`Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
+          console.error(`Problematic data point:`, d);
+          throw new Error(`Variant "${d.variant}" in data not found in metadata.variants. Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
+        }
+
         const store = pointEstimates.has(site) ?
-          points.get(d.location).get(d.variant) :
-          points.get(d.location).get(d.variant).get('temporal')[dateIdx.get(d.date)];
+          variantPoint :
+          variantPoint.get('temporal')[dateIdx.get(d.date)];
 
         /* if it's not a point estimate enforce a date */
         if (!pointEstimates.has(site) && dateIdx.get(d.date) === undefined) return;
