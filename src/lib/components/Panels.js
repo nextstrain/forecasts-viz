@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useElementSize, useDebounce } from 'usehooks-ts';
-import styled from 'styled-components';
 import { Legend } from "./Legend";
 import { ErrorBoundary } from './ErrorBoundary';
 import { ErrorMessage } from "./ErrorMessage";
@@ -19,38 +18,6 @@ import "../styles/styles.css";
  */
 
 
-/**
- * <Container> is intended to have 2 children: <Legend> and <PanelSectionContainer>
- * The intention is for both to occupy the full width and the Legend
- * to be on top.
- * @private 
- */
-const Container = styled.div`
-  /* border: dashed orange; */
-  display: flex;
-  flex-wrap: nowrap;
-  flex-direction: column;
-`;
-
-/**
- * Container for the individual <Graph> elements
- * @private 
- */
-const PanelSectionContainer = styled.div`
-  /* border: dashed purple; */
-  flex-grow: 1;
-  display: grid;
-  gap: 0px;
-  padding-top: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(${props => props.smallMultipleWidth}px, 1fr));
-`;
-
-const OptionsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  justify-content: flex-end;
-`
 
 /**
  * This function should handle all styling parameters related to sizing -- graph sizes,
@@ -64,7 +31,6 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
 
   const numVariants = modelData?.get('variants')?.length;
 
-  let legendFontSize = 15;
   let legendRadius = 8;
 
   /** width/heights are in pixels (as they'll be used in the SVG).
@@ -87,7 +53,7 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
   /* control the spacing around graphs via the margin of each graph
   We export these as individual keys so they can be easily overridden.
   The initial ones are generally ok. */
-  let [top, right, bottom, left] = [15, 10, 30, 45];
+  let [top, right, bottom, left] = [15, 10, 35, 45];
   if (params.preset==="growthAdvantage") {
     [top, right, bottom, left] = [15, 40, 70, 40];
   }
@@ -95,7 +61,7 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
   return {
     width, height,
     top, right, bottom, left,
-    legendFontSize, legendRadius,
+    legendRadius,
     outerWidth
   };
 }
@@ -178,8 +144,8 @@ const Panel = ({
   const  locationList = locations || modelData?.get('locations');
   const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
-  const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('daily_raw_freq');
-  const canShowWeeklyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('weekly_raw_freq');
+  const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_raw');
+  const canShowWeeklyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_smoothed');
 
   if (error) {
     return (<ErrorMessage error={error}/>);
@@ -190,16 +156,17 @@ const Panel = ({
   }
 
   return (
-    <div ref={outerDivRef}>
-      <OptionsContainer>
-        {canUseLogit && <Toggle label="Logit transform" checked={logit} sizes={sizes} onChange={() => toggleLogit(!logit)}/>}
-        {canShowDailyRawFreq && <Toggle label="Daily raw data" checked={showDailyRawFreq} sizes={sizes} onChange={() => toggleShowDailyRawFreq(!showDailyRawFreq)}/>}
-        {canShowWeeklyRawFreq && <Toggle label="Weekly raw data" checked={showWeeklyRawFreq} sizes={sizes} onChange={() => toggleShowWeeklyRawFreq(!showWeeklyRawFreq)}/>}
-      </OptionsContainer>
+    <div className='panelContainer' ref={outerDivRef}>
+      <div className='optionsContainer'>
+        {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={() => toggleLogit(!logit)}/>}
+        {canShowDailyRawFreq && <Toggle label={params.rawDataToggleName || "Daily raw data"} checked={showDailyRawFreq} onChange={() => toggleShowDailyRawFreq(!showDailyRawFreq)}/>}
+        {canShowWeeklyRawFreq && <Toggle label={params.smoothedDataToggleName || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={() => toggleShowWeeklyRawFreq(!showWeeklyRawFreq)}/>}
+      </div>
 
-      <Container>
+      <div className='legendAndSmallMultiplesContainer'>
         <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={setLegendSwatchHovered} preset={params.preset}/>
-        <PanelSectionContainer smallMultipleWidth={sizes.width}>
+        <div className='smallMultiplesContainer'
+          style={{gridTemplateColumns: `repeat(auto-fill, minmax(${sizes.width}px, 1fr))`}}>
           {locationList
             .map((location) => (
               <Graph
@@ -212,8 +179,8 @@ const Panel = ({
               />
             ))
           }
-        </PanelSectionContainer>
-      </Container>
+        </div>
+      </div>
     </div>
   )
 }

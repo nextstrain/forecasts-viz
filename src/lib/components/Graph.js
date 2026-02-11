@@ -1,12 +1,7 @@
 import React, { useRef } from 'react';
-import styled from 'styled-components';
 import { useGraph } from "../utils/useGraph";
 import { displayTopVariants, categoryPointTooltip} from "../utils/tooltipDisplay";
 import * as d3 from "d3";
-
-const D3Container = styled.div`
-  /* border: dashed blue; */
-`;
 
 /**
  * @typedef {Object} GraphParameters
@@ -53,7 +48,7 @@ export const Graph = ({modelData, sizes, location, params, options}) => {
   useGraph(d3Container, sizes, modelData, expandedParams, options);
 
   return (
-    <D3Container ref={d3Container}/>
+    <div ref={d3Container}/>
   )
 }
 

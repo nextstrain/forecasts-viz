@@ -1,12 +1,4 @@
 import React from 'react';
-import styled from 'styled-components';
-
-const Container = styled.div`
-  margin-top: 100px;
-  margin-bottom: 100px;
-  font-size: 20px;
-  color: red;
-`;
 
 /**
  * A component to display an error (if set).
@@ -18,8 +10,8 @@ const Container = styled.div`
 export const ErrorMessage = ({error}) => {
   if (!error) return null;
   return (
-    <Container>
+    <div className='errorMessage'>
       {String(error)}
-    </Container>
+    </div>
   )
 }

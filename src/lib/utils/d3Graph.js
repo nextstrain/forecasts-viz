@@ -14,7 +14,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.sizes = sizes;
   this.setStyles();
 
-  this.createScales(options);
+  this.createScales(options, params);
   this.drawAxes();
 
   this.setupTooltipXY();
@@ -33,7 +33,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
 }
 
 
-D3Graph.prototype.createScales = function({logit}) {
+D3Graph.prototype.createScales = function({logit}, {log2}) {
   const customXDomain = Array.isArray(this.params.xDomain) ?
     [...this.params.xDomain] :
       typeof this.params.xDomain === "function" ?
@@ -58,7 +58,7 @@ D3Graph.prototype.createScales = function({logit}) {
     case "points":
       this.x = d3.scalePoint()
         .domain(customXDomain || [...this.modelData.get('variants')])
-      this.y = d3.scaleLinear()
+      this.y = (log2 ? d3.scaleLog().base(2): d3.scaleLinear())
         .domain(customYDomain)
       break;
     default:
@@ -69,12 +69,67 @@ D3Graph.prototype.createScales = function({logit}) {
 }
 
 D3Graph.prototype.drawAxes = function() {
-  // stream + lines are temporal, points are by variant
-  const xTickFmt = this.params.graphType==="points" ?
-    (variant) => this.modelData.get('variantDisplayNames').get(variant) || variant :
-    dateFormatter;
+  /**
+   * X-axis. Note the scale is always `scalePoint`, so we must control the ticks to
+   * show manually (i.e. can't use `axis.ticks()`)
+   */
+  // First work out which ticks to display and how to display them
+  // `xTicks` is a dict of tick value -> displayed text.
+  const xTicks = {};
+  if (this.params.graphType==="points") {
+    // display every variant (point in the domain)
+    this.x.domain().forEach((variant) => {
+      xTicks[variant] = this.modelData.get('variantDisplayNames').get(variant) || variant;
+    });
+  } else {
+    if (this.modelData.get('sparseDates')===false) {
+      // We have values for every day (i.e. no holes), so display a tick for
+      // the first day of each month
+      this.x.domain().forEach((dStr) => {
+        const date = d3.timeParse("%Y-%m-%d")(dStr);
+        if (d3.timeFormat("%d")(date)==='01') {
+          xTicks[dStr] = `${d3.timeFormat("%b")(date)}`;
+        }
+      });
+    } else {
+      // sparse data - plot the first tick for each month encountered
+      let _lastTick;
+      this.x.domain().forEach((dStr, i) => {
+        const date = d3.timeParse("%Y-%m-%d")(dStr);
+        const month = d3.timeFormat("%m")(date)
+        if (month!==_lastTick) {
+          // don't plot first tick (aesthetic reasons)
+          if (_lastTick) {
+            xTicks[dStr] = `${d3.timeFormat("%b %e")(date)}`;
+          }
+          _lastTick=month;
+        }
+      });
+    }
+  }
   this.svg.append("g")
-    .call(generalXAxis(this.x, this.sizes, xTickFmt));
+    .call((g) => g
+      .attr("transform", `translate(0,${this.sizes.height-this.sizes.bottom})`)
+      .call(
+        d3.axisBottom(this.x)
+          .tickSize(2) /* small (vertical) tick lines */
+          .tickValues(Object.keys(xTicks))
+      )
+      // .call(g => g.select(".domain").remove())
+      .selectAll("text")
+        .text((tickValue) => xTicks[tickValue])
+        // .attr("y", 0)
+        // .attr("x", (d) => x(d))
+        .attr("dy", "0.6em")
+        .attr("transform", "rotate(45)")
+        .style("text-anchor", "start")
+        .style("font-size", "12px")
+        .style("fill", "#aaa")
+    );
+
+  /**
+   * Y-axis
+   */
   this.svg.append("g")
     .attr("class", "yAxis")
     .call(simpleYAxis(this.y, this.sizes, this.params.yTickFmt));
@@ -247,7 +302,7 @@ D3Graph.prototype.annotateFinalPoint = function() {
 D3Graph.prototype.updateScale = function(options) {
   if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
 
-  this.createScales(options); // updates this.x, this.y
+  this.createScales(options, this.params); // updates this.x, this.y
 
   this.svg.selectAll('.yAxis')
     .transition().duration(TRANSITION_DURATION)
@@ -265,13 +320,13 @@ D3Graph.prototype.updateScale = function(options) {
       .transition().duration(TRANSITION_DURATION)
       .attr("d", this.area(temporalPoints))
 
-    g.selectAll('.dailyRawFreqPoints') // may be empty - that's ok!
+    g.selectAll('.freqRawPoints') // may be empty - that's ok!
       .transition().duration(TRANSITION_DURATION)
-      .attr("cy", (d) => this.y(d.get(`daily_raw_freq`) || false))
+      .attr("cy", (d) => this.y(d.get(`freq_raw`) || false))
 
-    g.selectAll('.weeklyRawFreqPoints') // may be empty - that's ok!
+    g.selectAll('.freqSmoothedPoints') // may be empty - that's ok!
       .transition().duration(TRANSITION_DURATION)
-      .attr("cy", (d) => this.y(d.get(`weekly_raw_freq`) || false))
+      .attr("cy", (d) => this.y(d.get(`freq_smoothed`) || false))
   });
 }
 
@@ -313,28 +368,28 @@ D3Graph.prototype.setStyles = function(options) {
 }
 
 /**
- * Prototype called when the "Daily raw data" toggle is changed
+ * Prototype called when the frequency raw-data toggle is changed
+ * NOTE: this used to be hardcoded to convey "daily", but this is no longer the case
  */
 D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
   if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
   if (!options.showDailyRawFreq) {
-    this.svg.selectAll('.dailyRawFreqPoints').remove("*")
+    this.svg.selectAll('.freqRawPoints').remove("*")
     return;
   }
-  const key = `daily_raw_freq`
+  const key = 'freq_raw';
   this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
     const temporalPoints = variantPoint.get('temporal')
       .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
-
-    const variantColor = this.getVariantColor(variant);
+    const variantColor = this.getVariantColor(variant) || 'black'
     const pointColor = this.styles.rawFreqs.daily.colorModifier(variantColor)
 
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
-      .selectAll("dailyRawFreqPoints")
+      .selectAll("freqRawPoints")
       .data(temporalPoints)
       .enter()
       .append("circle")
-        .attr("class", "dailyRawFreqPoints")
+        .attr("class", "freqRawPoints")
         .attr("cx", (d) => this.x(d.get('date')))
         .attr("cy", (d) => this.y(d.get(key) || false))
         .attr("r", this.styles.rawFreqs.daily.r.normal)
@@ -344,28 +399,29 @@ D3Graph.prototype.toggleDailyRawFreqPoints = function(options) {
 }
 
 /**
- * Prototype called when the "7-day smoothed data" toggle is changed
+ * Prototype called when the smoothed (raw) data toggle is changed
+ * NOTE: this used to be hardcoded to convey "weekly", but this is no longer the case
  */
 D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
   if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
   if (!options.showWeeklyRawFreq) {
-    this.svg.selectAll('.weeklyRawFreqPoints').remove("*")
+    this.svg.selectAll('.freqSmoothedPoints').remove("*")
     return;
   }
-  const key = `weekly_raw_freq`
+  const key = `freq_smoothed`
   this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
     const temporalPoints = variantPoint.get('temporal')
       .filter((pt) => pt.has(key) && Number.isFinite(pt.get(key)))
 
-    const variantColor = this.getVariantColor(variant);
+    const variantColor = this.getVariantColor(variant) || 'black';
     const pointColor = this.styles.rawFreqs.weekly.colorModifier(variantColor)
 
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
-      .selectAll("weeklyRawFreqPoints")
+      .selectAll("freqSmoothedPoints")
       .data(temporalPoints)
       .enter()
       .append("circle")
-        .attr("class", "weeklyRawFreqPoints")
+        .attr("class", "freqSmoothedPoints")
         .attr("cx", (d) => this.x(d.get('date')))
         .attr("cy", (d) => this.y(d.get(key) || false))
         .attr("r", this.styles.rawFreqs.weekly.r.normal)
@@ -390,10 +446,10 @@ D3Graph.prototype.singleVariantFocus = function(legendSwatchHovered) {
     /* Initially set everything to normal | focusInactive styling, then select the focus variant
     (if applicable) and modify the styles of that */
     const focusState = legendSwatchHovered===undefined ? 'normal' : 'focusInactive';
-    this.svg.selectAll('.dailyRawFreqPoints')
+    this.svg.selectAll('.freqRawPoints')
       .attr("r", this.styles.rawFreqs.daily.r[focusState])
       .style("opacity", this.styles.rawFreqs.daily.opacity[focusState])
-    this.svg.selectAll('.weeklyRawFreqPoints')
+    this.svg.selectAll('.freqSmoothedPoints')
     .attr("r", this.styles.rawFreqs.weekly.r[focusState])
     .style("opacity", this.styles.rawFreqs.weekly.opacity[focusState])
     this.svg.selectAll('.area')
@@ -403,10 +459,10 @@ D3Graph.prototype.singleVariantFocus = function(legendSwatchHovered) {
       .attr("stroke-width", this.styles.lines.line.strokeWidth[focusState])
     if (legendSwatchHovered!==undefined) {
       const s = this.svg.selectAll(`.${cssSafeName(`variant_${legendSwatchHovered}`)}`);
-      s.selectAll('.dailyRawFreqPoints')
+      s.selectAll('.freqRawPoints')
         .attr("r", this.styles.rawFreqs.daily.r.focusActive)
         .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
-      s.selectAll('.weeklyRawFreqPoints')
+      s.selectAll('.freqSmoothedPoints')
         .attr("r", this.styles.rawFreqs.daily.r.focusActive)
         .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
       s.selectAll('.area')
@@ -503,29 +559,6 @@ function invertScalePoint(xPx) {
   return  domain[d3.bisect(rangePoints, xPx) -1];
 }
 
-function generalXAxis(x, sizes, textFn) {
-  return (g) => g
-    .attr("transform", `translate(0,${sizes.height - sizes.bottom})`)
-    .call(d3.axisBottom(x).tickSize(0))
-    // .call(g => g.select(".domain").remove())
-    .selectAll("text")
-      .text(textFn)
-      // .attr("y", 0)
-      // .attr("x", (d) => x(d))
-      .attr("dy", "0.6em")
-      .attr("transform", "rotate(45)")
-      .style("text-anchor", "start")
-      .style("font-size", "12px")
-      .style("fill", "#aaa");
-}
-
-function dateFormatter(dStr) {
-  const date = d3.timeParse("%Y-%m-%d")(dStr);
-  if (parseInt(d3.timeFormat("%d")(date), 10)===1) {
-    return `${d3.timeFormat("%b")(date)}`;
-  }
-  return '';
-}
 
 function simpleYAxis(y, sizes, textFun = (d) => d) {
   return (g) => g
