@@ -81,13 +81,12 @@ export const parseModelData = (modelName, modelJson, configSites, configProvided
     ["sites", undefined], /* sites discovered in processModelData */
     ["pivot", pivot],
     ['domains', new Map([])],
-    ["variantColors", variantColors(modelJson, variants, configProvidedVariantColors)],
+    ["variantColors", getVariantColors(modelJson, variants, configProvidedVariantColors)],
     ["variantDisplayNames", variantDisplayNames(modelJson, variants, configProvidedVariantDisplayNames)],
   ]);
   
   console.log(`\t${data.get('locations').length} locations x ${data.get('variants').length} variants x ${dates.length} dates`)
   console.log("\t"+dateSummary);
-  _validateVariantColors(data); // may throw
 
   /** POINTS hold all the actual data for plotting in a hierarchical Map structure.
    * We initialise to the following structure:
@@ -148,12 +147,11 @@ function collectSites(modelSites, configSites) {
   let sitesInfo = {...DEFAULT_SITES};
 
   if (configSites) {
-    console.log("Merging config-defined sites with defaults");
     if (typeof configSites !== 'object') {
       throw new Error(`The config-defined 'sites' has changed to an object (you have provided a ${typeof configSites})`)
     }
     sitesInfo = {...sitesInfo, ...configSites};
-    console.log("Merging config-defined sites with defaults. Combined sites:", sitesInfo);
+    console.log("Merged config-defined sites with defaults. Combined sites:", sitesInfo);
   }
 
   // Prune out any sites not in the model JSON
@@ -276,16 +274,31 @@ function variantDisplayNames(modelJson, variants, configProvidedVariantDisplayNa
 /**
  * @private
  */
-function variantColors(modelJson, variants, configProvidedVariantColors) {
+function getVariantColors(modelJson, variants, configProvidedVariantColors) {
+  let variantColors;
   if (configProvidedVariantColors) {
-    return configProvidedVariantColors;
+    variantColors = configProvidedVariantColors;
+  } else if (Array.isArray(modelJson.metadata?.variantColors)) {
+    variantColors = new Map(modelJson.metadata.variantColors);
+  } else {
+    // Todo - sample from a continuous scale when we have more than 10 variants
+    // (e.g. collapsed pango lineages will have lots more!)
+    variantColors = new Map(variants.map((name, idx) => [name, schemeTableau10[idx % 10]]));
   }
-  if (Array.isArray(modelJson.metadata?.variantColors)) {
-    return new Map(modelJson.metadata.variantColors);
+  
+  const missingColors = variants.filter((v) => !variantColors.has(v));
+  if (missingColors.length) {
+    console.error(
+      `Missing colors for ${missingColors.length} variant(s): ${missingColors.join(', ')}\n\n` +
+      `All variants should have colors defined in metadata.variantColors.\n` +
+      `(Grey will be used for these missing variants as a fallback)`
+    );
+    for (const v of missingColors) {
+      variantColors.set(v, '#bdbdbd')
+    }
   }
-  // Todo - sample from a continuous scale when we have more than 10 variants
-  // (e.g. collapsed pango lineages will have lots more!)
-  return new Map(variants.map((name, idx) => [name, schemeTableau10[idx%10]]));
+
+  return variantColors;
 }
 
 /**
@@ -455,25 +468,4 @@ function processModelData(data, points, dateIdx, sitesInfo, ps_point_estimator) 
     }      
   }
   return keysAdded;
-}
-
-
-function _validateVariantColors(data) {
-  const variantColors = data.get('variantColors');
-    const missingColors = [];
-    for (const variant of data.get('variants')) {
-      const color = variantColors.get(variant);
-      if (!color) {
-        missingColors.push(variant);
-      }
-    }
-    if (missingColors.length > 0) {
-      const availableColors = Array.from(variantColors.keys());
-      throw new Error(
-        `Missing colors for ${missingColors.length} variant(s): ${missingColors.join(', ')}\n\n` +
-        `All variants must have colors defined in metadata.variantColors.\n` +
-        `Variants with colors: ${availableColors.join(', ')}\n` +
-        `Variants without colors: ${missingColors.join(', ')}`
-      );
-    }
 }
