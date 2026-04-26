@@ -1,10 +1,10 @@
 import {useState, useEffect, useRef} from 'react';
-import { isEqual } from 'lodash';
+import { isEqual } from './isEqual.js';
 import {parseModelData} from "./parse.js";
 
 /**
  * A custom React Hook that returns a memoized value that will only change
- * if a deep comparison using lodash.isEqual determines the value is not
+ * if a deep comparison determines the value is not
  * equivalent to the previous value.
  * Copied from Auspice
  * <https://github.com/nextstrain/auspice/blob/6370cc5a682824b607dcd0314c1821e99bd636f7/src/components/measurements/index.tsx#L65-L76>

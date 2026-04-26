@@ -1,5 +1,5 @@
 import {useRef, useEffect} from 'react';
-import {isEqual} from 'lodash';
+import {isEqual} from './isEqual.js';
 import {D3Graph} from "./d3Graph";
 
 export const useGraph = (dom, sizes, modelData, params, options) => {
