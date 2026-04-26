@@ -1,4 +1,4 @@
-import { PanelDisplay } from './components/Panels.js';
+import { PanelDisplay } from './components/Panels.jsx';
 import { useModelData } from "./utils/useModelData.js";
 
 /**

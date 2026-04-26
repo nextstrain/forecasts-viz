@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import { PanelDisplay, useModelData} from './lib/index.js';
 import './styles.css';
 /* Following are not currently exported by the library itself */
-import { getDomainUsingKey } from "./lib/components/Graph.js";
+import { getDomainUsingKey } from "./lib/components/Graph.jsx";
 import { displayTopVariants } from "./lib/utils/tooltipDisplay.js";
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';

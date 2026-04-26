@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useElementSize, useDebounce } from 'usehooks-ts';
-import { Legend } from "./Legend";
-import { ErrorBoundary } from './ErrorBoundary';
-import { ErrorMessage } from "./ErrorMessage";
-import Spinner from "./Spinner";
-import { Toggle } from "./Toggle";
-import { Graph } from "./Graph";
+import { Legend } from "./Legend.jsx";
+import { ErrorBoundary } from './ErrorBoundary.jsx';
+import { ErrorMessage } from "./ErrorMessage.jsx";
+import Spinner from "./Spinner.jsx";
+import { Toggle } from "./Toggle.jsx";
+import { Graph } from "./Graph.jsx";
 import "../styles/styles.css";
 
 /**

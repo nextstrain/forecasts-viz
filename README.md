@@ -84,20 +84,16 @@ npm run deploy # will automatically push assets to the gh-pages branch
 
 ### How to develop the library in the context of a consuming app
 
-In this directory (`forecasts-viz`) run `npm develop:library`.
-This will bundle the library code, without dependencies, to `dist/` and keep it up-to-date as you make changes to the code.
+If the consuming app supports it (e.g. `forecasts-flu/viz`), set
+`LOCAL_LIB=1` when running its dev server. The consumer's Vite config
+should alias `@nextstrain/evofr-viz` to this repo's `src/lib/` so edits
+here hot-reload in the running app without any `npm pack` step.
 
-In the consuming app, first install the tarball and associated dependencies as above.
-Then use hardlinks to swap out the bundled library code with the version we are keeping up-to-date, e.g.:
+For example, with `forecasts-viz` and `forecasts-flu` checked out as
+siblings:
+
 ```sh
-rm -rf node_modules/\@nextstrain/evofr-viz/dist
-cp -lR ~/github/nextstrain/forecasts-viz/dist  node_modules/\@nextstrain/evofr-viz/dist
+cd ../forecasts-flu/viz
+LOCAL_LIB=1 npm run dev
 ```
-(your paths will differ).
-Then run the app and you should be using the current state of the underlying library code.
-If your development mode doesn't work then try the production mode to see if it's due to build-tool caching.
-
-If you need to update dependencies of the library then you're on your own!
-
-To undo this, in the consuming app directory delete all the dependencies and re-install: `rm -rf node_modules && npm ci`.
 
