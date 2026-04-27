@@ -1,6 +1,9 @@
-const argparse = require("argparse");
-const path = require('path')
-const express = require('express')
+import argparse from "argparse";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import express from "express";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function parseArgs() {
   const parser = new argparse.ArgumentParser({
@@ -34,4 +37,3 @@ async function main(args) {
 }
 
 main(parseArgs());
-

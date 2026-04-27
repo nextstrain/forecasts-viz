@@ -3,51 +3,30 @@
   "version": "0.2.0",
   "description": "React components for visualising evofr model JSONs",
   "private": true,
+  "type": "module",
   "author": "Nextstrain",
   "license": "AGPL-3.0-only",
   "repository": "github:nextstrain/forecasts-viz",
   "homepage": "https://nextstrain.github.io/forecasts-viz",
   "main": "dist/index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "build:local": "rm -rf build && react-scripts build && mkdir build/forecasts-viz && mv build/static build/forecasts-viz",
-    "serve": "serve -s build",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:lib": "vite build --config vite.lib.config.js",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "download": "bash ./scripts/download-data.sh",
-    "start:local": "concurrently \"node scripts/data-server.js\" \"REACT_APP_CLADES_RENEWAL='http://localhost:8000/clades.renewal.json' REACT_APP_CLADES_MLR='http://localhost:8000/clades.mlr.json' REACT_APP_LINEAGES_MLR='http://localhost:8000/lineages.mlr.json' npm run start\"",
+    "dev:local": "concurrently \"node scripts/data-server.js\" \"VITE_CLADES_RENEWAL='http://localhost:8000/clades.renewal.json' VITE_CLADES_MLR='http://localhost:8000/clades.mlr.json' VITE_LINEAGES_MLR='http://localhost:8000/lineages.mlr.json' vite\"",
     "test": "node src/tests/date-parsing.js",
-    "lint": "eslint src",
-    "eject": "react-scripts eject",
     "docs": "jsdoc2md src/lib/index.js src/lib/**/*.js > api.md",
-    "transpile": "rm -rf dist && NODE_ENV=production rollup -c",
-    "develop:library": "rollup -c --sourcemap --watch",
-    "prepack": "npm run transpile"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "prepack": "npm run build:lib"
   },
   "files": [
     "dist",
     "api.md",
     "README.md"
   ],
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "peerDependencies": {
     "d3": ">=7",
     "rc-switch": ">=4",
@@ -56,15 +35,7 @@
     "usehooks-ts": "^2.9.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.20.7",
-    "@babel/core": "^7.20.12",
-    "@babel/preset-react": "^7.18.6",
-    "@rollup/plugin-babel": "^6.0.3",
-    "@rollup/plugin-image": "^3.0.2",
-    "@rollup/plugin-terser": "^0.4.1",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
+    "@vitejs/plugin-react": "^4.3.0",
     "argparse": "^2.0.1",
     "concurrently": "^8.2.0",
     "d3": ">=7",
@@ -76,14 +47,8 @@
     "rc-switch": ">=4",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-scripts": "5.0.1",
     "react-tabs": "^4.3.0",
-    "rollup": "^2.79.1",
-    "rollup-plugin-css-only": "^4.3.0",
-    "rollup-plugin-gzip": "^3.1.0",
-    "rollup-plugin-peer-deps-external": "^2.2.4",
-    "serve": "^14.2.0",
     "usehooks-ts": "^2.9.1",
-    "web-vitals": "^2.1.4"
+    "vite": "^5.4.0"
   }
 }

@@ -90,17 +90,17 @@ const baseConfiguration = {
 const config = {
   'cladesMlr': {
     modelName: "clades/MLR",
-    modelUrl: process.env.REACT_APP_CLADES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/mlr/latest_results.json`,
+    modelUrl: import.meta.env.VITE_CLADES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/mlr/latest_results.json`,
     sites: undefined,
   },
   'cladesRenewal': {
     modelName: "clades/renewal",
-    modelUrl: process.env.REACT_APP_CLADES_RENEWAL || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/renewal/latest_results.json`,
+    modelUrl: import.meta.env.VITE_CLADES_RENEWAL || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/renewal/latest_results.json`,
     ...baseConfiguration
   },
   'lineagesMlr': {
     modelName: "lineages/MLR",
-    modelUrl: process.env.REACT_APP_LINEAGES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/pango_lineages/global/mlr/latest_results.json`,
+    modelUrl: import.meta.env.VITE_LINEAGES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/pango_lineages/global/mlr/latest_results.json`,
     // don't add baseConfiguration as the JSON defines the colours and we don't want the config to override this
     sites: undefined,
   },
