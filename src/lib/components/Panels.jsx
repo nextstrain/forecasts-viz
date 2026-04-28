@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useElementSize, useDebounce } from 'usehooks-ts';
 import { Legend } from "./Legend.jsx";
 import { ErrorBoundary } from './ErrorBoundary.jsx';
@@ -135,9 +135,7 @@ const Panel = ({
   locations=undefined, /* optional. Defaults to all available */
 }) => {
   const {modelData, error} = data;
-  const [logit, toggleLogit] = useState(false);
-  const [showDailyRawFreq, toggleShowDailyRawFreq] = useState(false);
-  const [showWeeklyRawFreq, toggleShowWeeklyRawFreq] = useState(false);
+  const {logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
 
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);
@@ -158,9 +156,9 @@ const Panel = ({
   return (
     <div className='panelContainer' ref={outerDivRef}>
       <div className='optionsContainer'>
-        {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={() => toggleLogit(!logit)}/>}
-        {canShowDailyRawFreq && <Toggle label={params.rawDataToggleName || "Daily raw data"} checked={showDailyRawFreq} onChange={() => toggleShowDailyRawFreq(!showDailyRawFreq)}/>}
-        {canShowWeeklyRawFreq && <Toggle label={params.smoothedDataToggleName || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={() => toggleShowWeeklyRawFreq(!showWeeklyRawFreq)}/>}
+        {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={toggleLogit}/>}
+        {canShowDailyRawFreq && <Toggle label={params.rawDataToggleName || "Daily raw data"} checked={showDailyRawFreq} onChange={toggleShowDailyRawFreq}/>}
+        {canShowWeeklyRawFreq && <Toggle label={params.smoothedDataToggleName || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={toggleShowWeeklyRawFreq}/>}
       </div>
 
       <div className='legendAndSmallMultiplesContainer'>
@@ -174,7 +172,6 @@ const Panel = ({
                 sizes={sizes}
                 location={location}
                 params={params}
-                options={{logit, showDailyRawFreq, showWeeklyRawFreq}}
                 key={`${params.preset || params.key}_${location}`}
               />
             ))

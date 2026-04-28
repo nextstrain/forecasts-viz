@@ -38,16 +38,13 @@ import * as d3 from "d3";
  * The react component for each individual graph
  * @private
  */
-export const Graph = ({modelData, sizes, location, params, options}) => {
+export const Graph = ({modelData, sizes, location, params}) => {
   const d3Container = useRef(null);
-  const {selectedVariants} = useControlsContext();
+  const controls = useControlsContext();
 
-  /**
-   * Add in certain params, as well as interpreting a preset
-   */
   const expandedParams = expandParams(params, location);
 
-  useGraph(d3Container, sizes, modelData, expandedParams, {...options, selectedVariants});
+  useGraph(d3Container, sizes, modelData, expandedParams, controls);
 
   return (
     <div ref={d3Container}/>

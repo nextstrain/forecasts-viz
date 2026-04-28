@@ -1,14 +1,19 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useControls, Controls } from './useControls';
 
-/* Default value so consumers rendered outside a <ControlsProvider> still
-   work — they just see an empty selection and a no-op changeVariant. */
-const defaultControls: Controls = {
+const defaultControls: Controls & { _isDefault?: true } = {
+  _isDefault: true,
   changeVariant: () => {},
   selectedVariants: new Set(),
+  logit: false,
+  toggleLogit: () => {},
+  showDailyRawFreq: false,
+  toggleShowDailyRawFreq: () => {},
+  showWeeklyRawFreq: false,
+  toggleShowWeeklyRawFreq: () => {},
 };
 
-const ControlsContext = createContext<Controls>(defaultControls);
+const ControlsContext = createContext<Controls & { _isDefault?: true }>(defaultControls);
 
 export function ControlsProvider({ children }: { children: ReactNode }) {
   const controls = useControls();
@@ -20,5 +25,9 @@ export function ControlsProvider({ children }: { children: ReactNode }) {
 }
 
 export function useControlsContext(): Controls {
-  return useContext(ControlsContext);
+  const controls = useContext(ControlsContext);
+  if ('_isDefault' in controls) {
+    console.error("useControlsContext was called outside of a <ControlsProvider>. Interactivity will not work properly.");
+  }
+  return controls;
 }
