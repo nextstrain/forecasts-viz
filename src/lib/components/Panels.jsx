@@ -1,5 +1,6 @@
 import React from 'react';
 import { useElementSize, useDebounce } from 'usehooks-ts';
+import Select from 'react-select';
 import { Legend } from "./Legend.jsx";
 import { ErrorBoundary } from './ErrorBoundary.jsx';
 import { ErrorMessage } from "./ErrorMessage.jsx";
@@ -8,6 +9,7 @@ import { Toggle } from "./Toggle.jsx";
 import { Graph } from "./Graph.jsx";
 import { useControlsContext } from "../hooks/ControlsContext";
 import "../styles/styles.css";
+
 
 /**
  * The intention is to (eventually) expose two components here
@@ -123,6 +125,28 @@ export const PanelDisplay = (props) => {
   )
 }
 
+const LocationFilter = ({allLocations, selectedLocations, changeLocations}) => {
+  const options = locationsToOptions(allLocations);
+  const value = locationsToOptions(selectedLocations);
+  return (
+    <div className='toggle'>
+      <span style={{paddingTop: 10}}>
+        Locations:
+      </span>
+      <Select
+        value={value}
+        isMulti
+        name="locations"
+        options={options}
+        className="basic-multi-select"
+        classNamePrefix="select"
+        styles={{ container: (base) => ({ ...base, paddingLeft: 10, minWidth: 400, maxWidth: 400 }) }}
+        onChange={(selected) => changeLocations(selected ? selected.map((s) => s.value) : [])}
+      />
+    </div>
+  )
+}
+
 /**
  * See <PanelDisplay> for description. That component wraps this one
  * so that if any hooks have errors they bubble up and can be caught
@@ -131,15 +155,22 @@ export const PanelDisplay = (props) => {
 const Panel = ({
   data,
   params,
-  styles=undefined,
+  styles = undefined,
+  
+  /** Deprecated! */
   locations=undefined, /* optional. Defaults to all available */
 }) => {
   const {modelData, error} = data;
-  const {logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
+  const {selectedLocations, changeLocations, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
+
+  if (locations) {
+    console.warn("Deprecation: <Panel> no longer takes a 'locations' prop")
+  }
 
   const [outerDivRef, _dimensions] = useElementSize()
-  const dimensions = useDebounce(_dimensions, 500);
-  const  locationList = locations || modelData?.get('locations');
+  const dimensions = useDebounce(_dimensions, 500);  
+  const locationList = (modelData?.get('locations') || [])
+    .filter((loc) => selectedLocations.length === 0 || selectedLocations.includes(loc));
   const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
   const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_raw');
@@ -156,9 +187,16 @@ const Panel = ({
   return (
     <div className='panelContainer' ref={outerDivRef}>
       <div className='optionsContainer'>
-        {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={toggleLogit}/>}
-        {canShowDailyRawFreq && <Toggle label={params.rawDataToggleName || "Daily raw data"} checked={showDailyRawFreq} onChange={toggleShowDailyRawFreq}/>}
-        {canShowWeeklyRawFreq && <Toggle label={params.smoothedDataToggleName || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={toggleShowWeeklyRawFreq}/>}
+        <LocationFilter
+          allLocations={modelData.get('locations') || []}
+          selectedLocations={selectedLocations}
+          changeLocations={changeLocations}
+        />
+        <div className='togglesContainer'>
+          {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={toggleLogit}/>}
+          {canShowDailyRawFreq && <Toggle label={params.rawDataToggleName || "Daily raw data"} checked={showDailyRawFreq} onChange={toggleShowDailyRawFreq}/>}
+          {canShowWeeklyRawFreq && <Toggle label={params.smoothedDataToggleName || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={toggleShowWeeklyRawFreq}/>}
+        </div>
       </div>
 
       <div className='legendAndSmallMultiplesContainer'>
@@ -180,4 +218,8 @@ const Panel = ({
       </div>
     </div>
   )
+}
+
+function locationsToOptions(locations) {
+  return locations.map((loc) => ({ value: loc, label: loc }))
 }

@@ -127,7 +127,7 @@ export const parseModelData = (
   const points = initialisePoints(data.get('locations'), variants, dates);
   const ps_point_estimator = modelJson.metadata.ps_point_estimator || "median";
 
-  const sites = processModelData(modelJson.data, points, dateIdx, sitesInfo, ps_point_estimator, locations);
+  const sites = processModelData(modelJson.data, points, dateIdx, sitesInfo, ps_point_estimator);
   data.set("sites", sites);
 
   /* Once everything's been added (including frequencies) - iterate over each point & censor certain frequencies */
@@ -420,12 +420,10 @@ function processModelData(
   dateIdx: Map<string, number>,
   sitesInfo: Record<string, any>,
   ps_point_estimator: string,
-  locationsList: string[],
 ): Set<string | undefined> {
   const keysAdded = new Set<string | undefined>();
   const keyInfo: Record<string, any> = {};
   const lookup: Record<string, (store: Map<string, any>, d: any) => string | undefined> = {};
-  const locations = new Set(locationsList);
 
   for (const [siteName, siteInfo] of Object.entries(sitesInfo)) {
     keyInfo[siteName] = siteInfo;

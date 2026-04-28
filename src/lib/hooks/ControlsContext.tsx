@@ -5,6 +5,8 @@ const defaultControls: Controls & { _isDefault?: true } = {
   _isDefault: true,
   changeVariant: () => {},
   selectedVariants: new Set(),
+  selectedLocations: [],
+  changeLocations: () => {},
   logit: false,
   toggleLogit: () => {},
   showDailyRawFreq: false,

@@ -165,7 +165,8 @@ D3Graph.prototype.setupArea = function() {
 }
 
 D3Graph.prototype.drawLines = function() {
-  if (this.params.graphType!=="lines") return;
+  if (this.params.graphType !== "lines") return;
+  
   this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
     const temporalPoints = variantPoint.get('temporal');
     const color = this.getVariantColor(variant);

@@ -3,9 +3,14 @@ import { useState, useCallback, useMemo } from 'react';
 export type ChangeVariantAction = 'set' | 'append' | 'unset';
 export type ChangeVariant = (variant: string, action: ChangeVariantAction) => void;
 
+export type SelectedLocations = string[];
+export type ChangeLocations = (locations: SelectedLocations) => void;
+
 export interface Controls {
   changeVariant: ChangeVariant;
   selectedVariants: Set<string>;
+  changeLocations: ChangeLocations;
+  selectedLocations: SelectedLocations;
   logit: boolean;
   toggleLogit: () => void;
   showDailyRawFreq: boolean;
@@ -16,6 +21,7 @@ export interface Controls {
 
 export function useControls(): Controls {
   const [selectedVariants, setSelectedVariants] = useState<Set<string>>(new Set());
+  const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>([]);
   const [logit, setLogit] = useState(false);
   const [showDailyRawFreq, setShowDailyRawFreq] = useState(false);
   const [showWeeklyRawFreq, setShowWeeklyRawFreq] = useState(false);
@@ -35,7 +41,10 @@ export function useControls(): Controls {
       }
     });
   }, []);
-
+  
+  const changeLocations = useCallback<ChangeLocations>(
+    (locations) => setSelectedLocations(locations),
+    []);
   const toggleLogit = useCallback(() => setLogit(prev => !prev), []);
   const toggleShowDailyRawFreq = useCallback(() => setShowDailyRawFreq(prev => !prev), []);
   const toggleShowWeeklyRawFreq = useCallback(() => setShowWeeklyRawFreq(prev => !prev), []);
@@ -44,6 +53,8 @@ export function useControls(): Controls {
     () => ({
       changeVariant,
       selectedVariants,
+      selectedLocations,
+      changeLocations,
       logit,
       toggleLogit,
       showDailyRawFreq,
@@ -51,6 +62,17 @@ export function useControls(): Controls {
       showWeeklyRawFreq,
       toggleShowWeeklyRawFreq,
     }),
-    [changeVariant, selectedVariants, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq]
+    [
+      changeVariant,
+      selectedVariants,
+      selectedLocations,
+      changeLocations,
+      logit,
+      toggleLogit,
+      showDailyRawFreq,
+      toggleShowDailyRawFreq,
+      showWeeklyRawFreq,
+      toggleShowWeeklyRawFreq
+    ]
   );
 }
