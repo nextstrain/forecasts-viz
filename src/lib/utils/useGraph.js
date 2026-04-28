@@ -64,8 +64,8 @@ export const useGraph = (dom, sizes, modelData, params, options) => {
       if (!isEqual(prevDeps.current.options.showWeeklyRawFreq, options.showWeeklyRawFreq)) {
         graph.current.toggleWeeklyRawFreqPoints(options)
       }
-      if (!isEqual(prevDeps.current.options.legendSwatchHovered, options.legendSwatchHovered)) {
-        graph.current.singleVariantFocus(options.legendSwatchHovered)
+      if (!isEqual(prevDeps.current.options.selectedVariants, options.selectedVariants)) {
+        graph.current.setVariantFocus(options.selectedVariants)
       }
       prevDeps.current.options = options;
     }

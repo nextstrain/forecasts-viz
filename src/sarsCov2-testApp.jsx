@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import { PanelDisplay, useModelData} from './lib/index.js';
+import { ControlsProvider } from './lib/hooks/ControlsContext';
 import './styles.css';
 /* Following are not currently exported by the library itself */
 import { getDomainUsingKey } from "./lib/components/Graph.jsx";
@@ -119,7 +120,7 @@ const incidenceDomain = getDomainUsingKey('I_smooth_HDI_95_upper');
 function CladesMLR() {
   const cladesMlrData = useModelData(config.cladesMlr);
   return (
-    <>
+    <ControlsProvider>
       <h2>{`General line graph (preset: 'frequency')`}</h2>
       <div className="abstract">{`Data comes from Clades/MLR model (updated: ${cladesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
@@ -128,14 +129,14 @@ function CladesMLR() {
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       <PanelDisplay data={cladesMlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
-    </>
+    </ControlsProvider>
   )
 }
 
 function LineagesMLR() {
   const lineagesMlrData = useModelData(config.lineagesMlr);
   return (
-    <>
+    <ControlsProvider>
       <h2>{`General line graph (preset: 'frequency')`}</h2>
       <div className="abstract">{`Data comes from Lineages/MLR model (updated: ${lineagesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
@@ -144,14 +145,14 @@ function LineagesMLR() {
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from Lineages/MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       <PanelDisplay data={lineagesMlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
-    </>
+    </ControlsProvider>
   )
 }
 
 function RenewalMLR() {
   const cladesRenewalData = useModelData(config.cladesRenewal);
   return (
-    <>
+    <ControlsProvider>
       <h2>{`Stream graph (preset: 'stackedIncidence')`}</h2>
       <div className="abstract">
         {`Custom styling to be 400px wide (default: 250px).
@@ -182,6 +183,6 @@ function RenewalMLR() {
         {`Data comes from renewal model (updated: ${cladesRenewalData?.modelData?.get('updated')}) matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
       </div>
       <PanelDisplay data={cladesRenewalData} locations={locations} params={{preset: "R_t"}}/>
-    </>
+    </ControlsProvider>
   )
 }

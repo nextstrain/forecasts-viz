@@ -6,6 +6,7 @@ import { ErrorMessage } from "./ErrorMessage.jsx";
 import Spinner from "./Spinner.jsx";
 import { Toggle } from "./Toggle.jsx";
 import { Graph } from "./Graph.jsx";
+import { useControlsContext } from "../hooks/ControlsContext";
 import "../styles/styles.css";
 
 /**
@@ -137,7 +138,6 @@ const Panel = ({
   const [logit, toggleLogit] = useState(false);
   const [showDailyRawFreq, toggleShowDailyRawFreq] = useState(false);
   const [showWeeklyRawFreq, toggleShowWeeklyRawFreq] = useState(false);
-  const [legendSwatchHovered, setLegendSwatchHovered] = useState(undefined);
 
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);
@@ -164,7 +164,7 @@ const Panel = ({
       </div>
 
       <div className='legendAndSmallMultiplesContainer'>
-        <Legend modelData={modelData} sizes={sizes} setLegendSwatchHovered={setLegendSwatchHovered} preset={params.preset}/>
+        <Legend modelData={modelData} sizes={sizes} preset={params.preset}/>
         <div className='smallMultiplesContainer'
           style={{gridTemplateColumns: `repeat(auto-fill, minmax(${sizes.width}px, 1fr))`}}>
           {locationList
@@ -174,7 +174,7 @@ const Panel = ({
                 sizes={sizes}
                 location={location}
                 params={params}
-                options={{logit, showDailyRawFreq, showWeeklyRawFreq, legendSwatchHovered}}
+                options={{logit, showDailyRawFreq, showWeeklyRawFreq}}
                 key={`${params.preset || params.key}_${location}`}
               />
             ))

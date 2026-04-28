@@ -430,53 +430,47 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
   })
 }
 
-D3Graph.prototype.singleVariantFocus = function(legendSwatchHovered) {
-  /**
-   * Calls to this method ultimately come from mouseover/mouseout events. It is
-   * _not_ guaranteed that a browser will fire a mouseout event (the faster the
-   * mouse move the more likely it is to be missed). For that reason we always
-   * ~reset the visual state in this method before highlighting the variant; this
-   * helps the case where we move from legend A to legend B and the browser doesn't
-   * fire a mouseout when leaving A. It will not address the case where we move from
-   * legend B to outside the legend; to address this we'd have to listen to mousemove
-   * events and manually check positions which I think is unnecessary complexity
-   * for the current state of the project.
-   */
+D3Graph.prototype.setVariantFocus = function(selectedVariants) {
+  const hasSelection = selectedVariants && selectedVariants.size > 0;
+
   if (this.params.graphType==="lines") {
-    /* Initially set everything to normal | focusInactive styling, then select the focus variant
-    (if applicable) and modify the styles of that */
-    const focusState = legendSwatchHovered===undefined ? 'normal' : 'focusInactive';
+    /* When a selection is active, non-selected variants go to focusInactive and
+    each selected variant is then bumped up to focusActive. With no selection,
+    everything is normal. */
+    const baseState = hasSelection ? 'focusInactive' : 'normal';
     this.svg.selectAll('.freqRawPoints')
-      .attr("r", this.styles.rawFreqs.daily.r[focusState])
-      .style("opacity", this.styles.rawFreqs.daily.opacity[focusState])
+      .attr("r", this.styles.rawFreqs.daily.r[baseState])
+      .style("opacity", this.styles.rawFreqs.daily.opacity[baseState])
     this.svg.selectAll('.freqSmoothedPoints')
-    .attr("r", this.styles.rawFreqs.weekly.r[focusState])
-    .style("opacity", this.styles.rawFreqs.weekly.opacity[focusState])
+      .attr("r", this.styles.rawFreqs.weekly.r[baseState])
+      .style("opacity", this.styles.rawFreqs.weekly.opacity[baseState])
     this.svg.selectAll('.area')
-      .style('opacity', this.styles.lines.area.opacity[focusState])
+      .style('opacity', this.styles.lines.area.opacity[baseState])
     this.svg.selectAll('.line')
-      .style('opacity', this.styles.lines.line.opacity[focusState])
-      .attr("stroke-width", this.styles.lines.line.strokeWidth[focusState])
-    if (legendSwatchHovered!==undefined) {
-      const s = this.svg.selectAll(`.${cssSafeName(`variant_${legendSwatchHovered}`)}`);
-      s.selectAll('.freqRawPoints')
-        .attr("r", this.styles.rawFreqs.daily.r.focusActive)
-        .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
-      s.selectAll('.freqSmoothedPoints')
-        .attr("r", this.styles.rawFreqs.daily.r.focusActive)
-        .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
-      s.selectAll('.area')
-        .style('opacity', this.styles.lines.area.opacity.focusActive)
-      s.selectAll('.line')
-        .style('opacity', this.styles.lines.line.opacity.focusActive)
-        .attr("stroke-width", this.styles.lines.line.strokeWidth.focusActive)
+      .style('opacity', this.styles.lines.line.opacity[baseState])
+      .attr("stroke-width", this.styles.lines.line.strokeWidth[baseState])
+    if (hasSelection) {
+      for (const variant of selectedVariants) {
+        const s = this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`);
+        s.selectAll('.freqRawPoints')
+          .attr("r", this.styles.rawFreqs.daily.r.focusActive)
+          .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
+        s.selectAll('.freqSmoothedPoints')
+          .attr("r", this.styles.rawFreqs.daily.r.focusActive)
+          .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
+        s.selectAll('.area')
+          .style('opacity', this.styles.lines.area.opacity.focusActive)
+        s.selectAll('.line')
+          .style('opacity', this.styles.lines.line.opacity.focusActive)
+          .attr("stroke-width", this.styles.lines.line.strokeWidth.focusActive)
+      }
     }
   } else if (this.params.graphType==='points') {
     /* We don't modify circle opacities here as HPD lines with circles drawn over
     them don't look nice if both opacities are <1 */
     const focusState = (d) => {
-      if (legendSwatchHovered===undefined) return 'normal';
-      if (d.get('variant')===legendSwatchHovered) return 'focusActive';
+      if (!hasSelection) return 'normal';
+      if (selectedVariants.has(d.get('variant'))) return 'focusActive';
       return 'focusInactive';
     }
     this.svg.selectAll('.dot')

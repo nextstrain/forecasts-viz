@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useGraph } from "../utils/useGraph";
+import { useControlsContext } from "../hooks/ControlsContext";
 import { displayTopVariants, categoryPointTooltip} from "../utils/tooltipDisplay";
 import * as d3 from "d3";
 
@@ -39,13 +40,14 @@ import * as d3 from "d3";
  */
 export const Graph = ({modelData, sizes, location, params, options}) => {
   const d3Container = useRef(null);
+  const {selectedVariants} = useControlsContext();
 
   /**
    * Add in certain params, as well as interpreting a preset
    */
   const expandedParams = expandParams(params, location);
 
-  useGraph(d3Container, sizes, modelData, expandedParams, options);
+  useGraph(d3Container, sizes, modelData, expandedParams, {...options, selectedVariants});
 
   return (
     <div ref={d3Container}/>
