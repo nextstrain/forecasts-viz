@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { isEqual } from './isEqual.js';
 import { parseModelData, ModelData } from './parse.js';
+import { DatasetConfig } from "./config.ts";
 
 /**
  * A custom React Hook that returns a memoized value that will only
@@ -16,42 +17,6 @@ function useDeepCompareMemo<T>(value: T): T {
     ref.current = value;
   }
   return ref.current as T;
-}
-
-/**
- * Configuration for the datasets to fetch & parse.
- *
- * Currently the library is only built for `forecasts-ncov` model data
- * and so there are hardcoded expectations. These will be lifted up and
- * made config-options so that this library is pathogen agnostic.
- */
-export interface DatasetConfig {
-  /** Name of the model — used to improve clarity of error messages. */
-  modelName: string;
-
-  /** Address to fetch the model JSON from. */
-  modelUrl: string;
-
-  /**
-   * List of sites to extract from JSON. If not provided we will use the
-   * sites set in the JSON metadata.
-   */
-  // TODO check this — current shape is roughly
-  // `Record<siteName, { temporal, stacked, raw, smoothed }>`
-  // (see DEFAULT_SITES in `parse.ts`).
-  sites?: any;
-
-  /**
-   * Colours for the variants specified in the model JSONs. A default
-   * colour scale is available.
-   */
-  variantColors?: Map<string, string>;
-
-  /**
-   * Display names for the variants specified in the model JSONs. If not
-   * provided we use the keys as names.
-   */
-  variantDisplayNames?: Map<string, string>;
 }
 
 /** Return type of {@link useModelData}. */
@@ -102,7 +67,7 @@ export const useModelData = (config: DatasetConfig): ModelDataWrapper => {
         return;
       }
       try {
-        setModelData(parseModelData(memoizedConfig.modelName, modelJson, memoizedConfig.sites, memoizedConfig.variantColors, memoizedConfig.variantDisplayNames));
+        setModelData(parseModelData(memoizedConfig, modelJson));
       } catch (err) {
         console.error(err);
         setError(new Error(`Downloading model data JSONs for ${memoizedConfig.modelName} succeeded, but parsing the JSONs failed.`));

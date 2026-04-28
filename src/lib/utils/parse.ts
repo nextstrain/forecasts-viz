@@ -1,4 +1,5 @@
 import { max, schemeTableau10 } from 'd3';
+import { DatasetConfig } from "./config.ts";
 
 /* Maps used instead of object as it's (seemingly) faster + consumes less
  * memory (https://www.zhenghao.io/posts/object-vs-map) */
@@ -62,17 +63,15 @@ export type ModelData = Map<string, any>;
  * @internal
  */
 export const parseModelData = (
-  modelName: string,
+  config: DatasetConfig,
   modelJson: any, // TODO check this — model JSON shape needs typing
-  configSites?: any, // TODO check this — see DatasetConfig.sites
-  configProvidedVariantColors?: Map<string, string>,
-  configProvidedVariantDisplayNames?: Map<string, string>,
 ): ModelData => {
-  if (!modelName) modelName = "Unknown";
+  
+  const modelName = config?.modelName || "Unknown";
   console.log(`${modelName} - parsing model data`);
 
   /** SITES - which keys to parse from model (and how to parse them) */
-  const sitesInfo = collectSites(modelJson.metadata.sites, configSites);
+  const sitesInfo = collectSites(modelJson.metadata.sites, config.sites);
 
   /** DATES */
   const [dates, updated, nowcastFinalDate, dateSummary, sparseDates] = extractDatesFromModels(modelJson);
@@ -81,8 +80,11 @@ export const parseModelData = (
   /** VARIANTS - e.g. clades, lineages etc. pivot will be first element */
   const { variants, pivot } = extractVariants(modelJson);
 
+  const { locations, locationHierarchy } = checkLocations(modelJson.metadata.location, config.locations, config.locationHierarchy);
+  
   const data: ModelData = new Map<string, any>([
-    ["locations", modelJson.metadata.location],
+    ["locations", locations],
+    ["locationHierarchy", locationHierarchy],
     ["variants", variants],
     ["dates", dates],
     ["dateIdx", dateIdx],
@@ -94,8 +96,8 @@ export const parseModelData = (
     ["sites", undefined], /* sites discovered in processModelData */
     ["pivot", pivot],
     ['domains', new Map([])],
-    ["variantColors", getVariantColors(modelJson, variants, configProvidedVariantColors)],
-    ["variantDisplayNames", variantDisplayNames(modelJson, variants, configProvidedVariantDisplayNames)],
+    ["variantColors", getVariantColors(modelJson, variants, config.variantColors)],
+    ["variantDisplayNames", variantDisplayNames(modelJson, variants, config.variantDisplayNames)],
   ]);
 
   console.log(`\t${data.get('locations').length} locations x ${data.get('variants').length} variants x ${dates.length} dates`);
@@ -125,7 +127,7 @@ export const parseModelData = (
   const points = initialisePoints(data.get('locations'), variants, dates);
   const ps_point_estimator = modelJson.metadata.ps_point_estimator || "median";
 
-  const sites = processModelData(modelJson.data, points, dateIdx, sitesInfo, ps_point_estimator);
+  const sites = processModelData(modelJson.data, points, dateIdx, sitesInfo, ps_point_estimator, locations);
   data.set("sites", sites);
 
   /* Once everything's been added (including frequencies) - iterate over each point & censor certain frequencies */
@@ -418,10 +420,12 @@ function processModelData(
   dateIdx: Map<string, number>,
   sitesInfo: Record<string, any>,
   ps_point_estimator: string,
+  locationsList: string[],
 ): Set<string | undefined> {
   const keysAdded = new Set<string | undefined>();
   const keyInfo: Record<string, any> = {};
   const lookup: Record<string, (store: Map<string, any>, d: any) => string | undefined> = {};
+  const locations = new Set(locationsList);
 
   for (const [siteName, siteInfo] of Object.entries(sitesInfo)) {
     keyInfo[siteName] = siteInfo;
@@ -464,16 +468,13 @@ function processModelData(
 
     if (lookupKeys.has(key)) {
       if (keyInfo[key].temporal === true && dateIdx.get(d.date) === undefined) continue;
-
-      // Check if location and variant exist in metadata
+      
+      // The user-config may restrict the locations, which flows into the keys present in `points`
+      // so skip processing this element if its location is not present in points.
       const locationMap = points.get(d.location);
       if (!locationMap) {
-        console.error(`ERROR at data point: Location "${d.location}" not found in metadata.location`);
-        console.error(`Available locations: ${Array.from(points.keys()).join(', ')}`);
-        console.error(`Problematic data point:`, d);
-        throw new Error(`Location "${d.location}" in data not found in metadata.location. Available locations: ${Array.from(points.keys()).join(', ')}`);
+        continue
       }
-
       const variantPoint = locationMap.get(d.variant);
       if (!variantPoint) {
         console.error(`ERROR at data point: Variant "${d.variant}" not found in metadata.variants`);
@@ -491,4 +492,31 @@ function processModelData(
     }
   }
   return keysAdded;
+}
+
+
+function checkLocations(
+  modelLocations,
+  configLocations: DatasetConfig['locations'],
+  configLocationHierarchy: DatasetConfig['locationHierarchy'],
+): { locations: DatasetConfig['locations'], locationHierarchy: DatasetConfig['locationHierarchy']|undefined} {
+  const missingConfigLocations = new Set();
+  
+  const locations = configLocations ?
+    configLocations.filter((loc) => {
+      if (modelLocations.includes(loc)) return true;
+      missingConfigLocations.add(loc);
+      return false;
+    }) :
+    modelLocations;
+  
+  // TODO XXX configLocationHierarchy
+
+  if (missingConfigLocations.size) {
+    console.warn(`Config object specified locations not present in the data: ${[...missingConfigLocations].join(', ')}`)
+  }
+  
+  if (!locations.length) throw new Error(`No locations!`)
+  
+  return {locations, locationHierarchy: undefined}
 }
