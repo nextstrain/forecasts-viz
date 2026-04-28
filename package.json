@@ -18,7 +18,8 @@
     "deploy": "gh-pages -d build",
     "download": "bash ./scripts/download-data.sh",
     "dev:local": "concurrently \"node scripts/data-server.js\" \"VITE_CLADES_RENEWAL='http://localhost:8000/clades.renewal.json' VITE_CLADES_MLR='http://localhost:8000/clades.mlr.json' VITE_LINEAGES_MLR='http://localhost:8000/lineages.mlr.json' vite\"",
-    "test": "node src/tests/date-parsing.js",
+    "test": "node src/tests/date-parsing.ts",
+    "typecheck": "tsc",
     "docs": "jsdoc2md src/lib/index.js src/lib/**/*.js > api.md",
     "prepack": "npm run build:lib"
   },
@@ -35,6 +36,8 @@
     "usehooks-ts": "^2.9.1"
   },
   "devDependencies": {
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.0",
     "argparse": "^2.0.1",
     "concurrently": "^8.2.0",
@@ -48,6 +51,7 @@
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-tabs": "^4.3.0",
+    "typescript": "^6.0.3",
     "usehooks-ts": "^2.9.1",
     "vite": "^5.4.0"
   }
