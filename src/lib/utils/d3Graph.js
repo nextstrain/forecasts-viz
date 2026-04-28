@@ -12,6 +12,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.modelData = modelData;
   this.params = params;
   this.sizes = sizes;
+  this.selectedVariants = new Set(options.selectedVariants);
   this.setStyles();
 
   this.createScales(options, params);
@@ -138,7 +139,7 @@ D3Graph.prototype.drawAxes = function() {
 D3Graph.prototype.setupTooltipXY = function() {
   if (typeof this.params.tooltipXY === "function") {
     this.tooltip.createMouseCaptureArea(this.svg, this.x, this.y, false) // todo = update if x,y change?
-      .on("mousemove", (event) => this.tooltip.update(event, this.params.tooltipXY, this.modelData, this.params))
+      .on("mousemove", (event) => this.tooltip.update(event, this.params.tooltipXY, this.modelData, this.params, this.selectedVariants))
       .on("mouseout", () => this.tooltip.hide())
   }
 }
@@ -432,7 +433,8 @@ D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
 
 D3Graph.prototype.setVariantFocus = function(selectedVariants) {
   const hasSelection = selectedVariants && selectedVariants.size > 0;
-
+  this.selectedVariants = hasSelection ? new Set(selectedVariants) : new Set([])
+  
   if (this.params.graphType==="lines") {
     /* When a selection is active, non-selected variants go to focusInactive and
     each selected variant is then bumped up to focusActive. With no selection,

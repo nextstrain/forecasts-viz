@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
-export function displayTopVariants({n=5, fmt=d3.format(".1f")}={}) {
-  return function(xy, modelData, params) {
+export function displayTopVariants({ n = 5, fmt = d3.format(".1f") } = {}) {
+  return function (xy, modelData, params, selectedVariants) {
     const dateIdx = modelData.get('dateIdx')
     const locationData = modelData.get('points').get(params.location);
     const xIdx = dateIdx.get(xy[0]);
@@ -12,16 +12,19 @@ export function displayTopVariants({n=5, fmt=d3.format(".1f")}={}) {
         values.push([variant, d.get(params.key)])
       }
     });
-    let topValues = ''
-    values.sort((a, b) => a[1]>b[1] ? -1 : 1)
+    let topValues = '';
+    values
+      .filter(([variant,]) => selectedVariants.size ? selectedVariants.has(variant) : true)
+      .sort((a, b) => a[1] > b[1] ? -1 : 1)
       .slice(0, n) // take the top 5 variants (highest frequencies)
       .forEach((d) => {
-        topValues+=`<p><b>${d[0]}</b> ${fmt(d[1])}</p>`
-      })
+        topValues += `<p><b>${d[0]}</b> ${fmt(d[1])}</p>`
+      });
+    const subtitle = selectedVariants.size ? 'Top selected variants:' : 'Top 5 variants:';
     return `
       <div>
         <p><b>Date:</b> ${xy[0]}</p>
-        <p><b>Top 5 variants:</p>
+        <p><b>${subtitle}</p>
         ${topValues}
       </div>
     `
