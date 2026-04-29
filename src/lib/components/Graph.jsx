@@ -43,8 +43,10 @@ export const Graph = ({modelData, sizes, location, params}) => {
   const controls = useControlsContext();
 
   const expandedParams = expandParams(params, location);
-
-  useGraph(d3Container, sizes, modelData, expandedParams, controls);
+  
+  const emptyGraph = useGraph(d3Container, sizes, modelData, expandedParams, controls);  
+  
+  if (emptyGraph) return null;
 
   return (
     <div ref={d3Container}/>

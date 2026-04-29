@@ -1,10 +1,11 @@
-import {useRef, useEffect} from 'react';
+import {useRef, useEffect, useState} from 'react';
 import {isEqual} from './isEqual.js';
 import {D3Graph} from "./d3Graph";
 
 export const useGraph = (dom, sizes, modelData, params, controls) => {
   const graph = useRef(null);
   const prevDeps = useRef(null);
+  const [emptyGraph, setEmptyGraph] = useState(false);
 
   useEffect(() => {
     if (!dom.current) {
@@ -31,6 +32,11 @@ export const useGraph = (dom, sizes, modelData, params, controls) => {
       return;
     }
 
+    if (graph.current.emptyData===true) {
+      setEmptyGraph(true);
+      return;
+    }
+  
     // controls are global, so we ensure they apply to this particular graph as necessary      
     if (params.graphType==='lines' && prevDeps.current.controls.logit !== controls.logit) {
       graph.current.updateScale(controls)
@@ -53,4 +59,6 @@ export const useGraph = (dom, sizes, modelData, params, controls) => {
    * they cross some thresholds. We could get away with a fresh start in such
    * cases.
    */
+  
+  return emptyGraph;
 }

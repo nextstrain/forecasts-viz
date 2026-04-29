@@ -14,6 +14,7 @@ export function D3Graph(d3Container, sizes, modelData, params, options) {
   this.sizes = sizes;
   this.selectedVariants = new Set(options.selectedVariants);
   this.setStyles();
+  this.emptyData = false;
 
   this.createScales(options, params);
   this.drawAxes();
@@ -166,9 +167,15 @@ D3Graph.prototype.setupArea = function() {
 
 D3Graph.prototype.drawLines = function() {
   if (this.params.graphType !== "lines") return;
+  let dataExists = false;
   
   this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
-    const temporalPoints = variantPoint.get('temporal');
+    const temporalPoints = variantPoint.get('temporal');    
+    if (temporalPoints.filter((pt) => pt.get('date') !== undefined).length === 0) {
+      return // no data points for this variant
+    }
+    dataExists = true;
+    
     const color = this.getVariantColor(variant);
     const g = this.svg.append('g')
       .attr("class", cssSafeName(`variant_${variant}`));
@@ -200,6 +207,7 @@ D3Graph.prototype.drawLines = function() {
      * (Don't forget to remove the pointer-events style of 'none'!)
      */
   });
+  this.emptyData = !dataExists;
 }
 
 /**
@@ -236,11 +244,18 @@ D3Graph.prototype.drawPoints = function() {
   if (!this.points) {
     // only computed once because a change in location or model data
     // runs the D3Graph constructor again
-    this.points = Array.from(
+    this.points = Array
+      .from(
         this.modelData.get('points').get(this.params.location),
         ([variant, variantMap]) => variantMap
       )
-      .filter((pt) => !isNaN(pt.get(this.params.key)))
+      .filter(
+        (pt) => !isNaN(pt.get(this.params.key))
+      );
+    if (this.points.length === 0) {
+      this.emptyData = true;
+      return; // quick exit from the render method
+    }
   }
   this.svg.append('g')
     .selectAll(".dot")
