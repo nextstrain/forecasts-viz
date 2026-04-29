@@ -1,10 +1,7 @@
 
 /**
- * Configuration for the datasets to fetch & parse.
- *
- * Currently the library is only built for `forecasts-ncov` model data
- * and so there are hardcoded expectations. These will be lifted up and
- * made config-options so that this library is pathogen agnostic.
+ * Configuration for fetching and parsing a model dataset.
+ * 
  */
 export interface DatasetConfig {
   /** Name of the model — used to improve clarity of error messages. */
@@ -15,7 +12,7 @@ export interface DatasetConfig {
 
   /**
    * List of sites to extract from JSON. If not provided we will use the
-   * sites set in the JSON metadata.
+   * sites listed in the JSON metadata.
    */
   // TODO check this — current shape is roughly
   // `Record<siteName, { temporal, stacked, raw, smoothed }>`
@@ -24,29 +21,29 @@ export interface DatasetConfig {
 
   /**
    * Colours for the variants specified in the model JSONs.
-   * Overrides `modelJson.metadata.variantColors`
-   * If not provided (here nor JSON) we will use a default colour scale.
+   * Overrides `modelJson.metadata.variantColors`.
+   * If not provided here or in the JSON, a default colour scale is used.
    */
   variantColors?: Map<string, string>;
 
   /**
    * Display names for the variants specified in the model JSONs.
-   * Overrides `modelJson.metadata.variantDisplayNames`
-   * If not provided (here nor JSON) we use the keys as names.
+   * Overrides `modelJson.metadata.variantDisplayNames`.
+   * If not provided here or in the JSON, variant keys are used as labels.
    */
   variantDisplayNames?: Map<string, string>;
   
   /**
    * Restrict the parsing of the JSON to these locations.
-   * Locations here which are not in modelJson.metadata.location will be removed. 
+   * Locations that are not present in `modelJson.metadata.location` are removed.
    * The order guides the ordering of the visualisation.
    */
   locations?: string[]
   
   /**
-   * Encode a heirarchy of locations here which can be used for filtering and other future uses
-   * Structure: locationHierarchy -> cateogry -> value -> list of locations
-   * E.g.:      locationHierarchy -> "region" -> "oceania" -> ["New Zealand", "Australia", ...]
+   * Optional hierarchy of locations for filtering and related UI.
+   * Structure: `locationHierarchy -> category -> value -> list of locations`.
+   * For example: `"region" -> "oceania" -> ["New Zealand", "Australia", ...]`.
    */
   locationHierarchy?: Map<string, Map<string, string[]>>
 }

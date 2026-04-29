@@ -18,7 +18,18 @@ const defaultControls: Controls & { _isDefault?: true } = {
 const ControlsContext = createContext<Controls & { _isDefault?: true }>(defaultControls);
 
 /**
- * Some docs about how to use ControlsProvider in projects...
+ * Provide shared control state for descendant visualisation components.
+ *
+ * Wrap `PanelDisplay` with this provider to enable geography filtering and
+ * display toggles such as logit mode and raw-frequency visibility.
+ * Such controls apply to all Panels rendered with this shared control state.
+ *
+ * @example
+ * ```tsx
+ * <ControlsProvider>
+ *   <PanelDisplay data={data} params={{ preset: "frequency" }} />
+ * </ControlsProvider>
+ * ```
  */
 export function ControlsProvider({ children }: { children: ReactNode }) {
   const controls = useControls();

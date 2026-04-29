@@ -4,11 +4,12 @@
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true,
+    "rewriteRelativeImportExtensions": true,
     "rootDir": "./src/lib",
-    "outDir": "./docs/types",
-    "allowImportingTsExtensions": false
+    "outDir": "./dist"
   },
   "include": [
-    "src/lib/docs-entry.ts"
+    "src/lib/index.ts",
+    "src/lib/assets/assets.d.ts"
   ]
 }

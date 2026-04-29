@@ -9,6 +9,7 @@
   "repository": "github:nextstrain/forecasts-viz",
   "homepage": "https://nextstrain.github.io/forecasts-viz",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -20,10 +21,9 @@
     "dev:local": "concurrently \"node scripts/data-server.js\" \"VITE_CLADES_RENEWAL='http://localhost:8000/clades.renewal.json' VITE_CLADES_MLR='http://localhost:8000/clades.mlr.json' VITE_LINEAGES_MLR='http://localhost:8000/lineages.mlr.json' vite\"",
     "test": "node src/tests/date-parsing.ts",
     "typecheck": "tsc",
-    "docs": "npm run docs:api && npm run docs:types",
-    "docs:api": "typedoc",
-    "docs:types": "tsc --project tsconfig.docs.json",
-    "prepack": "npm run build:lib"
+    "docs": "typedoc",
+    "prepack": "npm run build:lib && npm run build:types",
+    "build:types": "tsc --project tsconfig.lib.json && node scripts/fix-dts-extensions.js"
   },
   "files": [
     "dist",

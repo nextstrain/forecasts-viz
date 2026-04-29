@@ -98,56 +98,66 @@ const responsiveSizing = (
 
 
 /**
- * @typedef {Object} SmallMultipleStyles
- * Configuration for dimensions & styles of a small-multiple graph.
- * These override hardcoded (sensible) defaults.
- * More properties to come...
- * @property {Number} [width] width of SVG (pixels)
- * @property {Number} [height] height of SVG (pixels)
- * @property {Number} [top] margin of graph (pixels)
- * @property {Number} [right] margin of graph (pixels)
- * @property {Number} [bottom] margin of graph (pixels)
- * @property {Number} [left] margin of graph (pixels)
- * @private
+ * Render a panel of small-multiple graphs for the currently selected locations.
+ *
+ * Pass the {@link ModelDataWrapper} returned by `useModelData` as the `data`
+ * prop. The `params` prop selects which graph preset or graph definition to
+ * render, and `styles` can override the default sizing used for each graph.
+ *
+ * @remarks
+ * This component reads its interactive state from {@link ControlsProvider}.
+ * Render it inside that provider if you want geography filters and display
+ * toggles to work correctly.
+ *
+ * The `locations` prop is deprecated. Prefer dataset configuration and shared
+ * controls state to determine which locations are shown.
+ *
+ * @example
+ * ```tsx
+ * <PanelDisplay data={data} params={{ preset: "frequency" }} />
+ * ```
+ * @example
+ * ```tsx
+ * <PanelDisplay
+ *   data={data}
+ *   params={{
+ *     graphType: "lines",
+ *     key: "I_smooth",
+ *     interval: ["I_smooth_HDI_95_lower", "I_smooth_HDI_95_upper"],
+ *     intervalOpacity: 0.3,
+ *     yDomain: getDomainUsingKey("I_smooth_HDI_95_upper"),
+ *     tooltipXY: displayTopVariants(),
+ *   }}
+ * />
+ * ```
+ * @example
+ * ```tsx
+ * <PanelDisplay
+ *   data={data}
+ *   styles={{ height: 300, width: 400 }}
+ *   params={{ preset: "stackedIncidence" }}
+ * />
+ * ```
  */
-
-/**
- * Display a panel of small-multiple graphs for different locations.
- * This component should be provided data obtained via the `useModelData` hook.
- * The `params` prop defines the graphs to be drawn.
- * The `styles` prop defines any style overrides to the graphs.
- * The `locations` prop allows you to define a subset of locations for which to draw graphs.
- * @param {ModelDataWrapper} data see `useModelData`
- * @param {GraphParameters} params
- * @param {SmallMultipleStyles} styles
- * @param {(Array|undefined)} locations default (`undefined`) displays all available locations
- * @kind React Component
- * @memberof module:@nextstrain/evofr-viz
- * @example
- * // typical usage is to use a preset graph type
- * <PanelDisplay data={...} params={{preset: "frequency"}}/>
- * @example
- * // an example of defining the params yourself
- * // this will create a temporal line graph using the `I_smooth` key
- * <PanelDisplay data={...} params={{
- *   graphType: "lines",
- *   key: 'I_smooth',
- *   interval:  ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
- *   intervalOpacity: 0.3,
- *   yDomain: getDomainUsingKey('I_smooth_HDI_95_upper'),
- *   tooltipXY: displayTopVariants(),
- * }}/>
- * @example
- * // custom styling can be provided which is applied to each small-multiple
- * <PanelDisplay data={...}
- *    styles={{height: 300, width: 400}}
- *    params={{preset: "stackedIncidence"}}
- * /> 
- */
-export const PanelDisplay = (props: PanelProps) => {
+export const PanelDisplay = ({
+  data,
+  params,
+  styles,
+  locations,
+}: {
+  data: ModelDataWrapper;
+  params: GraphParameters;
+  styles?: SmallMultipleStyles;
+  locations?: string[] | undefined;
+}) => {
   return (
     <ErrorBoundary>
-      <Panel {...props}/>
+      <Panel
+        data={data}
+        params={params}
+        styles={styles}
+        locations={locations}
+      />
     </ErrorBoundary>
   )
 }

@@ -20,8 +20,14 @@ function useDeepCompareMemo<T>(value: T): T {
   return ref.current as T;
 }
 
-/** Return type of {@link useModelData}. */
+/**
+ * Result returned by {@link useModelData}.
+ *
+ * While data is being fetched and parsed, `modelData` is `undefined`. If the
+ * request or parsing fails, `error` is populated.
+ */
 export interface ModelDataWrapper {
+  /** Parsed model data, or `undefined` while loading. */
   modelData: ModelData | undefined;
   /** Errors encountered during JSON fetch / parse. */
   error: Error | undefined;
@@ -33,6 +39,9 @@ export interface ModelDataWrapper {
  * The returned object is designed to be passed to a `<PanelDisplay>`
  * component as its `data` prop. If an error is encountered it is also
  * logged via `console.error()`.
+ *
+ * @param config - Dataset location and parsing options.
+ * @returns The current loading state, parsed data, and any fetch or parse error.
  *
  * @example
  * ```ts

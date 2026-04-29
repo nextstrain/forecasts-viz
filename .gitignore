@@ -12,8 +12,8 @@
 # library build (`npm run transpile`)
 /dist
 
-# generated documentation
-/docs
+# generated documentation is not excluded so we can see it on GitHub
+# docs
 
 # test app build (`npm run build`)
 /build
