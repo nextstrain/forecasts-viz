@@ -33,7 +33,7 @@ function NoPageHere() {
     <div id="AppContainer">
       <h1>No page here!</h1>
       <div className="abstract">
-        {`See the page switch logic in ./src/index.js`}
+        {`See the page switch logic in ./test-app/index.jsx`}
       </div>
     </div>
   )

@@ -1,10 +1,10 @@
 import React, {useState} from 'react';
-import { PanelDisplay, useModelData} from './lib/index.js';
-import { ControlsProvider } from './lib/hooks/ControlsContext';
+import { PanelDisplay, useModelData} from '../src/lib/index.js';
+import { ControlsProvider } from '../src/lib/hooks/ControlsContext';
 import './styles.css';
 /* Following are not currently exported by the library itself */
-import { getDomainUsingKey } from "./lib/components/Graph.jsx";
-import { displayTopVariants } from "./lib/utils/tooltipDisplay.js";
+import { getDomainUsingKey } from "../src/lib/components/Graph.jsx";
+import { displayTopVariants } from "../src/lib/utils/tooltipDisplay.js";
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 

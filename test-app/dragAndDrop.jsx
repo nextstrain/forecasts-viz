@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import { PanelDisplay} from './lib/index.js';
-import { parseModelData } from './lib/utils/parse.ts'; // Note - not exposed by the library itself...
+import { PanelDisplay} from '../src/lib/index.js';
+import { parseModelData } from '../src/lib/utils/parse.ts'; // Note - not exposed by the library itself...
 
 function App() {
   const [errorState, setErrorState] = useState(undefined)
