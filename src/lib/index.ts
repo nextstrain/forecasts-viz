@@ -1,4 +1,4 @@
-import { PanelDisplay } from './components/Panels.jsx';
+import { PanelDisplay } from './components/Panels.tsx';
 import { useModelData } from "./utils/useModelData.ts";
 import { ControlsProvider } from "./hooks/ControlsContext.tsx";
 

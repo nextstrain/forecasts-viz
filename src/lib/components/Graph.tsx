@@ -1,44 +1,18 @@
 import React, { useRef } from 'react';
 import { useGraph } from "../utils/useGraph";
 import { useControlsContext } from "../hooks/ControlsContext";
-import { displayTopVariants, categoryPointTooltip} from "../utils/tooltipDisplay";
+import { displayTopVariants, categoryPointTooltip } from "../utils/tooltipDisplay";
+import { ModelData } from "../utils/modelData.types.ts";
 import * as d3 from "d3";
 
-/**
- * @typedef {Object} GraphParameters
- * Configuration for how a graph is to be visualised. All/any of these properties may be set by
- * the <PanelDisplay> component. If a preset is set then it will be expanded into a meaningful
- * set of these properties (see `expandParams()`).
- *
- * Note that a deep equality check will be used to decide when (if) the params for an individual
- * small-multiple have changes and the graph should therefore re-draw. Because functions are
- * compared by reference you must memoize any functions or provide a consistent reference to them.
- * A common case to avoid is defining the function within a react component (or within the prop
- * declaration), as that function will be re-created each time the component renders.
- *
- * @property {("stackedIncidence" | "R_t" | "growthAdvantage" | "frequency")} [preset]
- *      Load a set of preset parameters. Any parameters re-defined here will overwrite those which come from the preset.
- * @property {("points" | "lines" | "stream")} [graphType]
- * @property {String} [key]
- * @property {String[]} [interval]
- * @property {Number} [intervalOpacity]
- * @property {Number} [intervalStrokeWidth]
- * @property {Number[]} [dashedLines] horizontal dashed lines
- * @property {(Function | Array)} [xDomain] Function's `this` gives access to properties on the D3Graph instance
- * @property {(Function | Number[])} [yDomain] Function's `this` gives access to properties on the D3Graph instance
- * @property {Boolean} [forecastLine]
- * @property {Function} [yTickFmt]
- * @property {Function} [tooltipPt] Function to return HTML when tooltip is attached to a point.
- * @property {Function} [tooltipXY] Function to return HTML when tooltip is over any part of the graph.
- * @inner
- * @memberof module:@nextstrain/evofr-viz
- */
+interface GraphProps {
+  modelData: ModelData;
+  sizes: any; // todo
+  location: string;
+  params: any; // todo
+}
 
-/**
- * The react component for each individual graph
- * @private
- */
-export const Graph = ({modelData, sizes, location, params}) => {
+export const Graph = ({modelData, sizes, location, params}: GraphProps) => {
   const d3Container = useRef(null);
   const controls = useControlsContext();
 
@@ -58,9 +32,9 @@ const tooltipFrequency = displayTopVariants({fmt: d3.format(".1%")});
 const tooltipGeneric = displayTopVariants();
 const percentageFormat = d3.format(".0%");
 
-function expandParams(providedParams, location) {
+function expandParams(providedParams: any, location: string) { // todo: type providedParams
 
-  let params = {location};
+  let params: Record<string, any> = {location}; // todo
   switch (providedParams.preset) {
     case undefined:
       // user must define everything!
@@ -116,13 +90,8 @@ function expandParams(providedParams, location) {
   return params;
 }
 
-/**
- * Returns a function which will compute the y domain using observed values
- * (dependent on the current location). Currently lower bound is always zero.
- * @private
- */
-export function getDomainUsingKey(key) {
-  return function() {
+export function getDomainUsingKey(key: string) {
+  return function(this: any) { // todo: type D3Graph instance
     const variants = this.modelData.get('variants');
     const dataPerVariant = this.modelData.get('points').get(this.params.location)
     const maxObserved = d3.max(

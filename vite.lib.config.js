@@ -27,7 +27,7 @@ export default defineConfig({
     sourcemap: false,
     cssCodeSplit: false,
     lib: {
-      entry: path.resolve(__dirname, 'src/lib/index.js'),
+      entry: path.resolve(__dirname, 'src/lib/index.ts'),
       formats: ['es'],
       fileName: () => 'index.js',
     },

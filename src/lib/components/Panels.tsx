@@ -1,12 +1,13 @@
 import React from 'react';
 import { useElementSize, useDebounce } from 'usehooks-ts';
-import { Legend } from "./Legend.jsx";
-import { ErrorBoundary } from './ErrorBoundary.jsx';
-import { ErrorMessage } from "./ErrorMessage.jsx";
-import Spinner from "./Spinner.jsx";
-import { Toggle } from "./Toggle.jsx";
-import { Graph } from "./Graph.jsx";
+import { Legend } from "./Legend.tsx";
+import { ErrorBoundary } from './ErrorBoundary.tsx';
+import { ErrorMessage } from "./ErrorMessage.tsx";
+import Spinner from "./Spinner.tsx";
+import { Toggle } from "./Toggle.tsx";
+import { Graph } from "./Graph.tsx";
 import { useControlsContext } from "../hooks/ControlsContext";
+import { ModelDataWrapper } from "../utils/useModelData.ts";
 import { filterLocations, GeographyFilter } from "./GeographyFilter.tsx"
 import "../styles/styles.css";
 
@@ -22,13 +23,39 @@ import "../styles/styles.css";
 
 
 
+type GraphParameters = any; // todo: define the shared graph params type
+type SmallMultipleStyles = any; // todo: define the shared small-multiple sizing type
+
+interface ResponsiveSizingResult {
+  width: number;
+  height: number;
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+  legendRadius: number;
+  outerWidth: number;
+}
+
+interface PanelProps {
+  data: ModelDataWrapper;
+  params: GraphParameters;
+  styles?: SmallMultipleStyles;
+  locations?: string[] | undefined;
+}
+
 /**
  * This function should handle all styling parameters related to sizing -- graph sizes,
  * legend sizes, text sizes etc. It is a work in progress. All styles defined here can be
  * overridden by props from the parent component.
  * @private 
  */
-const responsiveSizing = (params, modelData, dimensions, locationList) => {
+const responsiveSizing = (
+  params: GraphParameters,
+  modelData: ModelDataWrapper['modelData'],
+  dimensions: { width: number },
+  locationList: string[],
+): ResponsiveSizingResult => {
 
   const outerWidth = dimensions.width;
 
@@ -117,7 +144,7 @@ const responsiveSizing = (params, modelData, dimensions, locationList) => {
  *    params={{preset: "stackedIncidence"}}
  * /> 
  */
-export const PanelDisplay = (props) => {
+export const PanelDisplay = (props: PanelProps) => {
   return (
     <ErrorBoundary>
       <Panel {...props}/>
@@ -137,7 +164,7 @@ const Panel = ({
   
   /** Deprecated! */
   locations=undefined, /* optional. Defaults to all available */
-}) => {
+}: PanelProps) => {
   const {modelData, error} = data;
   const {selectedGeographies, changeGeoFilters, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
 

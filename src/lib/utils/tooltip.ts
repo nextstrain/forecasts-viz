@@ -6,7 +6,13 @@ import {pointer} from 'd3';
  * @private
  */
 export class Tooltip {
-  constructor(parentElement) {
+  _selection: any;
+  _xScale: any; // todo
+  _yScale: any; // todo
+  _mouseCaptureArea: any;
+  _debugDot: any;
+
+  constructor(parentElement: any) {
     if (!parentElement || !parentElement.size()) {
       throw new Error("Requires a parent element in which to create the tooltip");
     }

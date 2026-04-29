@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { isEqual } from './isEqual.js';
-import { parseModelData, ModelData } from './parse.js';
+import { parseModelData } from './parse.js';
 import { DatasetConfig } from "./config.ts";
+import { ModelData } from "./modelData.types.ts";
 
 /**
  * A custom React Hook that returns a memoized value that will only

@@ -2,6 +2,7 @@ import React from 'react';
 import Select from 'react-select';
 import { Controls }  from "../hooks/useControls"
 import { DatasetConfig } from "../utils/config.ts";
+import { ModelData } from "../utils/modelData.types.ts"
 
 export const GeographyFilter = ({
   modelLocations,
@@ -55,7 +56,7 @@ function _label(category: string, name: string): string {
 }
 
 export function filterLocations(
-  modelData: any,
+  modelData: ModelData,
   selectedGeographies: Controls['selectedGeographies']
 ): string[] {
   const locations: string[] = (modelData?.get('locations') || []);

@@ -1,19 +1,16 @@
 import React, {useEffect, useRef} from 'react';
 import * as d3 from "d3";
 import { useControlsContext } from '../hooks/ControlsContext';
+import { ChangeVariant } from '../hooks/useControls';
+import { ModelData } from "../utils/modelData.types.ts";
 
-/**
- * My original intention for the legend on wide-screens was to have it stay in a
- * fixed position on the RHS and not allow it to scroll off the screen. With a
- * single <Legend> this can easily be achieved with `position: fixed` however
- * things get tricky with multiple legends. I chose to have one legend per panel
- * (set of small-multiples) as I want to enable interactivity between the legend
- * and the corresponding panel, and to allow panels with different legends.
- *                                                                james, jan 2023
- * @private
-*/
+interface LegendProps {
+  modelData: ModelData;
+  sizes: any; // todo
+  preset: string;
+}
 
-const useLegend = (d3Container, modelData, sizes, selectedVariants, changeVariant, preset) => {
+const useLegend = (d3Container: React.RefObject<HTMLDivElement | null>, modelData: ModelData, sizes: any, selectedVariants: Set<string>, changeVariant: ChangeVariant, preset: string) => {
   useEffect(() => {
     /* legend entries are arranged via the parent container's flexbox settings */
 
@@ -70,7 +67,7 @@ const useLegend = (d3Container, modelData, sizes, selectedVariants, changeVarian
   }, [d3Container, sizes, modelData, selectedVariants, changeVariant, preset])
 }
 
-export const Legend = ({modelData, sizes, preset}) => {
+export const Legend = ({modelData, sizes, preset}: LegendProps) => {
   const legendContainer = useRef(null);
   const {changeVariant, selectedVariants} = useControlsContext();
   useLegend(legendContainer, modelData, sizes, selectedVariants, changeVariant, preset); // renders the legend

@@ -20,10 +20,10 @@ Visit https://aka.ms/tsconfig.json for a detailed list of options.
     /* Modules */
     "module": "esnext",                                  /* `bundler` resolution requires a `module` of `esnext` (or similar). */
     "moduleResolution": "bundler",                       /* Vite handles bundling, so use the bundler resolution algorithm. Also allows `.ts` extensions in imports. */
-    "types": ["node"],                                   /* Specify type package names to be included without being referenced in a source file. (`webpack-env` removed — this project uses Vite.) */
+    "types": ["node", "vite/client"],                    /* Specify type package names to be included without being referenced in a source file. */
 
     /* JavaScript Support */
-    "allowJs": true,                                     /* Allow JavaScript files to be a part of your program. This allows TS files to import from JS files. */
+    "allowJs": false,                                     /* Allow JavaScript files to be a part of your program. This allows TS files to import from JS files. */
 
     /* Emit */
     "noEmit": true,                                      /* Do not emit compiler output files like JavaScript source code, source-maps or declarations. */
@@ -52,6 +52,7 @@ Visit https://aka.ms/tsconfig.json for a detailed list of options.
     "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "test-app/**/*"
   ]
 }

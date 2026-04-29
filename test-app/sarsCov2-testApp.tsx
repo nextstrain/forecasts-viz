@@ -1,14 +1,17 @@
-import React, {useState} from 'react';
-import { PanelDisplay, useModelData} from '../src/lib/index.js';
-import { ControlsProvider } from '../src/lib/hooks/ControlsContext';
+import React, { useState } from 'react';
+import { PanelDisplay, useModelData } from '../src/lib/index.js';
+import { ControlsProvider } from '../src/lib/hooks/ControlsContext.tsx';
 import './styles.css';
 /* Following are not currently exported by the library itself */
-import { getDomainUsingKey } from "../src/lib/components/Graph.jsx";
-import { displayTopVariants } from "../src/lib/utils/tooltipDisplay.js";
+import { getDomainUsingKey } from '../src/lib/components/Graph.tsx';
+import type { DatasetConfig } from '../src/lib/utils/config.ts';
+import { displayTopVariants } from '../src/lib/utils/tooltipDisplay.ts';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 
-let locations = undefined;
+type Locations = string[] | undefined;
+
+let locations: Locations = undefined;
 /* It's helpful for dev purposes to not see _all_ the small multiples. Uncomment the
 following line to remove this filtering */
 // locations = ["Australia", "Canada", "Denmark", "France", "China", "USA"];
@@ -27,13 +30,14 @@ function App() {
       </div>
 
       <button onClick={() => {
-        console.log("*** Triggering <App> to re-render ***");
-        setCount(count+1);
-      }}>
+        console.log('*** Triggering <App> to re-render ***');
+        setCount(count + 1);
+      }}
+      >
         {`Trigger <App> re-render. n=${count}`}
       </button>
 
-      <div style={{paddingBottom: '20px'}}/>
+      <div style={{ paddingBottom: '20px' }} />
       <div id="mainPanelsContainer" >
         <Tabs>
           <TabList>
@@ -42,13 +46,13 @@ function App() {
             <Tab>Clades / Renewal</Tab>
           </TabList>
           <TabPanel>
-            <CladesMLR/>
+            <CladesMLR />
           </TabPanel>
           <TabPanel>
-            <LineagesMLR/>
+            <LineagesMLR />
           </TabPanel>
           <TabPanel>
-            <RenewalMLR/>
+            <RenewalMLR />
           </TabPanel>
         </Tabs>
 
@@ -60,52 +64,51 @@ function App() {
 
 export default App;
 
-
-const DEFAULT_ENDPOINT_PREFIX = "https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov";
+const DEFAULT_ENDPOINT_PREFIX = 'https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov';
 const baseConfiguration = {
   sites: undefined,
   variantColors: new Map([
-    ["other", "#737373"],
-    ["21L (Omicron)", "#BDBDBD"],
-    ["22A (Omicron)", "#447CCD"],
-    ["22B (Omicron)", "#5EA9A1"],
-    ["22C (Omicron)", "#8ABB6A"],
-    ["22D (Omicron)", "#BEBB48"],
-    ["22E (Omicron)", "#E29E39"],
-    ["22F (Omicron)", "#E2562B"],
-    ["23A (Omicron)", "#FF322C"],
+    ['other', '#737373'],
+    ['21L (Omicron)', '#BDBDBD'],
+    ['22A (Omicron)', '#447CCD'],
+    ['22B (Omicron)', '#5EA9A1'],
+    ['22C (Omicron)', '#8ABB6A'],
+    ['22D (Omicron)', '#BEBB48'],
+    ['22E (Omicron)', '#E29E39'],
+    ['22F (Omicron)', '#E2562B'],
+    ['23A (Omicron)', '#FF322C'],
   ]),
   variantDisplayNames: new Map([
-    ["other", "other"],
-    ["21L (Omicron)", "21L (BA.2)"],
-    ["22A (Omicron)", "22A (BA.4)"],
-    ["22B (Omicron)", "22B (BA.5)"],
-    ["22C (Omicron)", "22C (BA.2.12.1)"],
-    ["22D (Omicron)", "22D (BA.2.75)"],
-    ["22E (Omicron)", "22E (BQ.1) some really long name"],
-    ["22F (Omicron)", "22F (XBB)"],
-    ["23A (Omicron)", "23A (XBB.1.5)"],
-  ])
-}
+    ['other', 'other'],
+    ['21L (Omicron)', '21L (BA.2)'],
+    ['22A (Omicron)', '22A (BA.4)'],
+    ['22B (Omicron)', '22B (BA.5)'],
+    ['22C (Omicron)', '22C (BA.2.12.1)'],
+    ['22D (Omicron)', '22D (BA.2.75)'],
+    ['22E (Omicron)', '22E (BQ.1) some really long name'],
+    ['22F (Omicron)', '22F (XBB)'],
+    ['23A (Omicron)', '23A (XBB.1.5)'],
+  ]),
+};
 
-const config = {
-  'cladesMlr': {
-    modelName: "clades/MLR",
+const config: Record<string, DatasetConfig> = {
+  cladesMlr: {
+    modelName: 'clades/MLR',
     modelUrl: import.meta.env.VITE_CLADES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/mlr/latest_results.json`,
     sites: undefined,
   },
-  'cladesRenewal': {
-    modelName: "clades/renewal",
+  cladesRenewal: {
+    modelName: 'clades/renewal',
     modelUrl: import.meta.env.VITE_CLADES_RENEWAL || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/renewal/latest_results.json`,
-    ...baseConfiguration
+    ...baseConfiguration,
   },
-  'lineagesMlr': {
-    modelName: "lineages/MLR",
+  lineagesMlr: {
+    modelName: 'lineages/MLR',
     modelUrl: import.meta.env.VITE_LINEAGES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/pango_lineages/global/mlr/latest_results.json`,
     // don't add baseConfiguration as the JSON defines the colours and we don't want the config to override this
     sites: undefined,
   },
-}
+};
 
 /** Create certain functions for the custom incidence line graph so that
  * they are not recreated each time <App> re-renders, as their recreation
@@ -116,7 +119,6 @@ const config = {
 const incidenceLinesTooltip = displayTopVariants();
 const incidenceDomain = getDomainUsingKey('I_smooth_HDI_95_upper');
 
-
 function CladesMLR() {
   const cladesMlrData = useModelData(config.cladesMlr);
   return (
@@ -124,13 +126,13 @@ function CladesMLR() {
       <h2>{`General line graph (preset: 'frequency')`}</h2>
       <div className="abstract">{`Data comes from Clades/MLR model (updated: ${cladesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
-      <PanelDisplay data={cladesMlrData} locations={locations} params={{preset: "frequency"}}/>
+      <PanelDisplay data={cladesMlrData} locations={locations} params={{ preset: 'frequency' }} />
 
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-      <PanelDisplay data={cladesMlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
+      <PanelDisplay data={cladesMlrData} locations={locations} params={{ preset: 'growthAdvantage' }} />
     </ControlsProvider>
-  )
+  );
 }
 
 function LineagesMLR() {
@@ -140,13 +142,13 @@ function LineagesMLR() {
       <h2>{`General line graph (preset: 'frequency')`}</h2>
       <div className="abstract">{`Data comes from Lineages/MLR model (updated: ${lineagesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
-      <PanelDisplay data={lineagesMlrData} locations={locations} params={{preset: "frequency"}}/>
+      <PanelDisplay data={lineagesMlrData} locations={locations} params={{ preset: 'frequency' }} />
 
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from Lineages/MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-      <PanelDisplay data={lineagesMlrData} locations={locations} params={{preset: "growthAdvantage"}}/>
+      <PanelDisplay data={lineagesMlrData} locations={locations} params={{ preset: 'growthAdvantage' }} />
     </ControlsProvider>
-  )
+  );
 }
 
 function RenewalMLR() {
@@ -158,10 +160,12 @@ function RenewalMLR() {
         {`Custom styling to be 400px wide (default: 250px).
         Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
       </div>
-      <PanelDisplay data={cladesRenewalData} locations={locations}
-        styles={{width: 400}}
-        params={{preset: "stackedIncidence"}}
-      /> 
+      <PanelDisplay
+        data={cladesRenewalData}
+        locations={locations}
+        styles={{ width: 400 }}
+        params={{ preset: 'stackedIncidence' }}
+      />
 
       <h2>{`Line graph using I_smooth`}</h2>
       <div className="abstract">
@@ -169,20 +173,24 @@ function RenewalMLR() {
         graph looks -- we specify the graphType (lines), the data key (I_smooth),
         the HPD interval keys, the yDomain and the tooltip function`}
       </div>
-      <PanelDisplay data={cladesRenewalData} locations={locations} params={{
-        graphType: "lines",
-        key: 'I_smooth',
-        interval:  ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
-        intervalOpacity: 0.3,
-        yDomain: incidenceDomain,
-        tooltipXY: incidenceLinesTooltip,
-      }}/>
+      <PanelDisplay
+        data={cladesRenewalData}
+        locations={locations}
+        params={{
+          graphType: 'lines',
+          key: 'I_smooth',
+          interval: ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
+          intervalOpacity: 0.3,
+          yDomain: incidenceDomain,
+          tooltipXY: incidenceLinesTooltip,
+        }}
+      />
 
       <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>
       <div className="abstract">
         {`Data comes from renewal model (updated: ${cladesRenewalData?.modelData?.get('updated')}) matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
       </div>
-      <PanelDisplay data={cladesRenewalData} locations={locations} params={{preset: "R_t"}}/>
+      <PanelDisplay data={cladesRenewalData} locations={locations} params={{ preset: 'R_t' }} />
     </ControlsProvider>
-  )
+  );
 }

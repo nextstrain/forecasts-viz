@@ -2,10 +2,46 @@ import * as d3 from "d3";
 import { logitScale } from "./logitScale";
 import { Tooltip } from "./tooltip";
 import { cssSafeName } from "./cssSafeName";
+import { ModelData } from "./modelData.types";
 
 const TRANSITION_DURATION = 700;
 
-export function D3Graph(d3Container, sizes, modelData, params, options) {
+/* todo -- progressively replace `any` types with proper definitions */
+interface D3GraphInstance {
+  svg: any;
+  tooltip: any;
+  modelData: ModelData;
+  params: any;
+  sizes: any;
+  selectedVariants: Set<string>;
+  emptyData: boolean;
+  x: any;
+  y: any;
+  line: any;
+  area: any;
+  styles: any;
+  points: any[];
+  setStyles(): void;
+  createScales(options: any, params: any): void;
+  drawAxes(): void;
+  setupTooltipXY(): void;
+  setupLine(): void;
+  setupArea(): void;
+  drawArea(): void;
+  drawLines(): void;
+  drawPoints(): void;
+  annotateFinalPoint(): void;
+  updateScale(options: any): void;
+  toggleDailyRawFreqPoints(options: any): void;
+  toggleWeeklyRawFreqPoints(options: any): void;
+  setVariantFocus(selectedVariants: Set<string>): void;
+  drawForecastLine(): void;
+  drawDashedLines(): void;
+  title(): void;
+  getVariantColor(variant: string): string;
+}
+
+export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData, params, options) {
   const dom = d3.select(d3Container.current);
   this.svg = svgSetup(dom, sizes);
   this.tooltip = new Tooltip(dom);
@@ -96,7 +132,7 @@ D3Graph.prototype.drawAxes = function() {
     } else {
       // sparse data - plot the first tick for each month encountered
       let _lastTick;
-      this.x.domain().forEach((dStr, i) => {
+      this.x.domain().forEach((dStr, _i) => {
         const date = d3.timeParse("%Y-%m-%d")(dStr);
         const month = d3.timeFormat("%m")(date)
         if (month!==_lastTick) {
@@ -147,7 +183,7 @@ D3Graph.prototype.setupTooltipXY = function() {
 
 D3Graph.prototype.setupLine = function() {
   if (this.params.graphType==="points") return;
-  this.line = d3.line()
+  this.line = d3.line<any>()
     .defined(d => !isNaN(d.get(this.params.key)) && !!d.get(this.params.key))
     .curve(d3.curveLinear)
     .x((d) => this.x(d.get('date')))
@@ -157,7 +193,7 @@ D3Graph.prototype.setupLine = function() {
 D3Graph.prototype.setupArea = function() {
   if (this.params.graphType==="points") return;
   if (!this.params.interval) return;
-  this.area = d3.area()
+  this.area = d3.area<any>()
     .defined(d => d.get(this.params.interval[0])!==undefined && d.get(this.params.interval[1])!==undefined && !!d.get('date'))
     .curve(d3.curveLinear)
     .x((d) => this.x(d.get('date')))
@@ -247,7 +283,7 @@ D3Graph.prototype.drawPoints = function() {
     this.points = Array
       .from(
         this.modelData.get('points').get(this.params.location),
-        ([variant, variantMap]) => variantMap
+        ([_variant, variantMap]) => variantMap
       )
       .filter(
         (pt) => !isNaN(pt.get(this.params.key))
@@ -269,7 +305,7 @@ D3Graph.prototype.drawPoints = function() {
       .style("fill", (d) => this.modelData.get('variantColors').get(d.get('variant')) ||  this.modelData.get('variantColors').get('other'))
       .call((sel) => {
         if (typeof this.params.tooltipPt!=="function") return;
-        sel.on("mouseover", (event, d) => this.tooltip.display(this.params.tooltipPt, d, this.params))
+        sel.on("mouseover", (_event, d) => this.tooltip.display(this.params.tooltipPt, d, this.params))
         sel.on("mousemove", (event) => this.tooltip.move(event))
         sel.on("mouseout", () => this.tooltip.hide())
       })
@@ -287,7 +323,7 @@ D3Graph.prototype.drawPoints = function() {
         .attr("d", (d) => `M ${this.x(d.get('variant'))} ${this.y(d.get(this.params.interval[0]))} L ${this.x(d.get('variant'))} ${this.y(d.get(this.params.interval[1]))}`)
         .call((sel) => {
           if (typeof this.params.tooltipPt!=="function") return;
-          sel.on("mouseover", (event, d) => this.tooltip.display(this.params.tooltipPt, d, this.params))
+          sel.on("mouseover", (_event, d) => this.tooltip.display(this.params.tooltipPt, d, this.params))
           sel.on("mousemove", (event) => this.tooltip.move(event))
           sel.on("mouseout", () => this.tooltip.hide())
         })
@@ -347,7 +383,7 @@ D3Graph.prototype.updateScale = function(options) {
   });
 }
 
-D3Graph.prototype.setStyles = function(options) {
+D3Graph.prototype.setStyles = function(_options) {
   /* The current responsiveSizing (Panels.js) sets the graph width. Common widths are 260px (small panels)
   or ~the available page width */
   const small = this.sizes.width < 300;
@@ -564,7 +600,7 @@ function svgSetup(dom, sizes) {
     .attr("viewBox", `0 0 ${sizes.width} ${sizes.height}`);
 }
 
-function invertScalePoint(xPx) {
+function invertScalePoint(this: any, xPx) { // todo - `this` is the d3 scalePoint
   /* xPx is a value within x.range() */
   const range = this.range(), domain = this.domain();
   const rangePoints = d3.range(range[0], range[1], this.step())
