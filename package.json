@@ -20,7 +20,9 @@
     "dev:local": "concurrently \"node scripts/data-server.js\" \"VITE_CLADES_RENEWAL='http://localhost:8000/clades.renewal.json' VITE_CLADES_MLR='http://localhost:8000/clades.mlr.json' VITE_LINEAGES_MLR='http://localhost:8000/lineages.mlr.json' vite\"",
     "test": "node src/tests/date-parsing.ts",
     "typecheck": "tsc",
-    "docs": "jsdoc2md src/lib/index.js src/lib/**/*.js > api.md",
+    "docs": "npm run docs:api && npm run docs:types",
+    "docs:api": "typedoc",
+    "docs:types": "tsc --project tsconfig.docs.json",
     "prepack": "npm run build:lib"
   },
   "files": [
@@ -52,6 +54,8 @@
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-tabs": "^4.3.0",
+    "typedoc": "^0.28.19",
+    "typedoc-plugin-markdown": "^4.11.0",
     "typescript": "^6.0.3",
     "usehooks-ts": "^2.9.1",
     "vite": "^5.4.0"

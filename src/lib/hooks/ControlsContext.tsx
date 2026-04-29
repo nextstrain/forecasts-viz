@@ -17,6 +17,9 @@ const defaultControls: Controls & { _isDefault?: true } = {
 
 const ControlsContext = createContext<Controls & { _isDefault?: true }>(defaultControls);
 
+/**
+ * Some docs about how to use ControlsProvider in projects...
+ */
 export function ControlsProvider({ children }: { children: ReactNode }) {
   const controls = useControls();
   return (

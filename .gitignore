@@ -12,6 +12,9 @@
 # library build (`npm run transpile`)
 /dist
 
+# generated documentation
+/docs
+
 # test app build (`npm run build`)
 /build
 
