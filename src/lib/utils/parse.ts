@@ -80,7 +80,7 @@ export const parseModelData = (
   /** VARIANTS - e.g. clades, lineages etc. pivot will be first element */
   const { variants, pivot } = extractVariants(modelJson);
 
-  const { locations, locationHierarchy } = checkLocations(modelJson.metadata.location, config.locations, config.locationHierarchy);
+  const { locations, locationHierarchy } = checkLocations(modelJson, config.locations, config.locationHierarchy);
   
   const data: ModelData = new Map<string, any>([
     ["locations", locations],
@@ -494,12 +494,16 @@ function processModelData(
 
 
 function checkLocations(
-  modelLocations,
+  modelJson: any,
   configLocations: DatasetConfig['locations'],
   configLocationHierarchy: DatasetConfig['locationHierarchy'],
 ): { locations: DatasetConfig['locations'], locationHierarchy: DatasetConfig['locationHierarchy']|undefined} {
+
+  /** First handle the locations themselves - use the config provided ones if provided,
+   * but filter against those present in the model.
+   */
   const missingConfigLocations = new Set();
-  
+  const modelLocations = modelJson.metadata.location;
   const locations = configLocations ?
     configLocations.filter((loc) => {
       if (modelLocations.includes(loc)) return true;
@@ -507,14 +511,40 @@ function checkLocations(
       return false;
     }) :
     modelLocations;
-  
-  // TODO XXX configLocationHierarchy
+
+  /** Now the locationHierarchy */
+  const locationHierarchy: DatasetConfig['locationHierarchy'] | undefined =
+    configLocationHierarchy ?
+      configLocationHierarchy :
+      modelJson.metadata.locationHierarchy ?
+        new Map(
+          Object.entries(modelJson.metadata.locationHierarchy).map(([category, values]) => [
+            category,
+            new Map(Object.entries(values)),
+          ]),
+        ) :
+        undefined;
+
+  /** If we have one, validate it against locations */
+  if (locationHierarchy) {
+    const locationSet = new Set(locations);
+    for (const [category, values] of locationHierarchy) {
+      for (const [value, locs] of values) {
+        const valid = locs.filter((loc) => locationSet.has(loc));
+        if (valid.length < locs.length) {
+          const removed = locs.filter((loc) => !locationSet.has(loc));
+          console.warn(`locationHierarchy "${category}" → "${value}": removed locations not in data: ${removed.join(', ')}`);
+        }
+        values.set(value, valid);
+      }
+    }
+  }
 
   if (missingConfigLocations.size) {
     console.warn(`Config object specified locations not present in the data: ${[...missingConfigLocations].join(', ')}`)
   }
-  
+
   if (!locations.length) throw new Error(`No locations!`)
-  
-  return {locations, locationHierarchy: undefined}
+
+  return {locations, locationHierarchy}
 }

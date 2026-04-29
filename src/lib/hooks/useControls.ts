@@ -3,14 +3,17 @@ import { useState, useCallback, useMemo } from 'react';
 export type ChangeVariantAction = 'set' | 'append' | 'unset';
 export type ChangeVariant = (variant: string, action: ChangeVariantAction) => void;
 
-export type SelectedLocations = string[];
-export type ChangeLocations = (locations: SelectedLocations) => void;
+/** each geography is category, then name.
+ * Examples: ['location', 'Italy'] or ['Region', 'Europe']
+ */
+export type SelectedGeographies = [string, string][];
+export type ChangeGeoFilters = (locations: SelectedGeographies) => void;
 
 export interface Controls {
   changeVariant: ChangeVariant;
   selectedVariants: Set<string>;
-  changeLocations: ChangeLocations;
-  selectedLocations: SelectedLocations;
+  changeGeoFilters: ChangeGeoFilters;
+  selectedGeographies: SelectedGeographies;
   logit: boolean;
   toggleLogit: () => void;
   showDailyRawFreq: boolean;
@@ -21,7 +24,7 @@ export interface Controls {
 
 export function useControls(): Controls {
   const [selectedVariants, setSelectedVariants] = useState<Set<string>>(new Set());
-  const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>([]);
+  const [selectedGeographies, setSelectedGeographies] = useState<SelectedGeographies>([]);
   const [logit, setLogit] = useState(false);
   const [showDailyRawFreq, setShowDailyRawFreq] = useState(false);
   const [showWeeklyRawFreq, setShowWeeklyRawFreq] = useState(false);
@@ -42,8 +45,11 @@ export function useControls(): Controls {
     });
   }, []);
   
-  const changeLocations = useCallback<ChangeLocations>(
-    (locations) => setSelectedLocations(locations),
+  const changeGeoFilters = useCallback<ChangeGeoFilters>(
+    (values) => {
+      // filters can operate on locations themselves or on hierarchical groups
+      setSelectedGeographies(values)
+    },
     []);
   const toggleLogit = useCallback(() => setLogit(prev => !prev), []);
   const toggleShowDailyRawFreq = useCallback(() => setShowDailyRawFreq(prev => !prev), []);
@@ -53,8 +59,8 @@ export function useControls(): Controls {
     () => ({
       changeVariant,
       selectedVariants,
-      selectedLocations,
-      changeLocations,
+      selectedGeographies,
+      changeGeoFilters,
       logit,
       toggleLogit,
       showDailyRawFreq,
@@ -65,8 +71,8 @@ export function useControls(): Controls {
     [
       changeVariant,
       selectedVariants,
-      selectedLocations,
-      changeLocations,
+      selectedGeographies,
+      changeGeoFilters,
       logit,
       toggleLogit,
       showDailyRawFreq,

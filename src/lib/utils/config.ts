@@ -44,7 +44,6 @@ export interface DatasetConfig {
   locations?: string[]
   
   /**
-   * NOT YET IMPLEMENTED
    * Encode a heirarchy of locations here which can be used for filtering and other future uses
    * Structure: locationHierarchy -> cateogry -> value -> list of locations
    * E.g.:      locationHierarchy -> "region" -> "oceania" -> ["New Zealand", "Australia", ...]

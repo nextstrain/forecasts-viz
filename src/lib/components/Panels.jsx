@@ -1,6 +1,5 @@
 import React from 'react';
 import { useElementSize, useDebounce } from 'usehooks-ts';
-import Select from 'react-select';
 import { Legend } from "./Legend.jsx";
 import { ErrorBoundary } from './ErrorBoundary.jsx';
 import { ErrorMessage } from "./ErrorMessage.jsx";
@@ -8,6 +7,7 @@ import Spinner from "./Spinner.jsx";
 import { Toggle } from "./Toggle.jsx";
 import { Graph } from "./Graph.jsx";
 import { useControlsContext } from "../hooks/ControlsContext";
+import { filterLocations, GeographyFilter } from "./GeographyFilter.tsx"
 import "../styles/styles.css";
 
 
@@ -125,28 +125,6 @@ export const PanelDisplay = (props) => {
   )
 }
 
-const LocationFilter = ({allLocations, selectedLocations, changeLocations}) => {
-  const options = locationsToOptions(allLocations);
-  const value = locationsToOptions(selectedLocations);
-  return (
-    <div className='toggle'>
-      <span style={{paddingTop: 10}}>
-        Locations:
-      </span>
-      <Select
-        value={value}
-        isMulti
-        name="locations"
-        options={options}
-        className="basic-multi-select"
-        classNamePrefix="select"
-        styles={{ container: (base) => ({ ...base, paddingLeft: 10, minWidth: 400, maxWidth: 400 }) }}
-        onChange={(selected) => changeLocations(selected ? selected.map((s) => s.value) : [])}
-      />
-    </div>
-  )
-}
-
 /**
  * See <PanelDisplay> for description. That component wraps this one
  * so that if any hooks have errors they bubble up and can be caught
@@ -161,7 +139,7 @@ const Panel = ({
   locations=undefined, /* optional. Defaults to all available */
 }) => {
   const {modelData, error} = data;
-  const {selectedLocations, changeLocations, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
+  const {selectedGeographies, changeGeoFilters, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
 
   if (locations) {
     console.warn("Deprecation: <Panel> no longer takes a 'locations' prop")
@@ -169,8 +147,7 @@ const Panel = ({
 
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);  
-  const locationList = (modelData?.get('locations') || [])
-    .filter((loc) => selectedLocations.length === 0 || selectedLocations.includes(loc));
+  const locationList = filterLocations(modelData, selectedGeographies);
   const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = params.canUseLogit || params.preset==="frequency";
   const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_raw');
@@ -187,10 +164,11 @@ const Panel = ({
   return (
     <div className='panelContainer' ref={outerDivRef}>
       <div className='optionsContainer'>
-        <LocationFilter
-          allLocations={modelData.get('locations') || []}
-          selectedLocations={selectedLocations}
-          changeLocations={changeLocations}
+        <GeographyFilter
+          modelLocations={modelData.get('locations') || []}
+          modelLocationHierarchy={modelData.get('locationHierarchy') || new Map()}
+          selectedGeographies={selectedGeographies}
+          changeGeoFilters={changeGeoFilters}
         />
         <div className='togglesContainer'>
           {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={toggleLogit}/>}
@@ -218,8 +196,4 @@ const Panel = ({
       </div>
     </div>
   )
-}
-
-function locationsToOptions(locations) {
-  return locations.map((loc) => ({ value: loc, label: loc }))
 }
