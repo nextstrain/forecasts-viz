@@ -3,15 +3,16 @@ import { logitScale } from "./logitScale";
 import { Tooltip } from "./tooltip";
 import { cssSafeName } from "./cssSafeName";
 import { ModelData } from "./modelData.types";
+import { GraphParamsWithLocation } from "./graphParams";
 
 const TRANSITION_DURATION = 700;
 
 /* todo -- progressively replace `any` types with proper definitions */
-interface D3GraphInstance {
+export interface D3GraphInstance {
   svg: any;
   tooltip: any;
   modelData: ModelData;
-  params: any;
+  params: GraphParamsWithLocation;
   sizes: any;
   selectedVariants: Set<string>;
   emptyData: boolean;
@@ -42,6 +43,7 @@ interface D3GraphInstance {
 
 export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: ModelData, params, options) {
   const dom = d3.select(d3Container.current);
+  
   this.svg = svgSetup(dom, sizes);
   this.tooltip = new Tooltip(dom);
   this.modelData = modelData;
@@ -70,7 +72,7 @@ export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: Mo
 }
 
 
-D3Graph.prototype.createScales = function(this: D3GraphInstance, {logit}, {log2}) {
+D3Graph.prototype.createScales = function (this: D3GraphInstance, { logit }, { log2 }) {
   const customXDomain = Array.isArray(this.params.xDomain) ?
     [...this.params.xDomain] :
       typeof this.params.xDomain === "function" ?
@@ -83,13 +85,15 @@ D3Graph.prototype.createScales = function(this: D3GraphInstance, {logit}, {log2}
         undefined;
   if (!customYDomain) throw new Error("Params must define the 'yDomain'")
 
+  const applyLogit = logit && this.params.canUseLogit;
+  
   switch (this.params.graphType) {
     case "lines": // fallthrough
     case "stream":
       this.x = d3.scalePoint()
         .domain(customXDomain || this.modelData.get('dates'))
       this.x.invert = invertScalePoint;
-      this.y = (logit ? logitScale() : d3.scaleLinear())
+      this.y = (applyLogit ? logitScale() : d3.scaleLinear())
         .domain(customYDomain)
       break
     case "points":
@@ -97,6 +101,11 @@ D3Graph.prototype.createScales = function(this: D3GraphInstance, {logit}, {log2}
         .domain(customXDomain || [...this.modelData.get('variants')])
       this.y = (log2 ? d3.scaleLog().base(2): d3.scaleLinear())
         .domain(customYDomain)
+      break;
+    case "statespace":
+      this.x = (applyLogit ? logitScale() : d3.scaleLinear())
+        .domain([0, 100]);
+      this.y = d3.scaleLinear().domain(customYDomain)
       break;
     default:
       throw new Error("TODO!");
@@ -113,63 +122,82 @@ D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
   // First work out which ticks to display and how to display them
   // `xTicks` is a dict of tick value -> displayed text.
   const xTicks = {};
-  if (this.params.graphType==="points") {
-    // display every variant (point in the domain)
-    this.x.domain().forEach((variant) => {
-      xTicks[variant] = this.modelData.get('variantDisplayNames').get(variant) || variant;
-    });
-  } else {
-    if (this.modelData.get('sparseDates')===false) {
-      // We have values for every day (i.e. no holes), so display a tick for
-      // the first day of each month
-      this.x.domain().forEach((dStr) => {
-        const date = d3.timeParse("%Y-%m-%d")(dStr);
-        if (d3.timeFormat("%d")(date)==='01') {
-          xTicks[dStr] = `${d3.timeFormat("%b")(date)}`;
-        }
+  switch (this.params.graphType) {
+    case "points":
+      // display every variant (point in the domain)
+      this.x.domain().forEach((variant) => {
+        xTicks[variant] = this.modelData.get('variantDisplayNames').get(variant) || variant;
       });
-    } else {
-      // sparse data - plot the first tick for each month encountered
-      let _lastTick;
-      this.x.domain().forEach((dStr, _i) => {
-        const date = d3.timeParse("%Y-%m-%d")(dStr);
-        const month = d3.timeFormat("%m")(date)
-        if (month!==_lastTick) {
-          // don't plot first tick (aesthetic reasons)
-          if (_lastTick) {
-            xTicks[dStr] = `${d3.timeFormat("%b %e")(date)}`;
+      break;
+    case "lines": // fallthrough
+    case "stream":
+      if (this.modelData.get('sparseDates') === false) {
+        // We have values for every day (i.e. no holes), so display a tick for
+        // the first day of each month
+        this.x.domain().forEach((dStr) => {
+          const date = d3.timeParse("%Y-%m-%d")(dStr);
+          if (d3.timeFormat("%d")(date) === '01') {
+            xTicks[dStr] = `${d3.timeFormat("%b")(date)}`;
           }
-          _lastTick=month;
-        }
-      });
-    }
+        });
+      } else {
+        // sparse data - plot the first tick for each month encountered
+        let _lastTick;
+        this.x.domain().forEach((dStr, _i) => {
+          const date = d3.timeParse("%Y-%m-%d")(dStr);
+          const month = d3.timeFormat("%m")(date)
+          if (month !== _lastTick) {
+            // don't plot first tick (aesthetic reasons)
+            if (_lastTick) {
+              xTicks[dStr] = `${d3.timeFormat("%b %e")(date)}`;
+            }
+            _lastTick = month;
+          }
+        });
+      }
+      break;
+    case "statespace":
+      xTicks[50] = '50%'; // TODO XXX
+      break;
   }
-  this.svg.append("g")
-    .call((g) => g
-      .attr("transform", `translate(0,${this.sizes.height-this.sizes.bottom})`)
-      .call(
-        d3.axisBottom(this.x)
-          .tickSize(2) /* small (vertical) tick lines */
-          .tickValues(Object.keys(xTicks))
-      )
-      // .call(g => g.select(".domain").remove())
-      .selectAll("text")
-        .text((tickValue) => xTicks[tickValue])
-        // .attr("y", 0)
-        // .attr("x", (d) => x(d))
-        .attr("dy", "0.6em")
-        .attr("transform", "rotate(45)")
-        .style("text-anchor", "start")
-        .style("font-size", "12px")
-        .style("fill", "#aaa")
-    );
+  
+  switch (this.params.graphType) {
+    case "points": // fallthrough
+    case "lines": // fallthrough
+    case "stream":
+      this.svg.append("g")
+        .call((g) => g
+          .attr("transform", `translate(0,${this.sizes.height-this.sizes.bottom})`)
+          .call(
+            d3.axisBottom(this.x)
+              .tickSize(2) /* small (vertical) tick lines */
+              .tickValues(Object.keys(xTicks))
+          )
+          // .call(g => g.select(".domain").remove())
+          .selectAll("text")
+            .text((tickValue) => xTicks[tickValue])
+            // .attr("y", 0)
+            // .attr("x", (d) => x(d))
+            .attr("dy", "0.6em")
+            .attr("transform", "rotate(45)")
+            .style("text-anchor", "start")
+            .style("font-size", "12px")
+            .style("fill", "#aaa")
+        );
+      break;
+    case "statespace":
+      this.svg.append("g")
+        .attr("class", "xAxis")
+        .call(simpleAxis('x', this.x, this.sizes));
+      break;
+  }
 
   /**
    * Y-axis
    */
   this.svg.append("g")
     .attr("class", "yAxis")
-    .call(simpleYAxis(this.y, this.sizes, this.params.yTickFmt));
+    .call(simpleAxis('y', this.y, this.sizes, this.params.yTickFmt));
 }
 
 D3Graph.prototype.setupTooltipXY = function(this: D3GraphInstance) {
@@ -182,6 +210,14 @@ D3Graph.prototype.setupTooltipXY = function(this: D3GraphInstance) {
 
 D3Graph.prototype.setupLine = function(this: D3GraphInstance) {
   if (this.params.graphType==="points") return;
+  if (this.params.graphType === 'statespace') {
+    this.line = d3.line<any>()
+      .defined(d => !!d)
+      .curve(d3.curveLinear)
+      .x((d) => this.x(d.freq*100))
+      .y((d) => this.y(d.relativeGa))
+    return;
+  }
   this.line = d3.line<any>()
     .defined(d => !!d)
     .curve(d3.curveLinear)
@@ -201,7 +237,7 @@ D3Graph.prototype.setupArea = function(this: D3GraphInstance) {
 }
 
 D3Graph.prototype.drawLines = function(this: D3GraphInstance) {
-  if (this.params.graphType !== "lines") return;
+  if (!['lines', 'statespace'].includes(this.params.graphType)) return;
   let dataExists = false;
   
   const locationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
@@ -209,7 +245,7 @@ D3Graph.prototype.drawLines = function(this: D3GraphInstance) {
     const temporalPoints = data?.temporal;
     if (!temporalPoints || temporalPoints.filter(Boolean).length === 0) return;
     dataExists = true;
-
+    
     const color = this.getVariantColor(variant);
     const g = this.svg.append('g')
       .attr("class", cssSafeName(`variant_${variant}`));
@@ -339,14 +375,27 @@ D3Graph.prototype.annotateFinalPoint = function(this: D3GraphInstance) {
 
 }
 
+/**
+ * Update the scale type - this entails updating the d3 scale, re-drawing th axes,
+ * and re-drawing any points/lines/intervals on the graph
+ */
 D3Graph.prototype.updateScale = function(this: D3GraphInstance, options) {
-  if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
+  if (!['lines', 'statespace'].includes(this.params.graphType)) throw new Error("Not yet implemented")
 
   this.createScales(options, this.params); // updates this.x, this.y
 
-  this.svg.selectAll('.yAxis')
-    .transition().duration(TRANSITION_DURATION)
-    .call(simpleYAxis(this.y, this.sizes, this.params.yTickFmt));
+  switch (this.params.graphType) {
+    case "lines":
+      this.svg.selectAll('.yAxis')
+        .transition().duration(TRANSITION_DURATION)
+        .call(simpleAxis('y', this.y, this.sizes, this.params.yTickFmt));
+      break;
+    case "statespace":
+      this.svg.selectAll('.xAxis')
+        .transition().duration(TRANSITION_DURATION)
+        .call(d3.axisBottom(this.x).tickSize(2).tickPadding(4))
+      break;
+  }
 
   const updateLocationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
   if (updateLocationData) Object.entries(updateLocationData).forEach(([variant, data]: [string, any]) => {
@@ -358,10 +407,11 @@ D3Graph.prototype.updateScale = function(this: D3GraphInstance, options) {
       .transition().duration(TRANSITION_DURATION)
       .attr("d", this.line(temporalPoints))
 
-    g.selectAll('.area')
-      .transition().duration(TRANSITION_DURATION)
-      .attr("d", this.area(temporalPoints))
-
+    if (this.area) {
+      g.selectAll('.area')
+        .transition().duration(TRANSITION_DURATION)
+        .attr("d", this.area(temporalPoints))
+    }
     g.selectAll('.freqRawPoints') // may be empty - that's ok!
       .transition().duration(TRANSITION_DURATION)
       .attr("cy", (d) => this.y(d.raw || false))
@@ -600,11 +650,15 @@ function invertScalePoint(this: any, xPx) { // todo - `this` is the d3 scalePoin
 }
 
 
-function simpleYAxis(y, sizes, textFun = (d) => d) {
+function simpleAxis(axis: 'x' | 'y', scale, sizes, textFun = (d) => d) {
+  const isX = axis === 'x';
+  const transform = isX
+    ? `translate(0,${sizes.height-sizes.bottom})`
+    : `translate(${sizes.left},0)`;
+  const axisFn = isX ? d3.axisBottom(scale) : d3.axisLeft(scale);
   return (g) => g
-    .attr("transform", `translate(${sizes.left},0)`)
-    .call(d3.axisLeft(y).tickSize(2).tickPadding(4))
-    // .call(g => g.select(".domain").remove())
+    .attr("transform", transform)
+    .call(axisFn.tickSize(2).tickPadding(4))
     .selectAll("text")
       .text(textFun)
       .style("font-size", "12px")

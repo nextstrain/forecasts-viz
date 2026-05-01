@@ -3,7 +3,7 @@ import { PanelDisplay, useModelData } from '../src/lib/index.js';
 import { ControlsProvider } from '../src/lib/hooks/ControlsContext.tsx';
 import './styles.css';
 /* Following are not currently exported by the library itself */
-import { getDomainUsingKey } from '../src/lib/components/Graph.tsx';
+import { getDomainUsingKey } from '../src/lib/utils/graphParams.ts';
 import type { DatasetConfig } from '../src/lib/utils/config.ts';
 import { displayTopVariants } from '../src/lib/utils/tooltipDisplay.ts';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
@@ -128,9 +128,18 @@ function CladesMLR() {
       {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
       <PanelDisplay data={cladesMlrData} locations={locations} params={{ preset: 'frequency' }} />
 
+      
+      <h2>{`Relative growth advantage vs frequency`}</h2>
+      <PanelDisplay data={cladesMlrData} params={{ preset: 'relativeGA' }} />
+      
+      <h2>{`Population-relative Growth Advantage`}</h2>
+      <PanelDisplay data={cladesMlrData} params={{ preset: 'freqGA' }} />
+      
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       <PanelDisplay data={cladesMlrData} locations={locations} params={{ preset: 'growthAdvantage' }} />
+      
+      
     </ControlsProvider>
   );
 }

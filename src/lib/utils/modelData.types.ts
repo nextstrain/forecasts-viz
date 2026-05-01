@@ -33,7 +33,7 @@ export interface ModelData extends Map<string, any> {
   /** `metadata.updated` if present. */
   get(key: 'updated'): string | undefined;
   /** Per-site `[min, max]` for non-temporal sites (e.g. growth advantage). */
-  get(key: 'domains'): Map<string, [number, number]>;
+  get(key: 'domains'): Record<string, [number, number]>;
   /** Encode a hierarchy of locations for filtering. Category -> value -> list of locations. */
   get(key: 'locationHierarchy'): Map<string, Map<string, string[]>> | undefined;
 }
@@ -66,21 +66,49 @@ export interface ModelDataConfig {
       ps_interval_estimator?: [string, string];
       /** display name of the interval */
       interval_name: string;
-    }
+    };
+    relativeGA: {
+      /** Compute popGA and relativeGA at parse time. Needed to plot certain graphs. */
+      enable: true;
+    };
   }
 }
 
-interface FreqTimePoint {
+
+export interface GenericTimePoint {
   date: string;
   value?: number;
+}
+
+interface  FreqTimePoint extends GenericTimePoint {
   lower?: number;
   upper?: number;
   raw?: number;
   smoothed?: number;
 }
 
+interface FreqGaTimePoint {
+  date: string;
+  /** frequency (NOT logit transformed) */
+  freq: number;
+  /** log(variant weighted ga) - log(pop ga) */
+  relativeGa: number;
+}
+
 export interface FreqData {
   temporal: (FreqTimePoint | undefined)[];
+}
+
+interface relativeGAData {
+  temporal: (GenericTimePoint | undefined)[];
+}
+
+interface popGAData {
+  temporal: (GenericTimePoint | undefined)[];
+}
+
+interface freqGAData {
+  temporal: (FreqGaTimePoint | undefined)[];
 }
 
 export interface GaData {
@@ -92,5 +120,7 @@ export interface GaData {
 export interface Points {
   freq?: Record<string, Record<string, FreqData>>;
   ga?: Record<string, Record<string, GaData>>;
-  [key: string]: Record<string, Record<string, any>> | undefined;
+  relativeGA?: Record<string, Record<string, relativeGAData>>;
+  popGA?: Record<string, popGAData>;
+  freqGA?: Record<string, Record<string, freqGAData>>; // TODO XXX 
 }

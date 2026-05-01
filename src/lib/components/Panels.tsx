@@ -9,21 +9,12 @@ import { Graph } from "./Graph.tsx";
 import { useControlsContext } from "../hooks/ControlsContext";
 import { ModelDataWrapper } from "../utils/useModelData.ts";
 import { filterLocations, GeographyFilter } from "./GeographyFilter.tsx"
+import type { UserGraphParams, GraphParams } from "../utils/graphParams.ts";
+import { expandParams } from "../utils/graphParams.ts";
+
 import "../styles/styles.css";
 
 
-/**
- * The intention is to (eventually) expose two components here
- * which display a panel of graphs (or perhaps one component
- * parameterised by props). The first will display the same graph
- * type, for multiple locations. The second will display multiple
- * graph types for the same location.
- * @private
- */
-
-
-
-type GraphParameters = any; // todo: define the shared graph params type
 type SmallMultipleStyles = any; // todo: define the shared small-multiple sizing type
 
 interface ResponsiveSizingResult {
@@ -39,7 +30,7 @@ interface ResponsiveSizingResult {
 
 interface PanelProps {
   data: ModelDataWrapper;
-  params: GraphParameters;
+  params: UserGraphParams;
   styles?: SmallMultipleStyles;
   locations?: string[] | undefined;
 }
@@ -51,7 +42,7 @@ interface PanelProps {
  * @private 
  */
 const responsiveSizing = (
-  params: GraphParameters,
+  params: GraphParams,
   modelData: ModelDataWrapper['modelData'],
   dimensions: { width: number },
   locationList: string[],
@@ -146,7 +137,7 @@ export const PanelDisplay = ({
   locations,
 }: {
   data: ModelDataWrapper;
-  params: GraphParameters;
+  params: UserGraphParams;
   styles?: SmallMultipleStyles;
   locations?: string[] | undefined;
 }) => {
@@ -178,6 +169,8 @@ const Panel = ({
   const {modelData, error} = data;
   const {selectedGeographies, changeGeoFilters, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
 
+  const expandedParams = expandParams(params);
+  
   if (locations) {
     console.warn("Deprecation: <Panel> no longer takes a 'locations' prop")
   }
@@ -185,10 +178,11 @@ const Panel = ({
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);  
   const locationList = filterLocations(modelData, selectedGeographies);
-  const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
-  const canUseLogit = params.canUseLogit || params.preset === "frequency";
-  const showRawPoints = params.preset === 'frequency' && modelData?.get('config').sitesInfo?.freq?.raw_site;
-  const showSmoothedPoints = params.preset === 'frequency' && modelData?.get('config').sitesInfo?.freq?.smoothed_site;
+  const sizes = {...responsiveSizing(expandedParams, modelData, dimensions, locationList), ...(styles ? styles : {})};
+  const canUseLogit = expandedParams.canUseLogit;
+  // Note: following lines hardcode 'freq'
+  const showRawPoints = expandedParams.showRawPoints && modelData?.get('config').sitesInfo?.freq?.raw_site;
+  const showSmoothedPoints = expandedParams.showSmoothedPoints && modelData?.get('config').sitesInfo?.freq?.smoothed_site;
   
   if (error) {
     return (<ErrorMessage error={error}/>);
@@ -215,7 +209,7 @@ const Panel = ({
       </div>
 
       <div className='legendAndSmallMultiplesContainer'>
-        <Legend modelData={modelData} sizes={sizes} preset={params.preset}/>
+        <Legend modelData={modelData} sizes={sizes} preset={expandedParams.preset}/>
         <div className='smallMultiplesContainer'
           style={{gridTemplateColumns: `repeat(auto-fill, minmax(${sizes.width}px, 1fr))`}}>
           {locationList
@@ -224,8 +218,8 @@ const Panel = ({
                 modelData={modelData}
                 sizes={sizes}
                 location={location}
-                params={params}
-                key={`${params.preset || params.key}_${location}`}
+                params={expandedParams}
+                key={`${expandedParams.preset || expandedParams.key}_${location}`}
               />
             ))
           }

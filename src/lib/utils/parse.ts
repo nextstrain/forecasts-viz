@@ -1,6 +1,7 @@
 import { max, schemeTableau10 } from 'd3';
 import { DatasetConfig } from "./config.ts";
 import { ModelData, Points, ModelDataConfig } from "./modelData.types.ts";
+import { calcRelativeGA, calcFreqGA} from "./fitness.ts"
 
 const THRESHOLD_FREQ = 0.005; /* half a percent */
 const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
@@ -23,6 +24,9 @@ const DEFAULT_SITES: ModelDataConfig['sitesInfo'] = {
     smoothed_site: 'weekly_raw_freq',
     smoothed_name: 'Weekly Raw Frequency',
   },
+  relativeGA: {
+    enable: true,
+  },
 };
 
 /**
@@ -43,7 +47,7 @@ export const parseModelData = (
   console.log(`${modelName} - parsing model data`);
 
   /** SITES - which keys to parse from model (and how to parse them) */
-  const sitesInfo = collectSites(modelJson.metadata.sites, config.sites);
+  const sitesInfo = collectSites(config.sites);
 
   /** DATES */
   const [dates, updated, nowcastFinalDate, dateSummary, sparseDates] = extractDatesFromModels(modelJson);
@@ -94,6 +98,8 @@ export const parseModelData = (
     console.warn(`Frequencies were not parsed from the model, no censoring of time points has occurred. Model results which had freq<${THRESHOLD_FREQ} may be unreliable.`);
   }
 
+  // TODO - drop variants entirely if their _max_ is under some threshold
+  
   /** compute stacked coordinates as needed */
   // TODO XXX
   Object.entries(sitesInfo).filter(([_site, info]) => info.stacked === true)
@@ -101,24 +107,22 @@ export const parseModelData = (
       computeStackedPoints(points, dates, site);
     });
 
-  /** Compute domains for point estimates */
-  // TODO XXX WHY ONLY POINT ESTIMATES?
-  // Object.entries(sitesInfo).filter(([_site, info]) => info.temporal === false)
-  //   .forEach(([site, _info]) => {
-  //     data.get('domains').set(site, computeBounds(points, site));
-  //   });
   data.set('domains', {
-    'ga': computeBounds(points, 'ga')
+    'ga': computeBounds(points, 'ga'), // TODO why only ga?
   });
   
-
   data.set("points", points);
+
+  if (sitesInfo.relativeGA?.enable) {
+    calcRelativeGA(data);
+    calcFreqGA(data);
+  }
 
   console.log("DATA", data);
   return data;
 };
 
-function collectSites(modelSites: string[], configSites?: any): Record<string, any> {
+function collectSites(configSites?: any): Record<string, any> {
   let sitesInfo: Record<string, any> = { ...DEFAULT_SITES };
 
   if (configSites) {
@@ -127,13 +131,6 @@ function collectSites(modelSites: string[], configSites?: any): Record<string, a
     }
     sitesInfo = { ...sitesInfo, ...configSites };
     console.log("Merged config-defined sites with defaults. Combined sites:", sitesInfo);
-  }
-
-  // Prune out any sites not in the model JSON
-  for (const s of Object.keys(sitesInfo)) {
-    if (!modelSites.includes(s)) {
-      delete sitesInfo[s];
-    }
   }
 
   return sitesInfo;

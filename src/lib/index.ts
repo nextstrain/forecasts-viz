@@ -34,3 +34,4 @@ export { PanelDisplay, useModelData, ControlsProvider };
 export type { ModelData } from "./utils/modelData.types.ts";
 export type { DatasetConfig } from "./utils/config.ts";
 export type { ModelDataWrapper } from "./utils/useModelData.ts";
+export type { UserGraphParams } from "./utils/graphParams.ts";
