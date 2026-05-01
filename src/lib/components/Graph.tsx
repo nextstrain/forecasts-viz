@@ -56,7 +56,7 @@ function expandParams(providedParams: any, location: string) { // todo: type pro
       params.key = 'ga';
       params.interval  = ['ga_HDI_95_lower', 'ga_HDI_95_upper'];
       params.tooltipPt = categoryPointTooltip;
-      params.yDomain = function() {return this.modelData.get('domains').get('ga');};
+      params.yDomain = function() {return this.modelData.get('domains').ga;};
       params.xDomain = function() {
         return ['', ...this.modelData.get('variants')]
       }
@@ -93,10 +93,10 @@ function expandParams(providedParams: any, location: string) { // todo: type pro
 export function getDomainUsingKey(key: string) {
   return function(this: any) { // todo: type D3Graph instance
     const variants = this.modelData.get('variants');
-    const dataPerVariant = this.modelData.get('points').get(this.params.location)
+    const locationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
     const maxObserved = d3.max(
       variants.map((v) =>
-        d3.max(dataPerVariant.get(v).get('temporal').map((point) => point.get(key)))
+        d3.max(locationData?.[v]?.temporal?.map((point: any) => point?.[key]))
       )
     );
     return [0, maxObserved];

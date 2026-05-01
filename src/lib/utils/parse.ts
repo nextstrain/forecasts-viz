@@ -1,29 +1,27 @@
 import { max, schemeTableau10 } from 'd3';
 import { DatasetConfig } from "./config.ts";
-import { ModelData } from "./modelData.types.ts";
-
-/* Maps used instead of object as it's (seemingly) faster + consumes less
- * memory (https://www.zhenghao.io/posts/object-vs-map) */
+import { ModelData, Points, ModelDataConfig } from "./modelData.types.ts";
 
 const THRESHOLD_FREQ = 0.005; /* half a percent */
 const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
 
-// TODO check this — the per-site config shape varies (e.g. `freq` carries
-// `raw`/`smoothed`; `I_smooth` doesn't). Modelled loosely as `any` until
-// the call sites are TS-converted.
-const DEFAULT_SITES: Record<string, any> = {
+
+const DEFAULT_SITES: ModelDataConfig['sitesInfo'] = {
   // Future options: specify the ps values to use, whether to use `${key}_forecast` etc
   ga: {
-    temporal: false,
-  },
-  I_smooth: {
-    temporal: true,
-    stacked: true,
+    ps_point_estimator: 'median',
+    ps_interval_estimator: ['HDI_95_lower', 'HDI_95_upper'],
+    interval_name: "95% HDI",
   },
   freq: {
-    temporal: true,
-    raw: 'daily_raw_freq',
-    smoothed: 'weekly_raw_freq',
+    estimateSites: ['freq', 'freq_forecast'],
+    ps_point_estimator: 'median',
+    ps_interval_estimator: ['HDI_95_lower', 'HDI_95_upper'],
+    interval_name: "95% HDI",
+    raw_site: 'daily_raw_freq',
+    raw_name: 'Daily Raw Frequency',
+    smoothed_site: 'weekly_raw_freq',
+    smoothed_name: 'Weekly Raw Frequency',
   },
 };
 
@@ -57,6 +55,7 @@ export const parseModelData = (
   const { locations, locationHierarchy } = checkLocations(modelJson, config.locations, config.locationHierarchy);
   
   const data: ModelData = new Map<string, any>([
+    ["config", {sitesInfo}], // TODO XXX
     ["locations", locations],
     ["locationHierarchy", locationHierarchy],
     ["variants", variants],
@@ -77,32 +76,14 @@ export const parseModelData = (
   console.log(`\t${data.get('locations').length} locations x ${data.get('variants').length} variants x ${dates.length} dates`);
   console.log("\t" + dateSummary);
 
-  /** POINTS hold all the actual data for plotting in a hierarchical Map structure.
-   * We initialise to the following structure:
-   *
-   * points → <location> → <variant> → "variant" → <variant>
-   *                                 → "temporal" → temporalArray
-   *                                              → [idx] → "date" → YYYY-MM-DD || undefined
-   *
-   * Note: temporal[idx] corresponds to dates[idx]
-   * We then add data dependent on the JSON contents, e.g. growth advantage sites add:
-   *
-   * points → <location> → <variant> → "ga" → float
-   *                                 → "ga_HDI_95_lower" → float
-   *                                 → "ga_HDI_95_upper" → float
-   *
-   * and frequencies add:
-   *
-   * points → <location> → <variant> → "temporal" → [idx] → "freq" → float[idx]
-   *                                                      → "freq_HDI_95_lower" → float[idx]
-   *                                                      → "freq_HDI_95_upper" → float[idx]
+  /** POINTS hold all the actual data for plotting.
+   * Structure: Points.freq[location][variant].temporal[dateIdx] → FreqTimePoint
+   *            Points.ga[location][variant] → GaData
    */
 
-  const points = initialisePoints(data.get('locations'), variants, dates);
-  const ps_point_estimator = modelJson.metadata.ps_point_estimator || "median";
+  const points = initialisePoints(data.get('locations'), variants, dateIdx.size, sitesInfo);
 
-  const sites = processModelData(modelJson.data, points, dateIdx, sitesInfo, ps_point_estimator);
-  data.set("sites", sites);
+  processModelData(modelJson.data, points, dateIdx, sitesInfo);
 
   /* Once everything's been added (including frequencies) - iterate over each point & censor certain frequencies */
   if (sitesInfo['freq']) {
@@ -114,16 +95,22 @@ export const parseModelData = (
   }
 
   /** compute stacked coordinates as needed */
+  // TODO XXX
   Object.entries(sitesInfo).filter(([_site, info]) => info.stacked === true)
     .forEach(([site, _info]) => {
       computeStackedPoints(points, dates, site);
     });
 
   /** Compute domains for point estimates */
-  Object.entries(sitesInfo).filter(([_site, info]) => info.temporal === false)
-    .forEach(([site, _info]) => {
-      data.get('domains').set(site, computeBounds(points, site));
-    });
+  // TODO XXX WHY ONLY POINT ESTIMATES?
+  // Object.entries(sitesInfo).filter(([_site, info]) => info.temporal === false)
+  //   .forEach(([site, _info]) => {
+  //     data.get('domains').set(site, computeBounds(points, site));
+  //   });
+  data.set('domains', {
+    'ga': computeBounds(points, 'ga')
+  });
+  
 
   data.set("points", points);
 
@@ -285,80 +272,66 @@ function getVariantColors(
   return variantColors;
 }
 
-// TODO check this — `TimePoint` is currently a Map keyed by string with
-// heterogeneous values (date string, frequencies, stack offsets, ...).
-// Worth becoming a real interface once the consumer types are nailed down.
-type TimePoint = Map<string, any>;
 
-/**
- * Returns a {@link TimePoint} — a Map with a key of `date` and the value
- * set to the `date` argument.
- */
-function timePoint(date: string | undefined = undefined): TimePoint {
-  return new Map<string, any>([
-    ['date', date],
-  ]);
-}
-
-// TODO check this — `Points` is the hierarchical Map described in
-// `parseModelData` above. Typed loosely until call sites are converted.
-type Points = Map<string, Map<string, Map<string, any>>>;
-
-function initialisePoints(locations: string[], variants: string[], dates: string[]): Points {
-  return new Map(
-    locations.map((location) => [
-      location,
-      new Map(
-        variants.map((variant) => [
-          variant,
-          new Map<string, any>([
-            ['variant', variant],
-            ['temporal', dates.map(timePoint)],
-          ]),
-        ]),
-      ),
-    ]),
-  );
-}
-
-function computeBounds(points: Points, key: string): [number, number] {
-  let _min = 100;
-  let _max = 0;
-  const keyLower = `${key}_HDI_95_lower`;
-  const keyUpper = `${key}_HDI_95_upper`;
-  for (const variantMap of points.values()) {
-    for (const variantPoint of variantMap.values()) {
-      if (variantPoint.get(keyLower) < _min) {
-        _min = variantPoint.get(keyLower);
-      } else if (variantPoint.get(keyUpper) > _max) {
-        _max = variantPoint.get(keyUpper);
+function initialisePoints(locations: string[], variants: string[], nDates: number, sitesInfo: Record<string, any>): Points {
+  const points: Points = {};
+  if (Object.hasOwn(sitesInfo, 'freq')) {
+    points.freq = {};
+    for (const location of locations) {
+      points.freq[location] = {};
+      for (const variant of variants) {
+        points.freq[location][variant] = { temporal: new Array(nDates) };
       }
+    }
+  }
+  if (Object.hasOwn(sitesInfo, 'ga')) {
+    points.ga = {};
+    for (const location of locations) {
+      points.ga[location] = {};
+      for (const variant of variants) {
+        points.ga[location][variant] = {};
+      }
+    }
+  }
+  return points;
+}
+
+function computeBounds(points: Points, key: 'ga'): [number, number] {
+  let [_min, _max] = [Infinity, -Infinity];
+  const siteData = points[key]!;
+  for (const locationData of Object.values(siteData)) {
+    for (const valuePt of Object.values(locationData)) {
+      if (valuePt.value! < _min) _min = valuePt.value!;
+      if (valuePt.value! > _max) _max = valuePt.value!;
+      if (valuePt.lower !== undefined && valuePt.lower < _min) _min = valuePt.lower;
+      if (valuePt.upper !== undefined && valuePt.upper > _max) _max = valuePt.upper;
     }
   }
   return [_min, _max];
 }
 
+/**
+ * for any timePoint where the associated ps value is either not provided or
+ * under our threshold, we don't want to use any model output for this date
+ * (for the given variant, location))
+ */
 function censorTimePoints(points: Points): { nanCount: number; censorCount: number } {
   let [nanCount, censorCount] = [0, 0];
-  /**
-   * for any timePoint where the frequency is either not provided (NaN) or
-   * under our threshold, we don't want to use any model output for this date
-   * (for the given variant, location))
-   */
-  const censor = (point: TimePoint, idx: number, dateList: TimePoint[]) => {
-    const freq = point.get('freq');
-    if (isNaN(freq)) {
-      dateList[idx] = timePoint();
-      nanCount++;
-    } else if (freq < THRESHOLD_FREQ) {
-      dateList[idx] = timePoint();
-      censorCount++;
-    }
-  };
-  for (const variantMap of points.values()) {
-    for (const variantPoint of variantMap.values()) {
-      const dateList: TimePoint[] = variantPoint.get('temporal');
-      dateList.forEach(censor);
+  for (const locationData of Object.values(points.freq!)) {
+    for (const freqData of Object.values(locationData)) {
+      const temporalData = freqData.temporal;
+      if (!temporalData) {
+        console.log("Skip?")
+        continue
+      }
+      temporalData.forEach((el, idx) => {
+        if (el?.value===undefined) {
+          nanCount; // TODO XXX it's not nan
+        } else if (el.value < THRESHOLD_FREQ) {
+          temporalData[idx] = undefined;
+          censorCount++;
+        }
+      })
     }
   }
   return { nanCount, censorCount };
@@ -370,14 +343,19 @@ function censorTimePoints(points: Points): { nanCount: number; censorCount: numb
  * determined by the variant order.
  */
 function computeStackedPoints(points: Points, dates: string[], key: string): void {
-  for (const variantMap of points.values()) {
-    let runningTotalPerDay = new Array(dates.length).fill(0);
-    for (const variantPoint of variantMap.values()) {
-      const dateList: TimePoint[] = variantPoint.get('temporal');
+  const siteData = points[key];
+  if (!siteData) return;
+  for (const locationData of Object.values(siteData)) {
+    const runningTotalPerDay = new Array(dates.length).fill(0);
+    for (const variantData of Object.values(locationData)) {
+      const dateList = variantData?.temporal;
+      if (!dateList) continue;
       dateList.forEach((point, idx) => {
-        point.set(`${key}_y0`, runningTotalPerDay[idx]);
-        runningTotalPerDay[idx] += point.get(key) || 0; // may be NaN
-        point.set(`${key}_y1`, runningTotalPerDay[idx]);
+        if (!point) return;
+        const p = point as Record<string, any>;
+        p[`${key}_y0`] = runningTotalPerDay[idx];
+        runningTotalPerDay[idx] += (p[key] || 0);
+        p[`${key}_y1`] = runningTotalPerDay[idx];
       });
     }
   }
@@ -393,77 +371,83 @@ function processModelData(
   points: Points,
   dateIdx: Map<string, number>,
   sitesInfo: Record<string, any>,
-  ps_point_estimator: string,
-): Set<string | undefined> {
-  const keysAdded = new Set<string | undefined>();
-  const keyInfo: Record<string, any> = {};
-  const lookup: Record<string, (store: Map<string, any>, d: any) => string | undefined> = {};
+): void {
+  // const keysAdded = new Set<string | undefined>();
+  // const keyInfo: Record<string, any> = {};
+  // const lookup: Record<string, (store: Map<string, any>, d: any) => string | undefined> = {};
 
-  for (const [siteName, siteInfo] of Object.entries(sitesInfo)) {
-    keyInfo[siteName] = siteInfo;
-    lookup[siteName] = defaultGetter(siteName);
-    if (siteInfo.raw) {
-      keyInfo[siteInfo.raw] = siteInfo;
-      lookup[siteInfo.raw] = simpleGetter('freq_raw');
-    }
-    if (siteInfo.smoothed) {
-      keyInfo[siteInfo.smoothed] = siteInfo;
-      lookup[siteInfo.smoothed] = simpleGetter('freq_smoothed');
-    }
+  // The data format is tough to work with, so partition things by site.
+  const locations = new Set(Object.keys(points.freq || points.ga || {}));
+  const dataBySite: Record<string,Record<string,any>[]> = {};
+  for (const el of data) {
+    const { site, location } = el;
+    if (!locations.has(location)) continue;
+    if (!Object.hasOwn(dataBySite, site)) dataBySite[site] = [];
+    dataBySite[site].push(el)
   }
 
-  function defaultGetter(baseKey: string) {
-    return (store: Map<string, any>, d: any): string | undefined => {
-      const key = d.ps === ps_point_estimator ? baseKey
-        : d.ps === "HDI_95_lower" ? `${baseKey}_HDI_95_lower`
-          : d.ps === "HDI_95_upper" ? `${baseKey}_HDI_95_upper`
-            : undefined;
-      if (!key) return undefined;
-      store.set(key, d.value);
-      return key;
-    };
-  }
-
-  function simpleGetter(baseKey: string) { // doesn't consider the ps value
-    return (store: Map<string, any>, d: any): string => {
-      store.set(baseKey, d.value);
-      return baseKey;
-    };
-  }
-
-  const lookupKeys = new Set(Object.keys(lookup));
-
-  for (const d of data) {
-    /* The site in the JSON isn't necessarily the key we store data under as we don't store forecasts under a different key */
-    // TODO - allow the sitesInfo to enable this via `useForecast` boolean
-    const key = d.site.replace("_forecast", "");
-
-    if (lookupKeys.has(key)) {
-      if (keyInfo[key].temporal === true && dateIdx.get(d.date) === undefined) continue;
-      
-      // The user-config may restrict the locations, which flows into the keys present in `points`
-      // so skip processing this element if its location is not present in points.
-      const locationMap = points.get(d.location);
-      if (!locationMap) {
-        continue
+  if (Object.hasOwn(sitesInfo, 'freq')) {
+    // TODO -- generalise for any _temporal_ key, but only 'freq' for now!
+    console.log("------ processing 'freq' ------- ", sitesInfo.freq);
+    const { estimateSites, ps_point_estimator, ps_interval_estimator, raw_site, smoothed_site } = sitesInfo.freq;
+    for (const estimateKey of estimateSites) {
+      if (!Object.hasOwn(dataBySite, estimateKey)) {
+        console.warn(`config specified site ${estimateKey} which was not found in data`);
+        continue;
       }
-      const variantPoint = locationMap.get(d.variant);
-      if (!variantPoint) {
-        console.error(`ERROR at data point: Variant "${d.variant}" not found in metadata.variants`);
-        console.error(`Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
-        console.error(`Problematic data point:`, d);
-        throw new Error(`Variant "${d.variant}" in data not found in metadata.variants. Available variants: ${Array.from(locationMap.keys()).join(', ')}`);
+      for (const el of dataBySite[estimateKey]) {
+        const { variant, location, ps, date, value } = el;
+        const _t = points.freq![location][variant].temporal;
+        const idx = dateIdx.get(date);
+        if (idx === undefined) {
+          console.log("undefined date idx", estimateKey)
+          continue
+        }
+        if (!_t[idx]) _t[idx] = {date};
+        if (ps === ps_point_estimator) _t[idx].value = value;
+        if (ps_interval_estimator) {
+          if (ps === ps_interval_estimator[0]) _t[idx].lower = value;
+          if (ps === ps_interval_estimator[1]) _t[idx].upper = value;
+        }
       }
+    }
+    // TODO: make this dynamic if we want to allow an arbitrary number of sites like this
+    // but this would entail dynamic UI parts as well
+    for (const d of [['raw', raw_site], ['smoothed', smoothed_site]]) {
+      const [name, site] = d;
+      if (!site) continue;
+      if (!Object.hasOwn(dataBySite, site)) {
+        console.warn(`Config specified freq ${name} site key '${site}' but no matching data elements`);
+      } else {
+        for (const el of dataBySite[site]) {
+          const { variant, location, date, value } = el;
+          const point = points.freq![location][variant].temporal?.[dateIdx.get(date)!];
+          if (!point) {
+            console.log("Skipping site", site)
+            continue;
+          }
+          point[name] = value;
+        }
+      }
+    }    
+  }
 
-      const store = keyInfo[key].temporal === true ?
-        variantPoint.get('temporal')[dateIdx.get(d.date)] :
-        variantPoint;
-
-      const storeKey = lookup[key](store, d);
-      keysAdded.add(storeKey);
+  if (Object.hasOwn(sitesInfo, 'ga')) {
+    if (!Object.hasOwn(dataBySite, 'ga')) {
+      console.warn(`config specified site 'ga' which was not found in data`);
+    } else {
+      const { ps_point_estimator, ps_interval_estimator } = sitesInfo.ga;
+      for (const el of dataBySite.ga) {
+        const { variant, location, value, ps } = el;
+        const point = points.ga![location][variant]
+        if (ps === ps_point_estimator) point.value = value;
+        if (ps_interval_estimator) {
+          if (ps === ps_interval_estimator[0]) point.lower = value;
+          if (ps === ps_interval_estimator[1]) point.upper = value;
+        }
+      }
     }
   }
-  return keysAdded;
 }
 
 

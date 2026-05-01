@@ -42,10 +42,10 @@ export const useGraph = (dom, sizes, modelData, params, controls) => {
       graph.current.updateScale(controls)
     }
     if (params.graphType==='lines' && prevDeps.current.controls.showDailyRawFreq !== controls.showDailyRawFreq) {
-      graph.current.toggleDailyRawFreqPoints(controls)
+      graph.current.togglePoints(controls, 'raw')
     }
     if (params.graphType==='lines' && prevDeps.current.controls.showWeeklyRawFreq !== controls.showWeeklyRawFreq) {
-      graph.current.toggleWeeklyRawFreqPoints(controls)
+      graph.current.togglePoints(controls, 'smoothed')
     }
     if (prevDeps.current.controls.selectedVariants !== controls.selectedVariants) {
       graph.current.setVariantFocus(controls.selectedVariants)

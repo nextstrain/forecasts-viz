@@ -3,14 +3,13 @@ import * as d3 from "d3";
 export function displayTopVariants({ n = 5, fmt = d3.format(".1f") } = {}) {
   return function (xy, modelData, params, selectedVariants) {
     const dateIdx = modelData.get('dateIdx')
-    const locationData = modelData.get('points').get(params.location);
+    const locationData = modelData.get('points')[params.key]?.[params.location] || {};
     const xIdx = dateIdx.get(xy[0]);
     let values = [];
-    locationData.forEach((variantPoint, variant) => {
-      const d = variantPoint.get('temporal')[xIdx];
-      if (d && d.get('date') && d.get(params.key)) {
-        values.push([variant, d.get(params.key)])
-      }
+    Object.entries(locationData).forEach(([variant, data]: [string, any]) => {
+      const el = data.temporal[xIdx];
+      if (!el) return;
+      values.push([variant, el.value]);
     });
     let topValues = '';
     values
@@ -38,12 +37,14 @@ export function displayTopVariants({ n = 5, fmt = d3.format(".1f") } = {}) {
  * @private
  */
 export function categoryPointTooltip(d, params) {
+  console.log(d)
   const fmt = d3.format(".1f");
+  // TODO XXX - make HPD/HDI/CI config-definable
   return `
     <div>
-      <p><b>Variant:</b> ${d.get('variant')}</p>
-      <p><b>${params.displayName||params.key}:</b> ${fmt(d.get(`${params.key}`))}</p>
-      <p><b>95% HDI:</b> ${fmt(d.get(`${params.key}_HDI_95_lower`))} - ${fmt(d.get(`${params.key}_HDI_95_upper`))}</p>
+      <p><b>Variant:</b> ${d.variant}</p>
+      <p><b>${params.displayName || params.key}:</b> ${fmt(d.value)}</p>
+      <p><b>95% HDI:</b> ${fmt(d.lower)} - ${fmt(d.upper)}</p>
     </div>
   `
 }

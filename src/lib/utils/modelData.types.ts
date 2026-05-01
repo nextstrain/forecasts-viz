@@ -8,8 +8,10 @@
  * the visualisation component in the future.
  */
 export interface ModelData extends Map<string, any> {
+  /** TODO XXX */
+  get(key: 'config'): ModelDataConfig;
   /** Hierarchical lookup: location -> variant -> site data. */
-  get(key: 'points'): Map<string, Map<string, Map<string, any>>>; // todo: type inner point data
+  get(key: 'points'): Points;
   /** Model-defined variants (`modelJson.metadata.variants`). */
   get(key: 'variants'): string[];
   /** Sorted `YYYY-MM-DD` strings, guaranteed dense (no holes). Bridges `metadata.dates` and `metadata.forecast_dates`. */
@@ -32,8 +34,63 @@ export interface ModelData extends Map<string, any> {
   get(key: 'updated'): string | undefined;
   /** Per-site `[min, max]` for non-temporal sites (e.g. growth advantage). */
   get(key: 'domains'): Map<string, [number, number]>;
-  /** Set of site keys discovered during data processing (e.g. 'freq', 'ga', 'freq_raw'). */
-  get(key: 'sites'): Set<string | undefined>;
   /** Encode a hierarchy of locations for filtering. Category -> value -> list of locations. */
   get(key: 'locationHierarchy'): Map<string, Map<string, string[]>> | undefined;
+}
+
+export interface ModelDataConfig {
+  /** Information about the sites */
+  sitesInfo: {
+    freq: {
+      /** site values which contain the model estimate values */
+      estimateSites: string[];
+      /** ps value to use as the model estimate value for estimateSites */
+      ps_point_estimator: string;
+      /** ps values to use as the model estimate intervals (HPD/HPI/CI etc) */
+      ps_interval_estimator?: [string, string];
+      /** display name of the interval */
+      interval_name: string;
+      /** site value for raw measurements */
+      raw_site: string;
+      /** name to display for the `raw_site` data */
+      raw_name: string;
+      /** site value for smoothed measurements */
+      smoothed_site: string;
+      /** name to display for the `raw_site` data */
+      smoothed_name: string;
+    };
+    ga: {
+      /** ps value to use as the model estimate value for estimateSites */
+      ps_point_estimator: string;
+      /** ps values to use as the model estimate intervals (HPD/HPI/CI etc) */
+      ps_interval_estimator?: [string, string];
+      /** display name of the interval */
+      interval_name: string;
+    }
+  }
+}
+
+interface FreqTimePoint {
+  date: string;
+  value?: number;
+  lower?: number;
+  upper?: number;
+  raw?: number;
+  smoothed?: number;
+}
+
+export interface FreqData {
+  temporal: (FreqTimePoint | undefined)[];
+}
+
+export interface GaData {
+  value?: number;
+  lower?: number;
+  upper?: number;
+}
+
+export interface Points {
+  freq?: Record<string, Record<string, FreqData>>;
+  ga?: Record<string, Record<string, GaData>>;
+  [key: string]: Record<string, Record<string, any>> | undefined;
 }

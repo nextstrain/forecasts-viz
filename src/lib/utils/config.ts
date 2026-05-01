@@ -1,3 +1,4 @@
+import type { ModelDataConfig } from "./modelData.types";
 
 /**
  * Configuration for fetching and parsing a model dataset.
@@ -11,13 +12,9 @@ export interface DatasetConfig {
   modelUrl: string;
 
   /**
-   * List of sites to extract from JSON. If not provided we will use the
-   * sites listed in the JSON metadata.
+   * How to parse the sites in the JSON. Merged into the defaults.
    */
-  // TODO check this — current shape is roughly
-  // `Record<siteName, { temporal, stacked, raw, smoothed }>`
-  // (see DEFAULT_SITES in `parse.ts`).
-  sites?: any;
+  sites?: ModelDataConfig['sitesInfo'];
 
   /**
    * Colours for the variants specified in the model JSONs.

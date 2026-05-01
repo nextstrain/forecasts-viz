@@ -186,10 +186,10 @@ const Panel = ({
   const dimensions = useDebounce(_dimensions, 500);  
   const locationList = filterLocations(modelData, selectedGeographies);
   const sizes = {...responsiveSizing(params, modelData, dimensions, locationList), ...(styles ? styles : {})};
-  const canUseLogit = params.canUseLogit || params.preset==="frequency";
-  const canShowDailyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_raw');
-  const canShowWeeklyRawFreq = params.preset==='frequency' && modelData && modelData?.get('sites')?.has('freq_smoothed');
-
+  const canUseLogit = params.canUseLogit || params.preset === "frequency";
+  const showRawPoints = params.preset === 'frequency' && modelData?.get('config').sitesInfo?.freq?.raw_site;
+  const showSmoothedPoints = params.preset === 'frequency' && modelData?.get('config').sitesInfo?.freq?.smoothed_site;
+  
   if (error) {
     return (<ErrorMessage error={error}/>);
   }
@@ -209,8 +209,8 @@ const Panel = ({
         />
         <div className='togglesContainer'>
           {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={toggleLogit}/>}
-          {canShowDailyRawFreq && <Toggle label={params.rawDataToggleName || "Daily raw data"} checked={showDailyRawFreq} onChange={toggleShowDailyRawFreq}/>}
-          {canShowWeeklyRawFreq && <Toggle label={params.smoothedDataToggleName || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={toggleShowWeeklyRawFreq}/>}
+          {showRawPoints && <Toggle label={modelData.get('config').sitesInfo.freq.raw_name || "Weekly raw data"} checked={showDailyRawFreq} onChange={toggleShowDailyRawFreq}/>}
+          {showSmoothedPoints && <Toggle label={modelData.get('config').sitesInfo.freq.smoothed_name || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={toggleShowWeeklyRawFreq}/>}
         </div>
       </div>
 
