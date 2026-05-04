@@ -74,8 +74,6 @@ export default App;
 
 function getPreset(site: string) {
   if (site === 'freq') return 'frequency';
-  if (site === 'R') return 'R_t';
-  if (site === 'I_smooth') return 'stackedIncidence';
   if (site === 'ga') return 'growthAdvantage';
   return undefined;
 }

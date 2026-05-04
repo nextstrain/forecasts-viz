@@ -100,13 +100,6 @@ export const parseModelData = (
 
   // TODO - drop variants entirely if their _max_ is under some threshold
   
-  /** compute stacked coordinates as needed */
-  // TODO XXX
-  Object.entries(sitesInfo).filter(([_site, info]) => info.stacked === true)
-    .forEach(([site, _info]) => {
-      computeStackedPoints(points, dates, site);
-    });
-
   data.set('domains', {
     'ga': computeBounds(points, 'ga'), // TODO why only ga?
   });
@@ -332,30 +325,6 @@ function censorTimePoints(points: Points): { nanCount: number; censorCount: numb
     }
   }
   return { nanCount, censorCount };
-}
-
-/**
- * The `key` must already be set within `points` (and be temporal). This
- * adds `${key}_y0` and `${key}_y1` values with the stacking order
- * determined by the variant order.
- */
-function computeStackedPoints(points: Points, dates: string[], key: string): void {
-  const siteData = points[key];
-  if (!siteData) return;
-  for (const locationData of Object.values(siteData)) {
-    const runningTotalPerDay = new Array(dates.length).fill(0);
-    for (const variantData of Object.values(locationData)) {
-      const dateList = variantData?.temporal;
-      if (!dateList) continue;
-      dateList.forEach((point, idx) => {
-        if (!point) return;
-        const p = point as Record<string, any>;
-        p[`${key}_y0`] = runningTotalPerDay[idx];
-        runningTotalPerDay[idx] += (p[key] || 0);
-        p[`${key}_y1`] = runningTotalPerDay[idx];
-      });
-    }
-  }
 }
 
 /**

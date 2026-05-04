@@ -28,7 +28,6 @@ export interface D3GraphInstance {
   setupTooltipXY(): void;
   setupLine(): void;
   setupArea(): void;
-  drawArea(): void;
   drawLines(): void;
   drawPoints(): void;
   annotateFinalPoint(): void;
@@ -60,7 +59,6 @@ export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: Mo
 
   this.setupLine();
   this.setupArea();
-  this.drawArea();
   this.drawLines();
   this.drawPoints();
   /* Note: raw data points never drawn on initial render */
@@ -88,8 +86,7 @@ D3Graph.prototype.createScales = function (this: D3GraphInstance, { logit }, { l
   const applyLogit = logit && this.params.canUseLogit;
   
   switch (this.params.graphType) {
-    case "lines": // fallthrough
-    case "stream":
+    case "lines":
       this.x = d3.scalePoint()
         .domain(customXDomain || this.modelData.get('dates'))
       this.x.invert = invertScalePoint;
@@ -130,7 +127,6 @@ D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
       });
       break;
     case "lines": // fallthrough
-    case "stream":
       if (this.modelData.get('sparseDates') === false) {
         // We have values for every day (i.e. no holes), so display a tick for
         // the first day of each month
@@ -163,8 +159,7 @@ D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
   
   switch (this.params.graphType) {
     case "points": // fallthrough
-    case "lines": // fallthrough
-    case "stream":
+    case "lines":
       this.svg.append("g")
         .call((g) => g
           .attr("transform", `translate(0,${this.sizes.height-this.sizes.bottom})`)
@@ -236,7 +231,12 @@ D3Graph.prototype.setupArea = function(this: D3GraphInstance) {
     .y1((d) => this.y(d.upper))
 }
 
-D3Graph.prototype.drawLines = function(this: D3GraphInstance) {
+D3Graph.prototype.drawLines = function (this: D3GraphInstance) {
+  /**
+   * Note: this approach (one <g> per variant) works, but there is an alternate
+   * nested d3 approach we could alternatively use. See the commit which removed
+   * streams for implementation details.
+   */
   if (!['lines', 'statespace'].includes(this.params.graphType)) return;
   let dataExists = false;
   
@@ -270,32 +270,6 @@ D3Graph.prototype.drawLines = function(this: D3GraphInstance) {
       .style('pointer-events', 'none')
   });
   this.emptyData = !dataExists;
-}
-
-/**
- * This approach is similar to the forEach approach used in `drawLines`, but
- * this is the more canonical data-join d3 approach.
- * It is here simply as an alternative way of doing things in d3, as one may
- * prove to be more versatile than the other going forward.
- * Note: this works "out of the box" for the HPDs in a lines graph, but the
- * `updateScale` function would need to be updated.
- */
-D3Graph.prototype.drawArea = function(this: D3GraphInstance) {
-  if (this.params.graphType!=="stream") return;
-  if (!Array.isArray(this.params.interval)) return;
-  const variants = this.modelData.get('variants');
-  const freqLocation = this.modelData.get('points').freq?.[this.params.location];
-  this.svg.append('g')
-    .attr("class", this.params.tooltipPt ? "area" : "noCapture area")
-    .selectAll("stackedLayer")
-    .data(variants)
-    .enter()
-    .append("path")
-      .style("fill", (variant) => this.getVariantColor(variant))
-      .style("fill-opacity", this.params.intervalOpacity ?? 0.5)
-      .style("stroke", (variant) => this.getVariantColor(variant))
-      .style("stroke-width", this.params.intervalStrokeWidth ?? 0)
-      .attr("d", (variant) => this.area(freqLocation?.[variant]?.temporal))
 }
 
 
@@ -352,7 +326,8 @@ D3Graph.prototype.drawPoints = function (this: D3GraphInstance) {
   }
 }
 
-D3Graph.prototype.annotateFinalPoint = function(this: D3GraphInstance) {
+D3Graph.prototype.annotateFinalPoint = function (this: D3GraphInstance) {
+  // TODO - adapt for statespace plot
   if (!(this.params.graphType==="lines" && this.params.annotateFinalPoint===true)) return;
   const g = this.svg
     .append('g')
@@ -372,7 +347,6 @@ D3Graph.prototype.annotateFinalPoint = function(this: D3GraphInstance) {
       .style("font-size", "12px")
       .style("fill", color);
   });
-
 }
 
 /**
@@ -492,39 +466,6 @@ D3Graph.prototype.togglePoints = function(this: D3GraphInstance, options, key: '
   })
 }
 
-// /**
-//  * Prototype called when the smoothed (raw) data toggle is changed
-//  * NOTE: this used to be hardcoded to convey "weekly", but this is no longer the case
-//  */
-// D3Graph.prototype.toggleWeeklyRawFreqPoints = function(options) {
-//   if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
-//   if (!options.showWeeklyRawFreq) {
-//     this.svg.selectAll('.freqSmoothedPoints').remove("*")
-//     return;
-//   }
-//   this.modelData.get('points').get(this.params.location).forEach((variantPoint, variant) => {
-    
-//     const temporalPoints = variantPoint.get(this.params.key)
-//       .temporal
-//       .filter((pt) => Number.isFinite(pt?.smoothed));
-//     if (temporalPoints.filter(Boolean).length === 0) return;
-//     const variantColor = this.getVariantColor(variant) || 'black';
-//     const pointColor = this.styles.rawFreqs.weekly.colorModifier(variantColor)
-
-//     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
-//       .selectAll("freqSmoothedPoints")
-//       .data(temporalPoints)
-//       .enter()
-//       .append("circle")
-//         .attr("class", "freqSmoothedPoints")
-//         .attr("cx", (d) => this.x(d.date))
-//         .attr("cy", (d) => this.y(d.smoothed))
-//         .attr("r", this.styles.rawFreqs.weekly.r.normal)
-//         .style("opacity", this.styles.rawFreqs.weekly.opacity.normal)
-//         .style("fill", pointColor)
-//   })
-// }
-
 D3Graph.prototype.setVariantFocus = function(this: D3GraphInstance, selectedVariants) {
   const hasSelection = selectedVariants && selectedVariants.size > 0;
   this.selectedVariants = hasSelection ? new Set(selectedVariants) : new Set([])
@@ -577,12 +518,10 @@ D3Graph.prototype.setVariantFocus = function(this: D3GraphInstance, selectedVari
 }
 
 /**
- * vertical (dashed) line + text to convey nowcast/forecast
+ * vertical (dashed) line + text to convey nowcast/forecast boundary
  */
 D3Graph.prototype.drawForecastLine = function(this: D3GraphInstance) {
-  if (this.params.graphType === "stream" ||
-    !this.modelData.has('nowcastFinalDate') ||
-    this.params.forecastLine !== true) {
+  if (!this.modelData.has('nowcastFinalDate') || this.params.forecastLine !== true) {
     return;
   }
 

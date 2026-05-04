@@ -18,7 +18,7 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
     "download": "bash ./scripts/download-data.sh",
-    "dev:local": "concurrently \"node scripts/data-server.js\" \"VITE_CLADES_RENEWAL='http://localhost:8000/clades.renewal.json' VITE_CLADES_MLR='http://localhost:8000/clades.mlr.json' VITE_LINEAGES_MLR='http://localhost:8000/lineages.mlr.json' vite\"",
+    "dev:local": "concurrently \"node scripts/data-server.js\" \"VITE_CLADES_MLR='http://localhost:8000/clades.mlr.json' VITE_LINEAGES_MLR='http://localhost:8000/lineages.mlr.json' vite\"",
     "test": "node src/tests/date-parsing.ts",
     "typecheck": "tsc",
     "docs": "typedoc",

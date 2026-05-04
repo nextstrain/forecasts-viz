@@ -9,7 +9,7 @@ export type GraphParamsWithLocation = GraphParams & { location: string };
 
 export interface GraphParams {
   preset: string;
-  graphType: "lines" | "points" | "stream" | "statespace";
+  graphType: "lines" | "points" | "statespace";
   key: string;
   interval: [string, string];
   canUseLogit: boolean;
@@ -66,24 +66,6 @@ export function expandParams(providedParams: UserGraphParams): GraphParams {
         return ['', ...this.modelData.get('variants')]
       }
       params.dashedLines = [1.0]
-      break;
-    case 'R_t':
-      params.graphType = "lines"
-      params.key = 'R';
-      params.interval  = ['R_HDI_95_lower', 'R_HDI_95_upper'];
-      params.intervalOpacity = 0.2
-      params.tooltipXY = tooltipGeneric;
-      params.yDomain = [0, 3];
-      params.dashedLines = [1.0]
-      params.annotateFinalPoint = true;
-      break;
-    case 'stackedIncidence':
-      params.graphType = "stream"
-      params.key = 'I_smooth';
-      params.interval  = ['I_smooth_y0', 'I_smooth_y1'];
-      params.intervalStrokeWidth = 0.5;
-      params.yDomain = getDomainUsingKey('I_smooth_y1');
-      params.tooltipXY = tooltipGeneric;
       break;
     case 'relativeGA': // TODO XXX TODO XXX
       params.graphType = "lines"

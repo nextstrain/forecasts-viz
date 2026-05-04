@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { PanelDisplay, useModelData } from '../src/lib/index.js';
+import type { DatasetConfig } from '../src/lib/index.js';
 import { ControlsProvider } from '../src/lib/hooks/ControlsContext.tsx';
 import './styles.css';
-/* Following are not currently exported by the library itself */
-import { getDomainUsingKey } from '../src/lib/utils/graphParams.ts';
-import type { DatasetConfig } from '../src/lib/utils/config.ts';
-import { displayTopVariants } from '../src/lib/utils/tooltipDisplay.ts';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 
@@ -43,16 +40,12 @@ function App() {
           <TabList>
             <Tab>Clades / MLR</Tab>
             <Tab>Lineages / MLR</Tab>
-            <Tab>Clades / Renewal</Tab>
           </TabList>
           <TabPanel>
             <CladesMLR />
           </TabPanel>
           <TabPanel>
             <LineagesMLR />
-          </TabPanel>
-          <TabPanel>
-            <RenewalMLR />
           </TabPanel>
         </Tabs>
 
@@ -65,42 +58,12 @@ function App() {
 export default App;
 
 const DEFAULT_ENDPOINT_PREFIX = 'https://nextstrain-data.s3.amazonaws.com/files/workflows/forecasts-ncov';
-const baseConfiguration = {
-  sites: undefined,
-  variantColors: new Map([
-    ['other', '#737373'],
-    ['21L (Omicron)', '#BDBDBD'],
-    ['22A (Omicron)', '#447CCD'],
-    ['22B (Omicron)', '#5EA9A1'],
-    ['22C (Omicron)', '#8ABB6A'],
-    ['22D (Omicron)', '#BEBB48'],
-    ['22E (Omicron)', '#E29E39'],
-    ['22F (Omicron)', '#E2562B'],
-    ['23A (Omicron)', '#FF322C'],
-  ]),
-  variantDisplayNames: new Map([
-    ['other', 'other'],
-    ['21L (Omicron)', '21L (BA.2)'],
-    ['22A (Omicron)', '22A (BA.4)'],
-    ['22B (Omicron)', '22B (BA.5)'],
-    ['22C (Omicron)', '22C (BA.2.12.1)'],
-    ['22D (Omicron)', '22D (BA.2.75)'],
-    ['22E (Omicron)', '22E (BQ.1) some really long name'],
-    ['22F (Omicron)', '22F (XBB)'],
-    ['23A (Omicron)', '23A (XBB.1.5)'],
-  ]),
-};
 
 const config: Record<string, DatasetConfig> = {
   cladesMlr: {
     modelName: 'clades/MLR',
     modelUrl: import.meta.env.VITE_CLADES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/mlr/latest_results.json`,
     sites: undefined,
-  },
-  cladesRenewal: {
-    modelName: 'clades/renewal',
-    modelUrl: import.meta.env.VITE_CLADES_RENEWAL || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/renewal/latest_results.json`,
-    ...baseConfiguration,
   },
   lineagesMlr: {
     modelName: 'lineages/MLR',
@@ -109,15 +72,6 @@ const config: Record<string, DatasetConfig> = {
     sites: undefined,
   },
 };
-
-/** Create certain functions for the custom incidence line graph so that
- * they are not recreated each time <App> re-renders, as their recreation
- * will cause the params to be different (at a deep-equality level) and thus
- * will result in all the graphs re-drawing.
- * We could achieve the same result inside App() via useMemo.
- */
-const incidenceLinesTooltip = displayTopVariants();
-const incidenceDomain = getDomainUsingKey('I_smooth_HDI_95_upper');
 
 function CladesMLR() {
   const cladesMlrData = useModelData(config.cladesMlr);
@@ -156,50 +110,6 @@ function LineagesMLR() {
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from Lineages/MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       <PanelDisplay data={lineagesMlrData} locations={locations} params={{ preset: 'growthAdvantage' }} />
-    </ControlsProvider>
-  );
-}
-
-function RenewalMLR() {
-  const cladesRenewalData = useModelData(config.cladesRenewal);
-  return (
-    <ControlsProvider>
-      <h2>{`Stream graph (preset: 'stackedIncidence')`}</h2>
-      <div className="abstract">
-        {`Custom styling to be 400px wide (default: 250px).
-        Data comes from Renewal model objects matching 'I_smooth' + 'median'`}
-      </div>
-      <PanelDisplay
-        data={cladesRenewalData}
-        locations={locations}
-        styles={{ width: 400 }}
-        params={{ preset: 'stackedIncidence' }}
-      />
-
-      <h2>{`Line graph using I_smooth`}</h2>
-      <div className="abstract">
-        {`An example of using the 'params' React prop in the calling app to completely define how the
-        graph looks -- we specify the graphType (lines), the data key (I_smooth),
-        the HPD interval keys, the yDomain and the tooltip function`}
-      </div>
-      <PanelDisplay
-        data={cladesRenewalData}
-        locations={locations}
-        params={{
-          graphType: 'lines',
-          key: 'I_smooth',
-          interval: ['I_smooth_HDI_95_lower', 'I_smooth_HDI_95_upper'],
-          intervalOpacity: 0.3,
-          yDomain: incidenceDomain,
-          tooltipXY: incidenceLinesTooltip,
-        }}
-      />
-
-      <h2>{`Estimated effective reproduction number over time (Renewal Model)`}</h2>
-      <div className="abstract">
-        {`Data comes from renewal model (updated: ${cladesRenewalData?.modelData?.get('updated')}) matching 'R' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}
-      </div>
-      <PanelDisplay data={cladesRenewalData} locations={locations} params={{ preset: 'R_t' }} />
     </ControlsProvider>
   );
 }
