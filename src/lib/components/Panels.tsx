@@ -8,7 +8,7 @@ import { Toggle } from "./Toggle.tsx";
 import { Graph } from "./Graph.tsx";
 import { useControlsContext } from "../hooks/ControlsContext";
 import { ModelDataWrapper } from "../utils/useModelData.ts";
-import { filterLocations, GeographyFilter } from "./GeographyFilter.tsx"
+import { filterLocations, Filter } from "./Filter.tsx"
 import type { UserGraphParams, GraphParams } from "../utils/graphParams.ts";
 import { expandParams } from "../utils/graphParams.ts";
 
@@ -167,7 +167,7 @@ const Panel = ({
   locations=undefined, /* optional. Defaults to all available */
 }: PanelProps) => {
   const {modelData, error} = data;
-  const {selectedGeographies, changeGeoFilters, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
+  const {selectedGeographies, changeGeoFilters, selectedVariants, setVariantsFromFilter, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
 
   const expandedParams = expandParams(params);
   
@@ -195,11 +195,15 @@ const Panel = ({
   return (
     <div className='panelContainer' ref={outerDivRef}>
       <div className='optionsContainer'>
-        <GeographyFilter
+        <Filter
           modelLocations={modelData.get('locations') || []}
           modelLocationHierarchy={modelData.get('locationHierarchy') || new Map()}
           selectedGeographies={selectedGeographies}
           changeGeoFilters={changeGeoFilters}
+          variants={modelData.get('variants') || []}
+          variantDisplayNames={modelData.get('variantDisplayNames') || new Map()}
+          selectedVariants={selectedVariants}
+          setVariantsFromFilter={setVariantsFromFilter}
         />
         <div className='togglesContainer'>
           {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={toggleLogit}/>}

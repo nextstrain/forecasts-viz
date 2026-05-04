@@ -4,6 +4,7 @@ import { useControls, Controls } from './useControls';
 const defaultControls: Controls & { _isDefault?: true } = {
   _isDefault: true,
   changeVariant: () => {},
+  setVariantsFromFilter: () => {},
   selectedVariants: new Set(),
   selectedGeographies: [],
   changeGeoFilters: () => {},

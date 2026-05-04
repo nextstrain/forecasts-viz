@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 
 export type ChangeVariantAction = 'set' | 'append' | 'unset';
 export type ChangeVariant = (variant: string, action: ChangeVariantAction) => void;
+export type SetVariantsFromFilter = (variants: string[]) => void;
 
 /** each geography is category, then name.
  * Examples: ['location', 'Italy'] or ['Region', 'Europe']
@@ -11,6 +12,7 @@ export type ChangeGeoFilters = (locations: SelectedGeographies) => void;
 
 export interface Controls {
   changeVariant: ChangeVariant;
+  setVariantsFromFilter: SetVariantsFromFilter;
   selectedVariants: Set<string>;
   changeGeoFilters: ChangeGeoFilters;
   selectedGeographies: SelectedGeographies;
@@ -44,6 +46,10 @@ export function useControls(): Controls {
       }
     });
   }, []);
+
+  const setVariantsFromFilter = useCallback<SetVariantsFromFilter>((variantNames) => {
+    setSelectedVariants(new Set(variantNames));
+  }, []);
   
   const changeGeoFilters = useCallback<ChangeGeoFilters>(
     (values) => {
@@ -58,6 +64,7 @@ export function useControls(): Controls {
   return useMemo(
     () => ({
       changeVariant,
+      setVariantsFromFilter,
       selectedVariants,
       selectedGeographies,
       changeGeoFilters,
@@ -70,6 +77,7 @@ export function useControls(): Controls {
     }),
     [
       changeVariant,
+      setVariantsFromFilter,
       selectedVariants,
       selectedGeographies,
       changeGeoFilters,
