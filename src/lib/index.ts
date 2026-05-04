@@ -31,7 +31,9 @@ import { ControlsProvider } from "./hooks/ControlsContext.tsx";
 export { PanelDisplay, useModelData, ControlsProvider };
   
 /* public-facing API types */
-export type { ModelData } from "./utils/modelData.types.ts";
+export type { ModelData, ModelDataConfig, Points, FreqData, FreqGAData, GaData, RelativeGAData, popGAData, GenericTimePoint, FreqTimePoint, FreqGaTimePoint } from "./utils/modelData.types.ts";
 export type { DatasetConfig } from "./utils/config.ts";
 export type { ModelDataWrapper } from "./utils/useModelData.ts";
-export type { UserGraphParams } from "./utils/graphParams.ts";
+export type { UserGraphParams, GraphParams, GraphParamsWithLocation } from "./utils/graphParams.ts";
+export type { D3GraphInstance } from "./utils/d3Graph.ts";
+export type { Controls, ChangeVariant, ChangeVariantAction, ChangeGeoFilters, SelectedGeographies, SetVariantsFromFilter } from "./hooks/useControls.ts";

@@ -69,7 +69,7 @@ export interface ModelDataConfig {
     };
     relativeGA: {
       /** Compute popGA and relativeGA at parse time. Needed to plot certain graphs. */
-      enable: true;
+      enable: boolean;
     };
   }
 }
@@ -80,14 +80,14 @@ export interface GenericTimePoint {
   value?: number;
 }
 
-interface  FreqTimePoint extends GenericTimePoint {
+export interface FreqTimePoint extends GenericTimePoint {
   lower?: number;
   upper?: number;
   raw?: number;
   smoothed?: number;
 }
 
-interface FreqGaTimePoint {
+export interface FreqGaTimePoint {
   date: string;
   /** frequency (NOT logit transformed) */
   freq: number;
@@ -99,15 +99,15 @@ export interface FreqData {
   temporal: (FreqTimePoint | undefined)[];
 }
 
-interface relativeGAData {
+export interface RelativeGAData {
   temporal: (GenericTimePoint | undefined)[];
 }
 
-interface popGAData {
+export interface popGAData {
   temporal: (GenericTimePoint | undefined)[];
 }
 
-interface freqGAData {
+export interface FreqGAData {
   temporal: (FreqGaTimePoint | undefined)[];
 }
 
@@ -120,7 +120,7 @@ export interface GaData {
 export interface Points {
   freq?: Record<string, Record<string, FreqData>>;
   ga?: Record<string, Record<string, GaData>>;
-  relativeGA?: Record<string, Record<string, relativeGAData>>;
+  relativeGA?: Record<string, Record<string, RelativeGAData>>;
   popGA?: Record<string, popGAData>;
-  freqGA?: Record<string, Record<string, freqGAData>>; // TODO XXX 
+  freqGA?: Record<string, Record<string, FreqGAData>>;
 }

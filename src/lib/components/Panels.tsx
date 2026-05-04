@@ -167,8 +167,7 @@ const Panel = ({
   locations=undefined, /* optional. Defaults to all available */
 }: PanelProps) => {
   const {modelData, error} = data;
-  const {selectedGeographies, changeGeoFilters, selectedVariants, setVariantsFromFilter, logit, toggleLogit, showDailyRawFreq, toggleShowDailyRawFreq, showWeeklyRawFreq, toggleShowWeeklyRawFreq} = useControlsContext();
-
+  const controls = useControlsContext();
   const expandedParams = expandParams(params);
   
   if (locations) {
@@ -177,7 +176,7 @@ const Panel = ({
 
   const [outerDivRef, _dimensions] = useElementSize()
   const dimensions = useDebounce(_dimensions, 500);  
-  const locationList = filterLocations(modelData, selectedGeographies);
+  const locationList = filterLocations(modelData, controls.selectedGeographies);
   const sizes = {...responsiveSizing(expandedParams, modelData, dimensions, locationList), ...(styles ? styles : {})};
   const canUseLogit = expandedParams.canUseLogit;
   // Note: following lines hardcode 'freq'
@@ -198,17 +197,17 @@ const Panel = ({
         <Filter
           modelLocations={modelData.get('locations') || []}
           modelLocationHierarchy={modelData.get('locationHierarchy') || new Map()}
-          selectedGeographies={selectedGeographies}
-          changeGeoFilters={changeGeoFilters}
+          selectedGeographies={controls.selectedGeographies}
+          changeGeoFilters={controls.changeGeoFilters}
           variants={modelData.get('variants') || []}
           variantDisplayNames={modelData.get('variantDisplayNames') || new Map()}
-          selectedVariants={selectedVariants}
-          setVariantsFromFilter={setVariantsFromFilter}
+          selectedVariants={controls.selectedVariants}
+          setVariantsFromFilter={controls.setVariantsFromFilter}
         />
         <div className='togglesContainer'>
-          {canUseLogit && <Toggle label="Logit transform" checked={logit} onChange={toggleLogit}/>}
-          {showRawPoints && <Toggle label={modelData.get('config').sitesInfo.freq.raw_name || "Weekly raw data"} checked={showDailyRawFreq} onChange={toggleShowDailyRawFreq}/>}
-          {showSmoothedPoints && <Toggle label={modelData.get('config').sitesInfo.freq.smoothed_name || "Weekly raw data"} checked={showWeeklyRawFreq} onChange={toggleShowWeeklyRawFreq}/>}
+          {canUseLogit && <Toggle label="Logit transform" checked={controls.logit} onChange={controls.toggleLogit}/>}
+          {showRawPoints && <Toggle label={modelData.get('config').sitesInfo.freq.raw_name || "Raw data points"} checked={controls.rawPoints} onChange={controls.toggleRawPoints}/>}
+          {showSmoothedPoints && <Toggle label={modelData.get('config').sitesInfo.freq.smoothed_name || "Smoothed data points"} checked={controls.smoothedPoints} onChange={controls.toggleSmoothedPoints}/>}
         </div>
       </div>
 

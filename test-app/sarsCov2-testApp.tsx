@@ -12,6 +12,7 @@ let locations: Locations = undefined;
 /* It's helpful for dev purposes to not see _all_ the small multiples. Uncomment the
 following line to remove this filtering */
 // locations = ["Australia", "Canada", "Denmark", "France", "China", "USA"];
+// locations = ["Australia"];
 
 function App() {
   const [count, setCount] = useState(1);
@@ -63,15 +64,18 @@ const config: Record<string, DatasetConfig> = {
   cladesMlr: {
     modelName: 'clades/MLR',
     modelUrl: import.meta.env.VITE_CLADES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/nextstrain_clades/global/mlr/latest_results.json`,
-    sites: undefined,
+    sites: {relativeGA: {enable: true}}
   },
   lineagesMlr: {
     modelName: 'lineages/MLR',
     modelUrl: import.meta.env.VITE_LINEAGES_MLR || `${DEFAULT_ENDPOINT_PREFIX}/gisaid/pango_lineages/global/mlr/latest_results.json`,
     // don't add baseConfiguration as the JSON defines the colours and we don't want the config to override this
-    sites: undefined,
+    sites: {relativeGA: {enable: true}}
   },
 };
+if (locations) {
+  Object.values(config).forEach((c) => c.locations=locations)
+}
 
 function CladesMLR() {
   const cladesMlrData = useModelData(config.cladesMlr);
@@ -80,7 +84,7 @@ function CladesMLR() {
       <h2>{`General line graph (preset: 'frequency')`}</h2>
       <div className="abstract">{`Data comes from Clades/MLR model (updated: ${cladesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
-      <PanelDisplay data={cladesMlrData} locations={locations} params={{ preset: 'frequency' }} />
+      <PanelDisplay data={cladesMlrData} params={{ preset: 'frequency' }} />
 
       
       <h2>{`Relative growth advantage vs frequency`}</h2>
@@ -91,7 +95,7 @@ function CladesMLR() {
       
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-      <PanelDisplay data={cladesMlrData} locations={locations} params={{ preset: 'growthAdvantage' }} />
+      <PanelDisplay data={cladesMlrData} params={{ preset: 'growthAdvantage' }} />
       
       
     </ControlsProvider>
@@ -105,11 +109,18 @@ function LineagesMLR() {
       <h2>{`General line graph (preset: 'frequency')`}</h2>
       <div className="abstract">{`Data comes from Lineages/MLR model (updated: ${lineagesMlrData?.modelData?.get('updated')}), objects matching {'freq', 'freq_forecast'} + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
       {/*You can inject styles via a prop like `styles={{top: 40}}`*/}
-      <PanelDisplay data={lineagesMlrData} locations={locations} params={{ preset: 'frequency' }} />
+      <PanelDisplay data={lineagesMlrData} params={{ preset: 'frequency' }} />
 
+      <h2>{`Relative growth advantage vs frequency`}</h2>
+      <PanelDisplay data={lineagesMlrData} params={{ preset: 'relativeGA' }} />
+      
+      <h2>{`Population-relative Growth Advantage`}</h2>
+      <PanelDisplay data={lineagesMlrData} params={{ preset: 'freqGA' }} />
+      
+      
       <h2>{`Growth Advantage (preset: 'growthAdvantage')`}</h2>
       <div className="abstract">{`Data comes from Lineages/MLR model, objects matching 'ga' + {'median', 'HDI_95_lower', 'HDI_95_upper'}`}</div>
-      <PanelDisplay data={lineagesMlrData} locations={locations} params={{ preset: 'growthAdvantage' }} />
+      <PanelDisplay data={lineagesMlrData} params={{ preset: 'growthAdvantage' }} />
     </ControlsProvider>
   );
 }

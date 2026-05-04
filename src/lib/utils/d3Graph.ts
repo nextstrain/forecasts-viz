@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import { logitScale } from "./logitScale";
 import { Tooltip } from "./tooltip";
 import { cssSafeName } from "./cssSafeName";
-import { ModelData } from "./modelData.types";
+import type { ModelData, FreqTimePoint, FreqGaTimePoint } from "./modelData.types";
 import type { GraphParamsWithLocation } from "./graphParams";
 import type { Controls } from '../hooks/useControls';
 const TRANSITION_DURATION = 700;
@@ -63,7 +63,8 @@ export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: Mo
   this.setupArea();
   this.drawLines();
   this.drawPoints();
-  /* Note: raw data points never drawn on initial render */
+  if (this.controls.rawPoints) this.togglePoints('raw');
+  if (this.controls.smoothedPoints) this.togglePoints('smoothed');
 
   this.drawForecastLine();
   this.drawDashedLines();
@@ -130,7 +131,7 @@ D3Graph.prototype.drawXAxis = function (this: D3GraphInstance) {
    */
   // First work out which ticks to display and how to display them
   // `xTicks` is a dict of tick value -> displayed text.
-  const xTicks = {};
+  const xTicks: Record<string,string> = {};
   switch (this.params.graphType) {
     case "points":
       // display every variant (point in the domain)
@@ -179,7 +180,7 @@ D3Graph.prototype.drawXAxis = function (this: D3GraphInstance) {
           )
           // .call(g => g.select(".domain").remove())
           .selectAll("text")
-            .text((tickValue) => xTicks[tickValue])
+            .text((tickValue: any): string => xTicks[tickValue])
             // .attr("y", 0)
             // .attr("x", (d) => x(d))
             .attr("dy", "0.6em")
@@ -242,24 +243,34 @@ D3Graph.prototype.drawLines = function (this: D3GraphInstance) {
    * streams for implementation details.
    */
   if (!['lines', 'statespace'].includes(this.params.graphType)) return;
-  let dataExists = false;
   
   const locationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
-  if (locationData) Object.entries(locationData).forEach(([variant, data]: [string, any]) => {
+  if (!locationData) {
+    this.emptyData = true;
+    return
+  }
+
+  let dataExists = false;
+  const areVariantsSelected = this.controls.selectedVariants.size > 0;
+
+  Object.entries(locationData).forEach(([variant, data]: [string, any]) => {
     const temporalPoints = data?.temporal;
     if (!temporalPoints || temporalPoints.filter(Boolean).length === 0) return;
     dataExists = true;
-    
     const color = this.getVariantColor(variant);
     const g = this.svg.append('g')
       .attr("class", cssSafeName(`variant_${variant}`));
 
+    const mode = areVariantsSelected === false ? 'normal' :
+      this.controls.selectedVariants.has(variant) ? 'focusActive' :
+        'focusInactive';
+    
     if (this.params.interval) {
       g.append('path')
         .attr("class", "area")
         .attr("stroke", "none")
         .attr("fill", color)
-        .attr("opacity", this.styles.lines.area.opacity.normal)
+        .attr("opacity", this.styles.lines.area.opacity[mode])
         .attr("d", this.area(temporalPoints))
         .style('pointer-events', 'none')
     }
@@ -268,8 +279,8 @@ D3Graph.prototype.drawLines = function (this: D3GraphInstance) {
       .attr("class", "line")
       .attr("fill", "none")
       .attr("stroke", color)
-      .attr("stroke-width", this.styles.lines.line.strokeWidth.normal)
-      .attr("stroke-opacity", this.styles.lines.line.opacity.normal)
+      .attr("stroke-width", this.styles.lines.line.strokeWidth[mode])
+      .attr("stroke-opacity", this.styles.lines.line.opacity[mode])
       .attr("d", this.line(temporalPoints))
       .style('pointer-events', 'none')
   });
@@ -330,6 +341,14 @@ D3Graph.prototype.drawPoints = function (this: D3GraphInstance) {
   }
 }
 
+interface AnnotationPoint {
+  variant: string;
+  point: FreqGaTimePoint;
+  isFilled: boolean;
+  opaque: boolean;
+  color: string;
+}
+
 D3Graph.prototype.annotateFinalPoint = function (this: D3GraphInstance): void {
   if (this.params.annotateFinalPoint !== true) return;
   if (this.params.graphType !== 'statespace' || this.params.key !== 'freqGA') {
@@ -345,7 +364,7 @@ D3Graph.prototype.annotateFinalPoint = function (this: D3GraphInstance): void {
   if (!locationData) return;
   const variantsSelected = this.controls.selectedVariants.size > 0;
   
-  const circleData = Object.entries(locationData).flatMap(([variant, variantData]: [string, any]) => {
+  const circleData: AnnotationPoint[] = Object.entries(locationData).flatMap(([variant, variantData]) => {
     const tIdx = _finalTemporalIdx(variantData.temporal);
     if (tIdx === false) return [];
     const point = variantData.temporal[tIdx];
@@ -354,7 +373,7 @@ D3Graph.prototype.annotateFinalPoint = function (this: D3GraphInstance): void {
     return [{variant, point, isFilled, opaque, color: this.getVariantColor(variant)}];
   });
 
-  g.selectAll<SVGCircleElement, typeof circleData[number]>("circle")
+  g.selectAll<SVGCircleElement, AnnotationPoint>("circle")
     .data(circleData, (d) => d.variant)
     .join("circle")
       .attr("cx", (d) => this.x(d.point.freq))
@@ -375,7 +394,7 @@ function _finalTemporalIdx(data: any[]): false|number {
 
 
 /**
- * Update the scale type - this entails updating the d3 scale, re-drawing th axes,
+ * Update the scale type - this entails updating the d3 scale, re-drawing the axes,
  * and re-drawing any points/lines/intervals on the graph
  */
 D3Graph.prototype.updateScale = function(this: D3GraphInstance) {
@@ -397,31 +416,34 @@ D3Graph.prototype.updateScale = function(this: D3GraphInstance) {
   }
 
   const updateLocationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
-  if (updateLocationData) Object.entries(updateLocationData).forEach(([variant, data]: [string, any]) => {
-    const temporalPoints = data.temporal
-    if (temporalPoints.filter(Boolean).length === 0) return;
-    const g = this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
-
-    g.selectAll('.line')
-      .transition().duration(TRANSITION_DURATION)
-      .attr("d", this.line(temporalPoints))
-
-    if (this.area) {
-      g.selectAll('.area')
+  if (updateLocationData) {
+    Object.entries(updateLocationData).forEach(([variant, data]) => {
+      const temporalPoints = (data as any).temporal; // TODO XXX fix types
+      if (temporalPoints.filter(Boolean).length === 0) return;
+      const g = this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
+  
+      g.selectAll('.line')
         .transition().duration(TRANSITION_DURATION)
-        .attr("d", this.area(temporalPoints))
-    }
-    g.selectAll('.freqRawPoints') // may be empty - that's ok!
-      .transition().duration(TRANSITION_DURATION)
-      .attr("cy", (d) => this.y(d.raw || false))
-
-    g.selectAll('.freqSmoothedPoints') // may be empty - that's ok!
-      .transition().duration(TRANSITION_DURATION)
-      .attr("cy", (d) => this.y(d.smoothed || false))
-  });
+        .attr("d", this.line(temporalPoints))
+  
+      if (this.area) {
+        g.selectAll('.area')
+          .transition().duration(TRANSITION_DURATION)
+          .attr("d", this.area(temporalPoints))
+      }
+      g.selectAll<SVGCircleElement, FreqTimePoint>('.rawPoints') // may be empty - that's ok!
+        .transition().duration(TRANSITION_DURATION)
+        .attr("cy", (d) => this.y(d.raw || false))
+  
+      g.selectAll<SVGCircleElement, FreqTimePoint>('.smoothedPoints') // may be empty - that's ok!
+        .transition().duration(TRANSITION_DURATION)
+        .attr("cy", (d) => this.y(d.smoothed || false))
+    });
+  }
 
   // Move the circles attached to the end of lines in statespace graph if applicable
-  this.svg.select('g.annotation').selectAll('circle')
+  this.svg.select('g.annotation')
+    .selectAll<SVGCircleElement, AnnotationPoint>('circle')
     .transition().duration(TRANSITION_DURATION)
     .attr("cx", (d) => this.x(d.point.freq));
 
@@ -431,69 +453,76 @@ D3Graph.prototype.setStyles = function(this: D3GraphInstance) {
   /* The current responsiveSizing (Panels.js) sets the graph width. Common widths are 260px (small panels)
   or ~the available page width */
   const small = this.sizes.width < 300;
-
-  this.styles = {};
-  this.styles.rawFreqs = {
-    daily: {
-      r: small ? {normal: 1.1 , focusInactive: 1.1, focusActive: 2} : {normal: 2 , focusInactive: 2, focusActive: 3},
-      opacity: {normal: 0.3 , focusInactive: 0, focusActive: 1},
-      colorModifier: (color) => d3.color(color).darker(0.5).toString()
+  const backgroundPointsOpacity = { normal: 0.3, focusInactive: 0, focusActive: 1 };
+  
+  this.styles = {
+    rawPoints: {
+      r: small ? { normal: 1.1, focusInactive: 1.1, focusActive: 2 } : { normal: 2, focusInactive: 2, focusActive: 3 },
+      opacity: { ...backgroundPointsOpacity },
+      colorModifier: (color) => d3.color(color).darker(0.5).toString(),
+    },
+    smoothedPoints: {
+      r: small ? { normal: 1.1, focusInactive: 1.1, focusActive: 2 } : { normal: 2, focusInactive: 2, focusActive: 3 },
+      opacity: { ...backgroundPointsOpacity },
+      colorModifier: (color) => d3.color(color).brighter(0.2).toString(),
+    },
+    lines: {
+      line: {
+        strokeWidth: { normal: 2, focusInactive: 2, focusActive: 3 },
+        opacity: { normal: 0.8, focusInactive: 0.3, focusActive: 1 },
+      },
+      area: {
+        opacity: { normal: 0.2, focusInactive: 0, focusActive: 0.2 },
+      },
+    },
+    points: {
+      circle: {
+        r: { normal: 4, focusInactive: 3, focusActive: 6 },
+      },
+      confidence: {
+        opacity: { normal: 1, focusInactive: 0.4, focusActive: 1 },
+      }
     }
-  }
-  this.styles.rawFreqs.weekly = {
-    r: small ? {normal: 1.1 , focusInactive: 1.1, focusActive: 2} : {normal: 2 , focusInactive: 2, focusActive: 3},
-    opacity: this.styles.rawFreqs.daily.opacity,
-    colorModifier: (color) => d3.color(color).brighter(0.2).toString()
-  }
-  this.styles.lines = {
-    line: {
-      strokeWidth: {normal: 2 , focusInactive: 2, focusActive: 3},
-      opacity: {normal: 0.8 , focusInactive: 0.3, focusActive: 1},
-    },
-    area: {
-      opacity: {normal: 0.2 , focusInactive: 0, focusActive: 0.2},
-    },
-  }
-  this.styles.points = {
-    circle: {
-      r: {normal: 4 , focusInactive: 3, focusActive: 6},
-    },
-    confidence: {
-      opacity: {normal: 1 , focusInactive: 0.4, focusActive: 1},
-    }
-  }
+  };
 }
 
 /**
  * Toggle individual data points (to be shown behind lines)
- * (The hardcoded raw/daily & freq strings are remnants from earlier versions)
+ * 
+ * SVG selection class is the key (raw|smoothed)
+ * 
  */
 D3Graph.prototype.togglePoints = function(this: D3GraphInstance, key: 'raw'|'smoothed') {
-  if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
-  const className = key === 'raw' ? 'freqRawPoints' : 'freqSmoothedPoints';
-  if (!this.controls[key === 'raw' ? 'showDailyRawFreq' : 'showWeeklyRawFreq']) {
-    this.svg.selectAll(`.${className}`).remove("*")
+  if (this.params.preset !== "frequency") return;
+
+  const drawPoints = this.controls[`${key}Points`]
+  if (!drawPoints) {
+    this.svg.selectAll(`.${key}Points`).remove()
     return;
   }
+  
   const freqLocationData = this.modelData.get('points').freq?.[this.params.location];
-  if (freqLocationData) Object.entries(freqLocationData).forEach(([variant, freqData]: [string, any]) => {
-    const temporalPoints = freqData.temporal
-      .filter((pt) => pt?.raw !== undefined)
-    const variantColor = this.getVariantColor(variant) || 'black'
-    const _baseColor = this.styles.rawFreqs[key === 'raw' ? 'daily' : 'weekly'];
-    const pointColor = _baseColor.colorModifier(variantColor)
-    const styles = this.styles.rawFreqs[key === 'raw' ? 'daily' : 'weekly'];
+  if (!freqLocationData) return
+  const _styles = key === 'raw' ? this.styles.rawPoints : this.styles.smoothedPoints;
+  
+  Object.entries(freqLocationData).forEach(([variant, freqData]) => {
+    const temporalPoints = freqData.temporal.filter((pt) => pt?.raw !== undefined)
+    const variantColor = this.getVariantColor(variant) || 'black';
+    if (this.controls.selectedVariants.size > 0 && !this.controls.selectedVariants.has(variant)) {
+      return;
+    }
+    const _mode = this.controls.selectedVariants.size === 0 ? 'normal' : 'focusActive';
     this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
-      .selectAll(className)
+      .selectAll(`.${key}Points`)
       .data(temporalPoints)
       .enter()
       .append("circle")
-        .attr("class", className)
+        .attr("class", `${key}Points`)
         .attr("cx", (d) => this.x(d.date))
-        .attr("cy", (d) => this.y(d.raw))
-        .attr("r", styles.r.normal)
-        .style("opacity", styles.opacity.normal)
-        .style("fill", pointColor)
+        .attr("cy", (d) => this.y(d[key]))
+        .attr("r", _styles.r[_mode])
+        .style("opacity", _styles.opacity[_mode])
+        .style("fill", _styles.colorModifier(variantColor))
   })
 }
 
@@ -505,12 +534,12 @@ D3Graph.prototype.setVariantFocus = function (this: D3GraphInstance) {
     each selected variant is then bumped up to focusActive. With no selection,
     everything is normal. */
     const baseState = hasSelection ? 'focusInactive' : 'normal';
-    this.svg.selectAll('.freqRawPoints')
-      .attr("r", this.styles.rawFreqs.daily.r[baseState])
-      .style("opacity", this.styles.rawFreqs.daily.opacity[baseState])
-    this.svg.selectAll('.freqSmoothedPoints')
-      .attr("r", this.styles.rawFreqs.weekly.r[baseState])
-      .style("opacity", this.styles.rawFreqs.weekly.opacity[baseState])
+    this.svg.selectAll('.rawPoints')
+      .attr("r", this.styles.rawPoints.r[baseState])
+      .style("opacity", this.styles.rawPoints.opacity[baseState])
+    this.svg.selectAll('.smoothedPoints')
+      .attr("r", this.styles.smoothedPoints.r[baseState])
+      .style("opacity", this.styles.smoothedPoints.opacity[baseState])
     this.svg.selectAll('.area')
       .style('opacity', this.styles.lines.area.opacity[baseState])
     this.svg.selectAll('.line')
@@ -519,12 +548,12 @@ D3Graph.prototype.setVariantFocus = function (this: D3GraphInstance) {
     if (hasSelection) {
       for (const variant of this.controls.selectedVariants) {
         const s = this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`);
-        s.selectAll('.freqRawPoints')
-          .attr("r", this.styles.rawFreqs.daily.r.focusActive)
-          .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
-        s.selectAll('.freqSmoothedPoints')
-          .attr("r", this.styles.rawFreqs.daily.r.focusActive)
-          .style("opacity", this.styles.rawFreqs.daily.opacity.focusActive)
+        s.selectAll('.rawPoints')
+          .attr("r", this.styles.rawPoints.r.focusActive)
+          .style("opacity", this.styles.rawPoints.opacity.focusActive)
+        s.selectAll('.smoothedPoints')
+          .attr("r", this.styles.smoothedPoints.r.focusActive)
+          .style("opacity", this.styles.smoothedPoints.opacity.focusActive)
         s.selectAll('.area')
           .style('opacity', this.styles.lines.area.opacity.focusActive)
         s.selectAll('.line')

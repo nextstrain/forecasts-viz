@@ -14,7 +14,7 @@ export interface DatasetConfig {
   /**
    * How to parse the sites in the JSON. Merged into the defaults.
    */
-  sites?: ModelDataConfig['sitesInfo'];
+  sites?: Partial<ModelDataConfig['sitesInfo']>;
 
   /**
    * Colours for the variants specified in the model JSONs.

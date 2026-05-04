@@ -1,36 +1,6 @@
 import type { GenericTimePoint, ModelData } from "./modelData.types.ts";
 
 
-
-// Step 1: compute popGA -- easy
-// 
-// 
-// 
-// 
-// Step 2: find variants with above 0.0001 frequency
-// 
-// 
-// 
-// 
-// Step 3: compute relative growth advantage (relative to population average)
-// 
-// 
-// Step ASIDE: plot relative growth advantage as a line...
-// 
-// 
-// Step 4: find variants with > 7 data points
-// 
-// 
-// 
-// Step 5: compute a new data structure for statespace
-// points → <location> → <variant> → "temporal" → [idx] → "freqGA" → [freq, log(ga) - log(popGA)]
-// 
-// 
-// Step 6: new visualisation for (5)
-// 
-// We've got ~three "structures" - point-estimates, temporal-estimates, state-space
-
-
 const SKIP_VARIANT = new Set(['other'])
 
 export function calcRelativeGA(data: ModelData): void {

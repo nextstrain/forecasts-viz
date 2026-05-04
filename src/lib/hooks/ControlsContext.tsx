@@ -10,10 +10,10 @@ const defaultControls: Controls & { _isDefault?: true } = {
   changeGeoFilters: () => {},
   logit: false,
   toggleLogit: () => {},
-  showDailyRawFreq: false,
-  toggleShowDailyRawFreq: () => {},
-  showWeeklyRawFreq: false,
-  toggleShowWeeklyRawFreq: () => {},
+  rawPoints: false,
+  toggleRawPoints: () => {},
+  smoothedPoints: false,
+  toggleSmoothedPoints: () => {},
 };
 
 const ControlsContext = createContext<Controls & { _isDefault?: true }>(defaultControls);

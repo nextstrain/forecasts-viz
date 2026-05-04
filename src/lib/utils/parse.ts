@@ -25,7 +25,7 @@ const DEFAULT_SITES: ModelDataConfig['sitesInfo'] = {
     smoothed_name: 'Weekly Raw Frequency',
   },
   relativeGA: {
-    enable: true,
+    enable: false,
   },
 };
 
@@ -105,7 +105,7 @@ export const parseModelData = (
   });
   
   data.set("points", points);
-
+  
   if (sitesInfo.relativeGA?.enable) {
     calcRelativeGA(data);
     calcFreqGA(data);

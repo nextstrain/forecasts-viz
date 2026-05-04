@@ -1,11 +1,12 @@
 import {useRef, useEffect, useState} from 'react';
 import {isEqual} from './isEqual.js';
-import {D3Graph} from "./d3Graph";
+import { D3Graph } from "./d3Graph";
+import type { D3GraphInstance } from "./d3Graph";
 import { GraphParamsWithLocation } from "./graphParams.ts";
 import type { Controls } from '../hooks/useControls';
 
 export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation, controls: Controls) => {
-  const graph = useRef(null);
+  const graph = useRef<null|D3GraphInstance>(null);
   const prevDeps = useRef(null);
   const [emptyGraph, setEmptyGraph] = useState(false);
 
@@ -43,18 +44,25 @@ export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation,
     graph.current.controls = controls;
     
     // controls are global, so we ensure they apply to this particular graph as necessary      
-    if (prevDeps.current.controls.logit !== controls.logit &&
-      ['lines', 'statespace'].includes(params.graphType)) {
+    if (
+      prevDeps.current.controls.logit !== controls.logit &&
+      ['lines', 'statespace'].includes(params.graphType)
+    ) {
       graph.current.updateScale()
     }
-    if (params.graphType==='lines' && prevDeps.current.controls.showDailyRawFreq !== controls.showDailyRawFreq) {
-      graph.current.togglePoints(controls, 'raw')
+
+    // Toggle raw/smoothed points as necessary
+    if (params.graphType === 'lines') {
+      if (prevDeps.current.controls.rawPoints !== controls.rawPoints) {
+        graph.current.togglePoints('raw');
+      }
+      if (prevDeps.current.controls.smoothedPoints !== controls.smoothedPoints) {
+        graph.current.togglePoints('smoothed');
+      }
     }
-    if (params.graphType==='lines' && prevDeps.current.controls.showWeeklyRawFreq !== controls.showWeeklyRawFreq) {
-      graph.current.togglePoints(controls, 'smoothed')
-    }
+    
     if (prevDeps.current.controls.selectedVariants !== controls.selectedVariants) {
-      graph.current.setVariantFocus(controls.selectedVariants)
+      graph.current.setVariantFocus()
     }
     prevDeps.current.controls = controls;
 

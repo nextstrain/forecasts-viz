@@ -18,18 +18,18 @@ export interface Controls {
   selectedGeographies: SelectedGeographies;
   logit: boolean;
   toggleLogit: () => void;
-  showDailyRawFreq: boolean;
-  toggleShowDailyRawFreq: () => void;
-  showWeeklyRawFreq: boolean;
-  toggleShowWeeklyRawFreq: () => void;
+  rawPoints: boolean;
+  toggleRawPoints: () => void;
+  smoothedPoints: boolean;
+  toggleSmoothedPoints: () => void;
 }
 
 export function useControls(): Controls {
   const [selectedVariants, setSelectedVariants] = useState<Set<string>>(new Set());
   const [selectedGeographies, setSelectedGeographies] = useState<SelectedGeographies>([]);
   const [logit, setLogit] = useState(false);
-  const [showDailyRawFreq, setShowDailyRawFreq] = useState(false);
-  const [showWeeklyRawFreq, setShowWeeklyRawFreq] = useState(false);
+  const [rawPoints, setRawPoints] = useState(false);
+  const [smoothedPoints, setSmoothedPoints] = useState(false);
 
   const changeVariant = useCallback<ChangeVariant>((variant, action) => {
     setSelectedVariants((prev) => {
@@ -58,8 +58,18 @@ export function useControls(): Controls {
     },
     []);
   const toggleLogit = useCallback(() => setLogit(prev => !prev), []);
-  const toggleShowDailyRawFreq = useCallback(() => setShowDailyRawFreq(prev => !prev), []);
-  const toggleShowWeeklyRawFreq = useCallback(() => setShowWeeklyRawFreq(prev => !prev), []);
+  const toggleRawPoints = useCallback(() => {
+    setRawPoints(prev => {
+      if (!prev) setSmoothedPoints(false);
+      return !prev;
+    });
+  }, []);
+  const toggleSmoothedPoints = useCallback(() => {
+    setSmoothedPoints(prev => {
+      if (!prev) setRawPoints(false);
+      return !prev;
+    });
+  }, []);
 
   return useMemo(
     () => ({
@@ -70,10 +80,10 @@ export function useControls(): Controls {
       changeGeoFilters,
       logit,
       toggleLogit,
-      showDailyRawFreq,
-      toggleShowDailyRawFreq,
-      showWeeklyRawFreq,
-      toggleShowWeeklyRawFreq,
+      rawPoints,
+      toggleRawPoints,
+      smoothedPoints,
+      toggleSmoothedPoints,
     }),
     [
       changeVariant,
@@ -83,10 +93,10 @@ export function useControls(): Controls {
       changeGeoFilters,
       logit,
       toggleLogit,
-      showDailyRawFreq,
-      toggleShowDailyRawFreq,
-      showWeeklyRawFreq,
-      toggleShowWeeklyRawFreq
+      rawPoints,
+      toggleRawPoints,
+      smoothedPoints,
+      toggleSmoothedPoints
     ]
   );
 }

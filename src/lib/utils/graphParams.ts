@@ -34,7 +34,6 @@ export interface GraphParams {
 }
 
 const tooltipFrequency = displayTopVariants({fmt: d3.format(".1%")});
-const tooltipGeneric = displayTopVariants();
 const percentageFormat = d3.format(".0%");
 
 export function expandParams(providedParams: UserGraphParams): GraphParams {
@@ -67,7 +66,7 @@ export function expandParams(providedParams: UserGraphParams): GraphParams {
       }
       params.dashedLines = [1.0]
       break;
-    case 'relativeGA': // TODO XXX TODO XXX
+    case 'relativeGA':
       params.graphType = "lines"
       params.key = 'relativeGA';
       params.forecastLine = true;
