@@ -3,18 +3,18 @@ import { logitScale } from "./logitScale";
 import { Tooltip } from "./tooltip";
 import { cssSafeName } from "./cssSafeName";
 import { ModelData } from "./modelData.types";
-import { GraphParamsWithLocation } from "./graphParams";
-
+import type { GraphParamsWithLocation } from "./graphParams";
+import type { Controls } from '../hooks/useControls';
 const TRANSITION_DURATION = 700;
 
 /* todo -- progressively replace `any` types with proper definitions */
 export interface D3GraphInstance {
-  svg: any;
+  svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   tooltip: any;
   modelData: ModelData;
   params: GraphParamsWithLocation;
+  controls: Controls;
   sizes: any;
-  selectedVariants: Set<string>;
   emptyData: boolean;
   x: any;
   y: any;
@@ -23,37 +23,39 @@ export interface D3GraphInstance {
   styles: any;
   points: any[];
   setStyles(): void;
-  createScales(options: any, params: any): void;
-  drawAxes(): void;
+  createScales(): void;
+  drawXAxis(): void;
+  drawYAxis(): void;
   setupTooltipXY(): void;
   setupLine(): void;
   setupArea(): void;
   drawLines(): void;
   drawPoints(): void;
   annotateFinalPoint(): void;
-  updateScale(options: any): void;
-  togglePoints(options: any, key: 'raw'|'smoothed'): void;
-  setVariantFocus(selectedVariants: Set<string>): void;
+  updateScale(): void;
+  togglePoints(key: 'raw'|'smoothed'): void;
+  setVariantFocus(): void;
   drawForecastLine(): void;
   drawDashedLines(): void;
   title(): void;
   getVariantColor(variant: string): string;
 }
 
-export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: ModelData, params, options) {
+export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: ModelData, params: GraphParamsWithLocation, controls: Controls) {
   const dom = d3.select(d3Container.current);
   
   this.svg = svgSetup(dom, sizes);
   this.tooltip = new Tooltip(dom);
   this.modelData = modelData;
   this.params = params;
+  this.controls = controls;
   this.sizes = sizes;
-  this.selectedVariants = new Set(options.selectedVariants);
   this.setStyles();
   this.emptyData = false;
 
-  this.createScales(options, params);
-  this.drawAxes();
+  this.createScales();
+  this.drawXAxis();
+  this.drawYAxis();
 
   this.setupTooltipXY();
 
@@ -70,7 +72,7 @@ export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: Mo
 }
 
 
-D3Graph.prototype.createScales = function (this: D3GraphInstance, { logit }, { log2 }) {
+D3Graph.prototype.createScales = function (this: D3GraphInstance) {
   const customXDomain = Array.isArray(this.params.xDomain) ?
     [...this.params.xDomain] :
       typeof this.params.xDomain === "function" ?
@@ -83,7 +85,7 @@ D3Graph.prototype.createScales = function (this: D3GraphInstance, { logit }, { l
         undefined;
   if (!customYDomain) throw new Error("Params must define the 'yDomain'")
 
-  const applyLogit = logit && this.params.canUseLogit;
+  const applyLogit = this.controls.logit && this.params.canUseLogit;
   
   switch (this.params.graphType) {
     case "lines":
@@ -96,12 +98,12 @@ D3Graph.prototype.createScales = function (this: D3GraphInstance, { logit }, { l
     case "points":
       this.x = d3.scalePoint()
         .domain(customXDomain || [...this.modelData.get('variants')])
-      this.y = (log2 ? d3.scaleLog().base(2): d3.scaleLinear())
+      this.y = (this.params.log2 ? d3.scaleLog().base(2): d3.scaleLinear())
         .domain(customYDomain)
       break;
     case "statespace":
       this.x = (applyLogit ? logitScale() : d3.scaleLinear())
-        .domain([0, 100]);
+        .domain(this.params.xDomain);
       this.y = d3.scaleLinear().domain(customYDomain)
       break;
     default:
@@ -111,7 +113,17 @@ D3Graph.prototype.createScales = function (this: D3GraphInstance, { logit }, { l
     this.y.range([this.sizes.height-this.sizes.bottom, this.sizes.top]); // y=0 is @ top. Range is [bottom_y, top_y] which maps 0 to the bottom and 1 to the top (of the graph)
 }
 
-D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
+D3Graph.prototype.drawXAxis = function (this: D3GraphInstance) {
+  /** Statespace graph uses a simple linear graph (frequency) */
+
+  if (this.params.graphType === 'statespace') {
+    this.svg.append("g")
+      .attr("class", "xAxis")
+      .call(simpleAxis('x', this.x, this.sizes, d3.format(".0%")));
+    return;
+  }
+  
+  
   /**
    * X-axis. Note the scale is always `scalePoint`, so we must control the ticks to
    * show manually (i.e. can't use `axis.ticks()`)
@@ -152,9 +164,6 @@ D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
         });
       }
       break;
-    case "statespace":
-      xTicks[50] = '50%'; // TODO XXX
-      break;
   }
   
   switch (this.params.graphType) {
@@ -162,7 +171,7 @@ D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
     case "lines":
       this.svg.append("g")
         .call((g) => g
-          .attr("transform", `translate(0,${this.sizes.height-this.sizes.bottom})`)
+          .attr("transform", `translate(0,${this.sizes.height - this.sizes.bottom})`)
           .call(
             d3.axisBottom(this.x)
               .tickSize(2) /* small (vertical) tick lines */
@@ -180,16 +189,11 @@ D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
             .style("fill", "#aaa")
         );
       break;
-    case "statespace":
-      this.svg.append("g")
-        .attr("class", "xAxis")
-        .call(simpleAxis('x', this.x, this.sizes));
-      break;
   }
+}
 
-  /**
-   * Y-axis
-   */
+
+D3Graph.prototype.drawYAxis = function (this: D3GraphInstance) {
   this.svg.append("g")
     .attr("class", "yAxis")
     .call(simpleAxis('y', this.y, this.sizes, this.params.yTickFmt));
@@ -198,7 +202,7 @@ D3Graph.prototype.drawAxes = function(this: D3GraphInstance) {
 D3Graph.prototype.setupTooltipXY = function(this: D3GraphInstance) {
   if (typeof this.params.tooltipXY === "function") {
     this.tooltip.createMouseCaptureArea(this.svg, this.x, this.y, false) // todo = update if x,y change?
-      .on("mousemove", (event) => this.tooltip.update(event, this.params.tooltipXY, this.modelData, this.params, this.selectedVariants))
+      .on("mousemove", (event) => this.tooltip.update(event, this.params.tooltipXY, this.modelData, this.params, this.controls.selectedVariants))
       .on("mouseout", () => this.tooltip.hide())
   }
 }
@@ -209,7 +213,7 @@ D3Graph.prototype.setupLine = function(this: D3GraphInstance) {
     this.line = d3.line<any>()
       .defined(d => !!d)
       .curve(d3.curveLinear)
-      .x((d) => this.x(d.freq*100))
+      .x((d) => this.x(d.freq))
       .y((d) => this.y(d.relativeGa))
     return;
   }
@@ -326,37 +330,58 @@ D3Graph.prototype.drawPoints = function (this: D3GraphInstance) {
   }
 }
 
-D3Graph.prototype.annotateFinalPoint = function (this: D3GraphInstance) {
-  // TODO - adapt for statespace plot
-  if (!(this.params.graphType==="lines" && this.params.annotateFinalPoint===true)) return;
-  const g = this.svg
-    .append('g')
-    .attr("class", "annotation")
-  const annotateLocationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
-  if (annotateLocationData) Object.entries(annotateLocationData).forEach(([variant, data]: [string, any]) => {
-    const temporalPoints = data?.temporal;
-    const finalPt = finalValidPoint(temporalPoints, 'R');
-    const color = this.getVariantColor(variant);
-    if (!finalPt) return;
-    g.append("text")
-      .text(`${parseFloat(finalPt.R).toPrecision(2)}`)
-      .attr("x", this.x(finalPt.date))
-      .attr("y", this.y(finalPt.R))
-      .style("text-anchor", "start")
-      .style("alignment-baseline", "baseline")
-      .style("font-size", "12px")
-      .style("fill", color);
+D3Graph.prototype.annotateFinalPoint = function (this: D3GraphInstance): void {
+  if (this.params.annotateFinalPoint !== true) return;
+  if (this.params.graphType !== 'statespace' || this.params.key !== 'freqGA') {
+    throw new Error('annotateFinalPoint only for statespace + freqGA plots ')
+  }
+
+  let g = this.svg.select<SVGGElement>('g.annotation');
+  if (g.empty()) {
+    g = this.svg.append('g').attr("class", "annotation");
+  }
+
+  const locationData = this.modelData.get('points').freqGA?.[this.params.location];
+  if (!locationData) return;
+  const variantsSelected = this.controls.selectedVariants.size > 0;
+  
+  const circleData = Object.entries(locationData).flatMap(([variant, variantData]: [string, any]) => {
+    const tIdx = _finalTemporalIdx(variantData.temporal);
+    if (tIdx === false) return [];
+    const point = variantData.temporal[tIdx];
+    const isFilled = !variantsSelected || this.controls.selectedVariants.has(variant);
+    const opaque = variantsSelected && !isFilled;
+    return [{variant, point, isFilled, opaque, color: this.getVariantColor(variant)}];
   });
+
+  g.selectAll<SVGCircleElement, typeof circleData[number]>("circle")
+    .data(circleData, (d) => d.variant)
+    .join("circle")
+      .attr("cx", (d) => this.x(d.point.freq))
+      .attr("cy", (d) => this.y(d.point.relativeGa))
+      .attr("r", 4)
+      .style('opacity', (d) => d.opaque ? this.styles.lines.line.opacity.focusInactive : 1 )
+      .style("fill", (d) => d.isFilled ? d.color : "none")
+      .style("stroke", (d) => d.isFilled ? "none" : d.color)
+      .style("stroke-width", (d) => d.isFilled ? 0 : 2);
 }
+
+function _finalTemporalIdx(data: any[]): false|number {
+  for (let i=data.length-1; i>0; i--) {
+    if (data[i] !== undefined) return i;
+  }
+  return false;
+}
+
 
 /**
  * Update the scale type - this entails updating the d3 scale, re-drawing th axes,
  * and re-drawing any points/lines/intervals on the graph
  */
-D3Graph.prototype.updateScale = function(this: D3GraphInstance, options) {
+D3Graph.prototype.updateScale = function(this: D3GraphInstance) {
   if (!['lines', 'statespace'].includes(this.params.graphType)) throw new Error("Not yet implemented")
 
-  this.createScales(options, this.params); // updates this.x, this.y
+  this.createScales(); // updates this.x, this.y
 
   switch (this.params.graphType) {
     case "lines":
@@ -367,7 +392,7 @@ D3Graph.prototype.updateScale = function(this: D3GraphInstance, options) {
     case "statespace":
       this.svg.selectAll('.xAxis')
         .transition().duration(TRANSITION_DURATION)
-        .call(d3.axisBottom(this.x).tickSize(2).tickPadding(4))
+        .call(simpleAxis('x', this.x, this.sizes, d3.format(".0%")));
       break;
   }
 
@@ -394,6 +419,12 @@ D3Graph.prototype.updateScale = function(this: D3GraphInstance, options) {
       .transition().duration(TRANSITION_DURATION)
       .attr("cy", (d) => this.y(d.smoothed || false))
   });
+
+  // Move the circles attached to the end of lines in statespace graph if applicable
+  this.svg.select('g.annotation').selectAll('circle')
+    .transition().duration(TRANSITION_DURATION)
+    .attr("cx", (d) => this.x(d.point.freq));
+
 }
 
 D3Graph.prototype.setStyles = function(this: D3GraphInstance) {
@@ -437,10 +468,10 @@ D3Graph.prototype.setStyles = function(this: D3GraphInstance) {
  * Toggle individual data points (to be shown behind lines)
  * (The hardcoded raw/daily & freq strings are remnants from earlier versions)
  */
-D3Graph.prototype.togglePoints = function(this: D3GraphInstance, options, key: 'raw'|'smoothed') {
+D3Graph.prototype.togglePoints = function(this: D3GraphInstance, key: 'raw'|'smoothed') {
   if (this.params.graphType !== "lines") throw new Error("Not yet implemented")
   const className = key === 'raw' ? 'freqRawPoints' : 'freqSmoothedPoints';
-  if (!options[key === 'raw' ? 'showDailyRawFreq' : 'showWeeklyRawFreq']) {
+  if (!this.controls[key === 'raw' ? 'showDailyRawFreq' : 'showWeeklyRawFreq']) {
     this.svg.selectAll(`.${className}`).remove("*")
     return;
   }
@@ -466,11 +497,10 @@ D3Graph.prototype.togglePoints = function(this: D3GraphInstance, options, key: '
   })
 }
 
-D3Graph.prototype.setVariantFocus = function(this: D3GraphInstance, selectedVariants) {
-  const hasSelection = selectedVariants && selectedVariants.size > 0;
-  this.selectedVariants = hasSelection ? new Set(selectedVariants) : new Set([])
+D3Graph.prototype.setVariantFocus = function (this: D3GraphInstance) {
+  const hasSelection = this.controls.selectedVariants.size > 0;
   
-  if (this.params.graphType==="lines") {
+  if (this.params.graphType==="lines" || this.params.graphType==="statespace") {
     /* When a selection is active, non-selected variants go to focusInactive and
     each selected variant is then bumped up to focusActive. With no selection,
     everything is normal. */
@@ -487,7 +517,7 @@ D3Graph.prototype.setVariantFocus = function(this: D3GraphInstance, selectedVari
       .style('opacity', this.styles.lines.line.opacity[baseState])
       .attr("stroke-width", this.styles.lines.line.strokeWidth[baseState])
     if (hasSelection) {
-      for (const variant of selectedVariants) {
+      for (const variant of this.controls.selectedVariants) {
         const s = this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`);
         s.selectAll('.freqRawPoints')
           .attr("r", this.styles.rawFreqs.daily.r.focusActive)
@@ -502,12 +532,14 @@ D3Graph.prototype.setVariantFocus = function(this: D3GraphInstance, selectedVari
           .attr("stroke-width", this.styles.lines.line.strokeWidth.focusActive)
       }
     }
+    this.annotateFinalPoint();
+    
   } else if (this.params.graphType==='points') {
     /* We don't modify circle opacities here as HPD lines with circles drawn over
     them don't look nice if both opacities are <1 */
     const focusState = (d) => {
       if (!hasSelection) return 'normal';
-      if (selectedVariants.has(d.variant)) return 'focusActive';
+      if (this.controls.selectedVariants.has(d.variant)) return 'focusActive';
       return 'focusInactive';
     }
     this.svg.selectAll('.dot')
@@ -589,24 +621,25 @@ function invertScalePoint(this: any, xPx) { // todo - `this` is the d3 scalePoin
 }
 
 
-function simpleAxis(axis: 'x' | 'y', scale, sizes, textFun = (d) => d) {
+function simpleAxis(axis: 'x' | 'y', scale: d3.AxisScale<d3.AxisDomain>, sizes: any, textFun: (d: any) => string = (d) => d) {
   const isX = axis === 'x';
   const transform = isX
     ? `translate(0,${sizes.height-sizes.bottom})`
     : `translate(${sizes.left},0)`;
   const axisFn = isX ? d3.axisBottom(scale) : d3.axisLeft(scale);
-  return (g) => g
-    .attr("transform", transform)
-    .call(axisFn.tickSize(2).tickPadding(4))
-    .selectAll("text")
-      .text(textFun)
-      .style("font-size", "12px")
-      .style("fill", "#aaa");
-}
-
-function finalValidPoint(points, key) {
-  for (let i=points.length-1; i>0; i--) {
-    if (!isNaN(points[i]?.[key])) return points[i];
-  }
-  return null;
+  return (g: d3.Selection<SVGGElement, unknown, any, unknown> | d3.Transition<any, unknown, any, unknown>): d3.Selection<SVGTextElement, unknown, SVGGElement, unknown> => {
+    const texts = (g as d3.Selection<SVGGElement, unknown, any, unknown>)
+      .attr("transform", transform)
+      .call(axisFn.tickSize(2).tickPadding(4))
+      .selectAll<SVGTextElement, unknown>("text")
+        .text(textFun)
+        .style("font-size", "12px")
+        .style("fill", "#aaa");
+    if (isX) {
+      texts
+        .attr("transform", "rotate(45)")
+        .style("text-anchor", "start");
+    }
+    return texts;
+  };
 }

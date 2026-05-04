@@ -76,10 +76,11 @@ export function expandParams(providedParams: UserGraphParams): GraphParams {
       break;
     case 'freqGA':
       params.graphType = "statespace"
-      // TODO XXX - need two keys!
       params.key = 'freqGA';
       params.canUseLogit = true;
+      params.annotateFinalPoint = true;
       params.yDomain = function (this) { return this.modelData.get('domains').relativeGa; };
+      params.xDomain = [0, 1];
       // params.tooltipXY = tooltipGeneric; // TODO XXX
       break;
     default:

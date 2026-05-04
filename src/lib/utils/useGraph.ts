@@ -2,8 +2,9 @@ import {useRef, useEffect, useState} from 'react';
 import {isEqual} from './isEqual.js';
 import {D3Graph} from "./d3Graph";
 import { GraphParamsWithLocation } from "./graphParams.ts";
+import type { Controls } from '../hooks/useControls';
 
-export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation, controls) => {
+export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation, controls: Controls) => {
   const graph = useRef(null);
   const prevDeps = useRef(null);
   const [emptyGraph, setEmptyGraph] = useState(false);
@@ -38,10 +39,13 @@ export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation,
       return;
     }
   
+    // make d3 aware of new state
+    graph.current.controls = controls;
+    
     // controls are global, so we ensure they apply to this particular graph as necessary      
     if (prevDeps.current.controls.logit !== controls.logit &&
       ['lines', 'statespace'].includes(params.graphType)) {
-      graph.current.updateScale(controls)
+      graph.current.updateScale()
     }
     if (params.graphType==='lines' && prevDeps.current.controls.showDailyRawFreq !== controls.showDailyRawFreq) {
       graph.current.togglePoints(controls, 'raw')
