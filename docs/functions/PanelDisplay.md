@@ -8,7 +8,7 @@
 
 > **PanelDisplay**(`__namedParameters`): `Element`
 
-Defined in: [components/Panels.tsx:142](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/components/Panels.tsx#L142)
+Defined in: [components/Panels.tsx:133](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/components/Panels.tsx#L133)
 
 Render a panel of small-multiple graphs for the currently selected locations.
 
@@ -30,7 +30,7 @@ render, and `styles` can override the default sizing used for each graph.
 
 #### params
 
-`any`
+[`UserGraphParams`](../type-aliases/UserGraphParams.md)
 
 #### styles?
 

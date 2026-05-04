@@ -6,7 +6,7 @@
 
 # Interface: DatasetConfig
 
-Defined in: [utils/config.ts:6](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L6)
+Defined in: [utils/config.ts:7](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L7)
 
 Configuration for fetching and parsing a model dataset.
 
@@ -16,7 +16,7 @@ Configuration for fetching and parsing a model dataset.
 
 > `optional` **locationHierarchy?**: `Map`\<`string`, `Map`\<`string`, `string`[]\>\>
 
-Defined in: [utils/config.ts:48](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L48)
+Defined in: [utils/config.ts:45](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L45)
 
 Optional hierarchy of locations for filtering and related UI.
 Structure: `locationHierarchy -> category -> value -> list of locations`.
@@ -28,7 +28,7 @@ For example: `"region" -> "oceania" -> ["New Zealand", "Australia", ...]`.
 
 > `optional` **locations?**: `string`[]
 
-Defined in: [utils/config.ts:41](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L41)
+Defined in: [utils/config.ts:38](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L38)
 
 Restrict the parsing of the JSON to these locations.
 Locations that are not present in `modelJson.metadata.location` are removed.
@@ -40,7 +40,7 @@ The order guides the ordering of the visualisation.
 
 > **modelName**: `string`
 
-Defined in: [utils/config.ts:8](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L8)
+Defined in: [utils/config.ts:9](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L9)
 
 Name of the model — used to improve clarity of error messages.
 
@@ -50,7 +50,7 @@ Name of the model — used to improve clarity of error messages.
 
 > **modelUrl**: `string`
 
-Defined in: [utils/config.ts:11](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L11)
+Defined in: [utils/config.ts:12](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L12)
 
 Address to fetch the model JSON from.
 
@@ -58,12 +58,11 @@ Address to fetch the model JSON from.
 
 ### sites?
 
-> `optional` **sites?**: `any`
+> `optional` **sites?**: `Partial`\<[`ModelDataConfig`](ModelDataConfig.md)\[`"sitesInfo"`\]\>
 
-Defined in: [utils/config.ts:20](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L20)
+Defined in: [utils/config.ts:17](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L17)
 
-List of sites to extract from JSON. If not provided we will use the
-sites listed in the JSON metadata.
+How to parse the sites in the JSON. Merged into the defaults.
 
 ***
 
@@ -71,7 +70,7 @@ sites listed in the JSON metadata.
 
 > `optional` **variantColors?**: `Map`\<`string`, `string`\>
 
-Defined in: [utils/config.ts:27](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L27)
+Defined in: [utils/config.ts:24](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L24)
 
 Colours for the variants specified in the model JSONs.
 Overrides `modelJson.metadata.variantColors`.
@@ -83,7 +82,7 @@ If not provided here or in the JSON, a default colour scale is used.
 
 > `optional` **variantDisplayNames?**: `Map`\<`string`, `string`\>
 
-Defined in: [utils/config.ts:34](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/config.ts#L34)
+Defined in: [utils/config.ts:31](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/config.ts#L31)
 
 Display names for the variants specified in the model JSONs.
 Overrides `modelJson.metadata.variantDisplayNames`.

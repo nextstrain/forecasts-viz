@@ -8,7 +8,7 @@
 
 > **useModelData**(`config`): [`ModelDataWrapper`](../interfaces/ModelDataWrapper.md)
 
-Defined in: [utils/useModelData.ts:54](https://github.com/nextstrain/forecasts-viz/blob/90e17ff143d6266cc094fc456c6d04e0ac6ca980/src/lib/utils/useModelData.ts#L54)
+Defined in: [utils/useModelData.ts:54](https://github.com/nextstrain/forecasts-viz/blob/442f962da6103585ab645c58a14805e2598eff82/src/lib/utils/useModelData.ts#L54)
 
 Fetch and parse the model data (JSON).
 
