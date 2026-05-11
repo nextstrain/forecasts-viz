@@ -1,0 +1,9 @@
+{
+  "entryPoints": ["src/lib/index.ts"],
+  "tsconfig": "tsconfig.json",
+  "plugin": ["typedoc-plugin-markdown"],
+  "out": "docs",
+  "readme": "none",
+  "name": "@nextstrain/evofr-viz",
+  "excludeExternals": true
+}

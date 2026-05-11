@@ -56,7 +56,8 @@ div.tooltip {
   display: flex;
   flex-wrap: wrap;
   flex-direction: row;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .panelContainer .legendAndSmallMultiplesContainer {
@@ -73,6 +74,12 @@ div.tooltip {
   gap: 0px;
   padding-top: 10px;
   /* NOTE: JS code specifies grid-template-columns */
+}
+
+.panelContainer .optionsContainer .togglesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .panelContainer .optionsContainer .toggle {

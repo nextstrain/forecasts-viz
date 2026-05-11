@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "./src/lib",
+    "outDir": "./dist"
+  },
+  "include": [
+    "src/lib/index.ts",
+    "src/lib/assets/assets.d.ts"
+  ]
+}

@@ -2,76 +2,57 @@
 
 > _This is a work in progress - all functionality, parameters etc are in flux_
 
-React components to parse [evofr](https://github.com/blab/evofr) model outputs and visualise them.
+React components to parse [evofr](https://github.com/blab/evofr) MLR model outputs and visualise them.
 Based on prior work including:
 
 * https://github.com/blab/rt-from-frequency-dynamics/tree/master/results/omicron-countries-split
 * https://github.com/blab/rt-from-frequency-dynamics/tree/master/results/pango-countries
 
-This repo includes the source code for the library (`./src/lib`) and a small test-app to showcase
-them and for development purposes (`./src/App.js`).
+This repo includes the **source code for react components ("the library")** (`./src/lib`) and **a small testing app** to help develop them (`./test-app/`).
+The test-app is [served via GitHub pages](https://nextstrain.github.io/forecasts-viz/) and you can drag-and-drop MLR model JSONs on to visualise them.
 
-Currently the name of the library in `@nextstrain/evofr-viz` (as defined in `package.json`).
-Once we settle on a final name this GitHub repo will be renamed accordingly.
+>  Currently the name of the library in `@nextstrain/evofr-viz` (as defined in `package.json`). Once we settle on a final name this GitHub repo will be renamed accordingly.
 
-### Examples of how to use the Components
+## How to use the library
 
-Please see the [`api.md`](./api.md) file for documentation and the code in [`./src/App.js`](./src/App.js) for a working example
+Documentation is sparse at the moment! The best places to start would be:
 
-### How to import the library
+* Read the API documentation in `docs/`
+* Read the code in the test-app
+* Read the code in [forecasts-flu](https://github.com/nextstrain/forecasts-flu/tree/main/viz) and/or [forecasts-ncov](https://github.com/nextstrain/forecasts-ncov/tree/main/viz) which use this library.
 
-If you wish to use this library in another project (i.e. outside this repo), you can use the following steps.
-This approach is how we use the library in [forecasts-ncov](https://github.com/nextstrain/forecasts-ncov/tree/main/viz).
-Note that this is temporary: once we publish this on npm it'll be a typical `npm install` command.
+The library is not published to npm. Currently we:
 
-1. In this repo run `npm pack` to produce a tarball such as `nextstrain-evofr-viz-0.1.0.tgz`.
+1. In this repo run `npm pack` to produce a tarball such as `nextstrain-evofr-viz-0.*.*.tgz`.
 2. Move this tarball to your App directory
-3. `npm install nextstrain-evofr-viz-0.1.0.tgz` (filename may be slightly different).
-4. Import components in your code as normal, e.g. `import { ModelDataProvider, ModelDataStatus } from 'nextstrain-evofr-viz';`
+3. `npm install nextstrain-evofr-viz-0.*.*.tgz`
+4. Import components, e.g. `import { PanelDisplay, useModelData, ControlsProvider } from '@nextstrain/evofr-viz';`
 
+## Development steps
 
-### How to run the test-app contained in this repo
-
-We use a basic test-app in this repo to help with development of the library.
-The test app has two pages:
-* http://localhost:3000 - visualises SARS-CoV-2 data (see [forecasts-ncov](github.com/nextstrain/forecasts-ncov/) for details).
-* http://localhost:3000/dragdrop - allows a model JSON to be dropped onto the window to visualise
-
-
-Firstly create a suitable environment with nodejs, e.g. by using conda:
+Firstly create a suitable environment with nodejs (e.g. via conda):
 
 ```sh
-conda create -n node18 -c conda-forge nodejs=18 # or similar
-conda activate node18
+conda create -n node24 -c conda-forge nodejs=24
+conda activate node24
 ```
-Then install dependencies and run the test app:
+
+
+Install deps and run the test app, fetching canonical data JSONs from S3 before serving locally:
 
 ```sh
 npm ci
-```
-
-Then you can either run the test app fetching canonical data JSONs from S3:
-```sh
-npm run start
-```
-
-Or (recommended) pre-fetch the JSON files (to `./data`):
-
-```sh
 npm run download
-npm run start:local
+npm run dev:local
 ```
 
-To run the test app in a production mode:
+To preview a production build:
 
 ```sh
-npm run build:local
-npm run serve
+npm run build
+npm run preview
 ```
 
-### Linting
-
-`npm run lint`
 
 ### To deploy to GitHub pages
 
@@ -84,20 +65,16 @@ npm run deploy # will automatically push assets to the gh-pages branch
 
 ### How to develop the library in the context of a consuming app
 
-In this directory (`forecasts-viz`) run `npm develop:library`.
-This will bundle the library code, without dependencies, to `dist/` and keep it up-to-date as you make changes to the code.
+If the consuming app supports it (e.g. `forecasts-flu/viz`), set
+`LOCAL_LIB=1` when running its dev server. The consumer's Vite config
+should alias `@nextstrain/evofr-viz` to this repo's `src/lib/` so edits
+here hot-reload in the running app without any `npm pack` step.
 
-In the consuming app, first install the tarball and associated dependencies as above.
-Then use hardlinks to swap out the bundled library code with the version we are keeping up-to-date, e.g.:
+For example, with `forecasts-viz` and `forecasts-flu` checked out as
+siblings:
+
 ```sh
-rm -rf node_modules/\@nextstrain/evofr-viz/dist
-cp -lR ~/github/nextstrain/forecasts-viz/dist  node_modules/\@nextstrain/evofr-viz/dist
+cd ../forecasts-flu/viz
+LOCAL_LIB=1 npm run dev
 ```
-(your paths will differ).
-Then run the app and you should be using the current state of the underlying library code.
-If your development mode doesn't work then try the production mode to see if it's due to build-tool caching.
-
-If you need to update dependencies of the library then you're on your own!
-
-To undo this, in the consuming app directory delete all the dependencies and re-install: `rm -rf node_modules && npm ci`.
 
