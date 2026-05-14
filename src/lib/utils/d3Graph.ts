@@ -506,7 +506,7 @@ D3Graph.prototype.togglePoints = function(this: D3GraphInstance, key: 'raw'|'smo
   const _styles = key === 'raw' ? this.styles.rawPoints : this.styles.smoothedPoints;
   
   Object.entries(freqLocationData).forEach(([variant, freqData]) => {
-    const temporalPoints = freqData.temporal.filter((pt) => pt?.raw !== undefined)
+    const temporalPoints = freqData.temporal.filter((pt) => pt?.[key] !== undefined)
     const variantColor = this.getVariantColor(variant) || 'black';
     if (this.controls.selectedVariants.size > 0 && !this.controls.selectedVariants.has(variant)) {
       return;
