@@ -3,6 +3,11 @@ import type { GenericTimePoint, ModelData } from "./modelData.types.ts";
 
 const SKIP_VARIANT = new Set(['other'])
 
+/**
+ * 
+ * @param data 
+ */
+
 export function calcRelativeGA(data: ModelData): void {
   const relativeGaDomain: [number, number] = [Infinity, -Infinity];
   const points = data.get('points');
@@ -13,37 +18,41 @@ export function calcRelativeGA(data: ModelData): void {
     points.relativeGA[location] = {};
     /* First step is to calculate population GA which is a temporal view of
     the sum of each variant's GA x frequency  */
-    const popGaTemporal: (GenericTimePoint | undefined)[] = Array(data.get('dateIdx').size);
-    const weightedGa: Record<string, number[]> = {};
+    const meanPopFit: (GenericTimePoint | undefined)[] = Array(data.get('dateIdx').size);
     for (const variant of data.get('variants')) {
       if (SKIP_VARIANT.has(variant)) continue;
       const ga = points?.ga?.[location]?.[variant]?.value;
       if (ga === undefined) continue;
       const freqTemporal = points?.freq?.[location]?.[variant]?.temporal;
       if (freqTemporal === undefined) continue
-      weightedGa[variant] = freqTemporal.map((freqTimePoint, idx) => {
+      freqTemporal.forEach((freqTimePoint, idx) => {
         if (freqTimePoint === undefined) return undefined;
         const value = freqTimePoint.value * ga;
         // popGA is sum over all variants
-        if (popGaTemporal[idx] === undefined) {
-          popGaTemporal[idx] = { date: freqTimePoint.date, value: 0 };
+        if (meanPopFit[idx] === undefined) {
+          meanPopFit[idx] = { date: freqTimePoint.date, value: 0 };
         }
-        popGaTemporal[idx].value += value;
-        return value;
+        meanPopFit[idx].value += value;
       });
     }
-    points.popGA[location] = { temporal: popGaTemporal };
-    /* Second step is to calculate population-relative growth advantage
-     * (for each variant, for each time point) */
+    points.popGA[location] = { temporal: meanPopFit };
+
+    /**
+     * Calculate population-relative growth advantage, essentially:
+     * variant fitness (point estimate) / time-varying mean population fitness
+     * then look at this in log space (log(a/b) == log(a) - log(b))
+     */  
     for (const variant of data.get('variants')) {
-      if (!Object.hasOwn(weightedGa, variant)) continue;
+      const variantFitnesss = points?.ga?.[location]?.[variant]?.value;
+      if (variantFitnesss === undefined) continue;
       points.relativeGA[location][variant] = {
-        temporal: weightedGa[variant].map((wGA, tIdx) => {
-          if (popGaTemporal[tIdx] === undefined) return undefined;
-          const relativeGa = Math.log(wGA) - Math.log(popGaTemporal[tIdx].value);
+        temporal: meanPopFit.map((el, timeIdx) => {
+          if (el.value === undefined) return undefined;
+          // const relativeGa = Math.log(variantFitnesss) - Math.log(el.value);
+          const relativeGa = variantFitnesss / el.value;
           if (relativeGa < relativeGaDomain[0]) relativeGaDomain[0] = relativeGa;
           if (relativeGa > relativeGaDomain[1]) relativeGaDomain[1] = relativeGa;
-          return { date: data.get('dates')[tIdx], value: relativeGa }
+          return { date: data.get('dates')[timeIdx], value: relativeGa }
         })
       };
     }

@@ -67,6 +67,7 @@ export interface ModelDataConfig {
       /** display name of the interval */
       interval_name: string;
     };
+    /** TODO XXX RENAME */
     relativeGA: {
       /** Compute popGA and relativeGA at parse time. Needed to plot certain graphs. */
       enable: boolean;
@@ -120,7 +121,10 @@ export interface GaData {
 export interface Points {
   freq?: Record<string, Record<string, FreqData>>;
   ga?: Record<string, Record<string, GaData>>;
+  /** TODO XXX - we don't need to store this - it's just used to compute meanPopFit */
   relativeGA?: Record<string, Record<string, RelativeGAData>>;
+  /** mean population fitness: <location> → temporal values */
+  // TODO XXX RENAME!
   popGA?: Record<string, popGAData>;
   freqGA?: Record<string, Record<string, FreqGAData>>;
 }
