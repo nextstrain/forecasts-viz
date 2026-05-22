@@ -12,6 +12,7 @@ interface GraphProps {
 }
 
 export const Graph = ({ modelData, sizes, location, params }: GraphProps) => {
+  console.log("<Graph> rerunning", location, params.key)
   const d3Container = useRef(null);
   const controls = useControlsContext();
 
@@ -20,10 +21,8 @@ export const Graph = ({ modelData, sizes, location, params }: GraphProps) => {
     [location]
   );
   
-  const emptyGraph = useGraph(d3Container, sizes, modelData, paramsWithLocation, controls);  
+  useGraph(d3Container, sizes, modelData, paramsWithLocation, controls);  
   
-  if (emptyGraph) return null;
-
   return (
     <div ref={d3Container}/>
   )

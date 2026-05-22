@@ -1,7 +1,7 @@
 import { max, schemeTableau10 } from 'd3';
 import { DatasetConfig } from "./config.ts";
 import { ModelData, Points, ModelDataConfig } from "./modelData.types.ts";
-import { calcRelativeGA, calcFreqGA} from "./fitness.ts"
+import { calcFitness} from "./fitness.ts"
 
 const THRESHOLD_FREQ = 0.005; /* half a percent */
 const INITIAL_DAY_CUTOFF = 10; /* cut off first 10 days */
@@ -106,9 +106,8 @@ export const parseModelData = (
   
   data.set("points", points);
   
-  if (sitesInfo.relativeGA?.enable) {
-    calcRelativeGA(data);
-    calcFreqGA(data);
+  if (sitesInfo.relativeGA?.enable) { // TODO XXX RENAME
+    calcFitness(data);
   }
 
   console.log("DATA", data);

@@ -75,6 +75,11 @@ export interface ModelDataConfig {
   }
 }
 
+type variant = string;
+/** variant name */
+
+type location = string;
+/** location name */
 
 export interface GenericTimePoint {
   date: string;
@@ -92,7 +97,7 @@ export interface FreqGaTimePoint {
   date: string;
   /** frequency (NOT logit transformed) */
   freq: number;
-  /** log(variant weighted ga) - log(pop ga) */
+  /** log(variant weighted ga) - log(pop ga) TODO XXX */
   relativeGa: number;
 }
 
@@ -112,6 +117,16 @@ export interface FreqGAData {
   temporal: (FreqGaTimePoint | undefined)[];
 }
 
+export interface MeanPopFitnessData {
+  temporal: GenericTimePoint[];
+  lower: number;
+  upper: number;
+}
+
+interface RelativeFitnessData {
+  temporal: GenericTimePoint[];
+}
+
 export interface GaData {
   value?: number;
   lower?: number;
@@ -119,12 +134,22 @@ export interface GaData {
 }
 
 export interface Points {
-  freq?: Record<string, Record<string, FreqData>>;
-  ga?: Record<string, Record<string, GaData>>;
-  /** TODO XXX - we don't need to store this - it's just used to compute meanPopFit */
+  freq?: Record<location, Record<variant, FreqData>>;
+  ga?: Record<location, Record<variant, GaData>>;
+
+  /** Mean population fitness is the sum of freq_i(t) * ga_i for all variants i */
+  meanPopFitness?: Record<location, MeanPopFitnessData>;
+
+  /** Relative Fitness is the variant's GA / meanPopFitness.
+   * (The fraction is log-transformed)
+   */
+  relativeFitness?: Record<location, Record<variant, RelativeFitnessData>>;
+  
+  // TODO XXX RENAME to
   relativeGA?: Record<string, Record<string, RelativeGAData>>;
   /** mean population fitness: <location> → temporal values */
-  // TODO XXX RENAME!
+  // TODO XXX RENAME! meanPopFit
   popGA?: Record<string, popGAData>;
+  // TODO XXX rENAME: 
   freqGA?: Record<string, Record<string, FreqGAData>>;
 }

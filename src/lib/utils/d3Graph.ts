@@ -30,6 +30,7 @@ export interface D3GraphInstance {
   setupLine(): void;
   setupArea(): void;
   drawLines(): void;
+  drawSingleLine(): void;
   drawPoints(): void;
   annotateFinalPoint(): void;
   updateScale(): void;
@@ -39,10 +40,14 @@ export interface D3GraphInstance {
   drawDashedLines(): void;
   title(): void;
   getVariantColor(variant: string): string;
+  /** TODO XXX */
+  statespaceData?: any;
 }
 
 export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: ModelData, params: GraphParamsWithLocation, controls: Controls) {
   const dom = d3.select(d3Container.current);
+
+  console.log("<<<SETUP d3graph", modelData.get('points')?.meanPopFitness)
   
   this.svg = svgSetup(dom, sizes);
   this.tooltip = new Tooltip(dom);
@@ -62,6 +67,7 @@ export function D3Graph(this: D3GraphInstance, d3Container, sizes, modelData: Mo
   this.setupLine();
   this.setupArea();
   this.drawLines();
+  this.drawSingleLine();
   this.drawPoints();
   if (this.controls.rawPoints) this.togglePoints('raw');
   if (this.controls.smoothedPoints) this.togglePoints('smoothed');
@@ -104,7 +110,7 @@ D3Graph.prototype.createScales = function (this: D3GraphInstance) {
       break;
     case "statespace":
       this.x = (applyLogit ? logitScale() : d3.scaleLinear())
-        .domain(this.params.xDomain);
+        .domain([0, 1]); // TODO XXX
       this.y = d3.scaleLinear().domain(customYDomain)
       break;
     default:
@@ -209,15 +215,17 @@ D3Graph.prototype.setupTooltipXY = function(this: D3GraphInstance) {
 }
 
 D3Graph.prototype.setupLine = function(this: D3GraphInstance) {
-  if (this.params.graphType==="points") return;
+  if (this.params.graphType === "points") return;
+  
   if (this.params.graphType === 'statespace') {
     this.line = d3.line<any>()
       .defined(d => !!d)
       .curve(d3.curveLinear)
-      .x((d) => this.x(d.freq))
-      .y((d) => this.y(d.relativeGa))
+      .x((d) => this.x(d.xVal))
+      .y((d) => this.y(d.yVal))
     return;
   }
+
   this.line = d3.line<any>()
     .defined(d => !!d)
     .curve(d3.curveLinear)
@@ -236,6 +244,30 @@ D3Graph.prototype.setupArea = function(this: D3GraphInstance) {
     .y1((d) => this.y(d.upper))
 }
 
+D3Graph.prototype.drawSingleLine = function (this: D3GraphInstance) {
+  if (this.params.key !== 'meanPopFitness') return;
+
+  const locationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
+  if (!locationData) {
+    this.emptyData = true;
+    return
+  }
+  this.emptyData = false;
+  const { lower, upper, temporal } = locationData;
+  const color = '#000';
+
+  const g = this.svg.append('g');
+  g.append('path')
+    .attr("class", "line")
+    .attr("fill", "none")
+    .attr("stroke", color)
+    .attr("stroke-width", this.styles.lines.line.strokeWidth.normal)
+    .attr("stroke-opacity", this.styles.lines.line.opacity.normal)
+    .attr("d", this.line(temporal))
+    .style('pointer-events', 'none')
+}
+
+
 D3Graph.prototype.drawLines = function (this: D3GraphInstance) {
   /**
    * Note: this approach (one <g> per variant) works, but there is an alternate
@@ -243,20 +275,50 @@ D3Graph.prototype.drawLines = function (this: D3GraphInstance) {
    * streams for implementation details.
    */
   if (!['lines', 'statespace'].includes(this.params.graphType)) return;
-  
-  const locationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
-  if (!locationData) {
-    this.emptyData = true;
-    return
-  }
 
-  let dataExists = false;
+  if (this.params.key === 'meanPopFitness') return;
+
+  let data: [string, any][] = []; /* array of [variant, variantData] where variantData is handed to the line / area constructors */
   const areVariantsSelected = this.controls.selectedVariants.size > 0;
 
-  Object.entries(locationData).forEach(([variant, data]: [string, any]) => {
-    const temporalPoints = data?.temporal;
-    if (!temporalPoints || temporalPoints.filter(Boolean).length === 0) return;
-    dataExists = true;
+  if (this.params.graphType === 'lines') {
+    const locationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
+    if (!locationData) {
+      this.emptyData = true;
+      return
+    }
+    data = Object.entries(locationData)
+      .map(([variant, d]: [string, any]): [string, any] | undefined => {
+        const temporalPoints = d?.temporal;
+        if (!temporalPoints || temporalPoints.filter(Boolean).length === 0) {
+          return undefined;
+        }
+        return [variant, temporalPoints];
+      })
+      .filter((el) => !!el);
+  } else if (this.params.graphType === 'statespace') {
+    // TODO XXX - don't hardcode!
+    const xVariantData = this.modelData.get('points').freq?.[this.params.location];
+    const yVariantData = this.modelData.get('points').relativeFitness?.[this.params.location];
+    for (const variant of Object.keys(xVariantData)) {
+      if (!Object.hasOwn(yVariantData, variant)) continue;
+      // TODO XXX - censor forecasts??
+      const xTemporal = xVariantData[variant].temporal;
+      const yTemporal = yVariantData[variant].temporal;
+      const temporalPoints = xTemporal.map((el, idx) => el && ({
+        date: el.date,
+        xVal: el.value,
+        yVal: yTemporal[idx].value,
+      })).filter((el) => !!el);
+      data.push([variant, temporalPoints]);
+    }
+    this.statespaceData = data; // TODO XXX hacky - abstract into fn.
+  }
+
+  this.emptyData = data.length > 0;
+  
+
+  for (const [variant, points] of data) {
     const color = this.getVariantColor(variant);
     const g = this.svg.append('g')
       .attr("class", cssSafeName(`variant_${variant}`));
@@ -271,7 +333,7 @@ D3Graph.prototype.drawLines = function (this: D3GraphInstance) {
         .attr("stroke", "none")
         .attr("fill", color)
         .attr("opacity", this.styles.lines.area.opacity[mode])
-        .attr("d", this.area(temporalPoints))
+        .attr("d", this.area(points))
         .style('pointer-events', 'none')
     }
 
@@ -281,10 +343,9 @@ D3Graph.prototype.drawLines = function (this: D3GraphInstance) {
       .attr("stroke", color)
       .attr("stroke-width", this.styles.lines.line.strokeWidth[mode])
       .attr("stroke-opacity", this.styles.lines.line.opacity[mode])
-      .attr("d", this.line(temporalPoints))
+      .attr("d", this.line(points))
       .style('pointer-events', 'none')
-  });
-  this.emptyData = !dataExists;
+  }
 }
 
 
@@ -343,42 +404,50 @@ D3Graph.prototype.drawPoints = function (this: D3GraphInstance) {
 
 interface AnnotationPoint {
   variant: string;
-  point: FreqGaTimePoint;
+  date: string;
+  xVal: number;
+  yVal: number;
   isFilled: boolean;
   opaque: boolean;
   color: string;
+  radius: number;
 }
 
 D3Graph.prototype.annotateFinalPoint = function (this: D3GraphInstance): void {
   if (this.params.annotateFinalPoint !== true) return;
-  if (this.params.graphType !== 'statespace' || this.params.key !== 'freqGA') {
-    throw new Error('annotateFinalPoint only for statespace + freqGA plots ')
+  if (this.params.graphType !== 'statespace') {
+    throw new Error('annotateFinalPoint only for statespace')
   }
+
+  const variantsSelected = this.controls.selectedVariants.size > 0;
 
   let g = this.svg.select<SVGGElement>('g.annotation');
   if (g.empty()) {
     g = this.svg.append('g').attr("class", "annotation");
   }
 
-  const locationData = this.modelData.get('points').freqGA?.[this.params.location];
-  if (!locationData) return;
-  const variantsSelected = this.controls.selectedVariants.size > 0;
-  
-  const circleData: AnnotationPoint[] = Object.entries(locationData).flatMap(([variant, variantData]) => {
-    const tIdx = _finalTemporalIdx(variantData.temporal);
+  const circleData: AnnotationPoint[] = this.statespaceData.flatMap(([variant, temporalPoints]) => {
+    const tIdx = _finalTemporalIdx(temporalPoints);
     if (tIdx === false) return [];
-    const point = variantData.temporal[tIdx];
+    const point = temporalPoints[tIdx];
+    const color = this.getVariantColor(variant);
     const isFilled = !variantsSelected || this.controls.selectedVariants.has(variant);
     const opaque = variantsSelected && !isFilled;
-    return [{variant, point, isFilled, opaque, color: this.getVariantColor(variant)}];
+    const finalForecastPoint = { variant, ...point, isFilled, opaque, color, radius: 4 };
+    const nowcastIdx = _nowcastIdx(temporalPoints, this.modelData.get('nowcastFinalDate'));
+    if (nowcastIdx === false) return [finalForecastPoint];
+    const nowcastPoint = { variant, ...temporalPoints[nowcastIdx], isFilled, opaque, color, radius: 6 };
+
+    return [finalForecastPoint, nowcastPoint];
   });
 
+  
   g.selectAll<SVGCircleElement, AnnotationPoint>("circle")
     .data(circleData, (d) => d.variant)
     .join("circle")
-      .attr("cx", (d) => this.x(d.point.freq))
-      .attr("cy", (d) => this.y(d.point.relativeGa))
-      .attr("r", 4)
+      .attr("cx", (d) => this.x(d.xVal))
+      .attr("cy", (d) => this.y(d.yVal))
+      .attr("r", (d) => d.radius)
       .style('opacity', (d) => d.opaque ? this.styles.lines.line.opacity.focusInactive : 1 )
       .style("fill", (d) => d.isFilled ? d.color : "none")
       .style("stroke", (d) => d.isFilled ? "none" : d.color)
@@ -391,6 +460,14 @@ function _finalTemporalIdx(data: any[]): false|number {
   }
   return false;
 }
+
+function _nowcastIdx(data: any[], dateCutoff): false|number {
+  for (let i = data.length - 1; i > 0; i--) {
+    if (data[i].date && data[i].date < dateCutoff) return i;
+  }
+  return false;
+}
+
 
 
 /**
@@ -414,11 +491,15 @@ D3Graph.prototype.updateScale = function(this: D3GraphInstance) {
         .call(simpleAxis('x', this.x, this.sizes, d3.format(".0%")));
       break;
   }
-
-  const updateLocationData = this.modelData.get('points')[this.params.key]?.[this.params.location];
+  
+  const updateLocationData = this.params.graphType === 'lines' ?
+    this.modelData.get('points')[this.params.key]?.[this.params.location] :
+    Object.fromEntries(this.statespaceData);
   if (updateLocationData) {
     Object.entries(updateLocationData).forEach(([variant, data]) => {
-      const temporalPoints = (data as any).temporal; // TODO XXX fix types
+      const temporalPoints = this.params.graphType === 'lines' ?
+        (data as any).temporal :
+        data; // TODO XXX fix types
       if (temporalPoints.filter(Boolean).length === 0) return;
       const g = this.svg.selectAll(`.${cssSafeName(`variant_${variant}`)}`)
   
@@ -445,7 +526,7 @@ D3Graph.prototype.updateScale = function(this: D3GraphInstance) {
   this.svg.select('g.annotation')
     .selectAll<SVGCircleElement, AnnotationPoint>('circle')
     .transition().duration(TRANSITION_DURATION)
-    .attr("cx", (d) => this.x(d.point.freq));
+    .attr("cx", (d) => this.x(d.xVal));
 
 }
 

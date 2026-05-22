@@ -8,10 +8,14 @@ import type { Controls } from '../hooks/useControls';
 export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation, controls: Controls) => {
   const graph = useRef<null|D3GraphInstance>(null);
   const prevDeps = useRef(null);
-  const [emptyGraph, setEmptyGraph] = useState(false);
+  // const [emptyGraph, setEmptyGraph] = useState(false);
 
   useEffect(() => {
+
+    console.log("useGraph::useEffect")
+    
     if (!dom.current) {
+      console.log("NO DOM?!?!")
       return;
     }
 
@@ -28,6 +32,7 @@ export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation,
 
     const sizesEqual = isEqual(prevDeps.current.sizes, sizes);
     const modelDataEqual = prevDeps.current.modelData === modelData;
+    console.log("modelDataEqual", modelDataEqual)
     if (!sizesEqual || !modelDataEqual) {
       prevDeps.current.sizes = sizes;
       prevDeps.current.modelData = modelData;
@@ -35,10 +40,11 @@ export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation,
       return;
     }
 
-    if (graph.current.emptyData===true) {
-      setEmptyGraph(true);
-      return;
-    }
+    // if (graph.current.emptyData === true) {
+    //   console.log("EMPPPP")
+    //   // setEmptyGraph(true);
+    //   return;
+    // }
   
     // make d3 aware of new state
     graph.current.controls = controls;
@@ -74,5 +80,5 @@ export const useGraph = (dom, sizes, modelData, params: GraphParamsWithLocation,
    * cases.
    */
   
-  return emptyGraph;
+  // return emptyGraph;
 }

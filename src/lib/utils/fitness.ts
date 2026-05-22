@@ -1,97 +1,95 @@
-import type { GenericTimePoint, ModelData } from "./modelData.types.ts";
+import type { GenericTimePoint, ModelData, MeanPopFitnessData, GaData, FreqData, RelativeFitnessData } from "./modelData.types.ts";
 
 
-const SKIP_VARIANT = new Set(['other'])
+const SKIP_VARIANT = new Set(['other', 'hierarchical'])
+
 
 /**
+ * Creates `data.points.meanPopFitness` `data.points.relativeFitness` structures.
  * 
- * @param data 
+ * Mean population fitness is the sum of freq_i(t) * ga_i
+ * for all variants i.
+ * 
+ * Relative fitness is log(ga_i / meanPopFit(t))
+ * 
+ * Each of these includes forecasted dates (forecasted frequencies)
+ * 
+ * <https://bedford.io/talks/viral-fitness-flux-penn-iizd/#/15>
  */
-
-export function calcRelativeGA(data: ModelData): void {
-  const relativeGaDomain: [number, number] = [Infinity, -Infinity];
+export function calcFitness(data: ModelData): void {
   const points = data.get('points');
-  points.popGA = {};
-  points.relativeGA = {};
-
-  for (const location of data.get('locations')) {
-    points.relativeGA[location] = {};
-    /* First step is to calculate population GA which is a temporal view of
-    the sum of each variant's GA x frequency  */
-    const meanPopFit: (GenericTimePoint | undefined)[] = Array(data.get('dateIdx').size);
-    for (const variant of data.get('variants')) {
-      if (SKIP_VARIANT.has(variant)) continue;
-      const ga = points?.ga?.[location]?.[variant]?.value;
-      if (ga === undefined) continue;
-      const freqTemporal = points?.freq?.[location]?.[variant]?.temporal;
-      if (freqTemporal === undefined) continue
-      freqTemporal.forEach((freqTimePoint, idx) => {
-        if (freqTimePoint === undefined) return undefined;
-        const value = freqTimePoint.value * ga;
-        // popGA is sum over all variants
-        if (meanPopFit[idx] === undefined) {
-          meanPopFit[idx] = { date: freqTimePoint.date, value: 0 };
-        }
-        meanPopFit[idx].value += value;
-      });
-    }
-    points.popGA[location] = { temporal: meanPopFit };
-
-    /**
-     * Calculate population-relative growth advantage, essentially:
-     * variant fitness (point estimate) / time-varying mean population fitness
-     * then look at this in log space (log(a/b) == log(a) - log(b))
-     */  
-    for (const variant of data.get('variants')) {
-      const variantFitnesss = points?.ga?.[location]?.[variant]?.value;
-      if (variantFitnesss === undefined) continue;
-      points.relativeGA[location][variant] = {
-        temporal: meanPopFit.map((el, timeIdx) => {
-          if (el.value === undefined) return undefined;
-          // const relativeGa = Math.log(variantFitnesss) - Math.log(el.value);
-          const relativeGa = variantFitnesss / el.value;
-          if (relativeGa < relativeGaDomain[0]) relativeGaDomain[0] = relativeGa;
-          if (relativeGa > relativeGaDomain[1]) relativeGaDomain[1] = relativeGa;
-          return { date: data.get('dates')[timeIdx], value: relativeGa }
-        })
-      };
-    }
-    
-    // TODO XXX - smooth?
+  points.meanPopFitness = {};
+  points.relativeFitness = {};
+  let [relativeFitnessLower, relativeFitnessUpper]: [number, number] = [Infinity, -Infinity]; // bounds
+  for (const [location, variantFreqs] of Object.entries(points.freq)) {
+    const locGa = points?.ga?.[location];
+    const locMeanPopFit = _locationMeanPopFitness(location, data.get('dates'), locGa, variantFreqs);
+    points.meanPopFitness[location] = locMeanPopFit;
+    const [locLower, relFitUpper, locRelFit] = _relativeFitness(location, locGa, locMeanPopFit.temporal);
+    if (locLower < relativeFitnessLower) relativeFitnessLower = locLower;
+    if (relFitUpper > relativeFitnessUpper) relativeFitnessUpper = relFitUpper;    
+    points.relativeFitness[location] = locRelFit;
   }
-  data.get('domains').relativeGa = relativeGaDomain;
+  console.log("*** overall relative fitness bounds:", relativeFitnessLower, relativeFitnessUpper)
+  data.get('domains').relativeFitness = [relativeFitnessLower, relativeFitnessUpper];
 }
 
-/**
- * Calculate `freqGA` data, which is just a combination of (per-location, per-variant, per-time-point)
- * frequency and relativeGA
- */
-export function calcFreqGA(data: ModelData): void {
-  const points = data.get('points');
-  points.freqGA = {};
-  const freqCutoffIdx = data.get('dateIdx').get(data.get('nowcastFinalDate'));
-  for (const location of data.get('locations')) {
-    points.freqGA[location] = {};
-    for (const variant of data.get('variants')) {
-      const freqTemporal = points?.freq?.[location]?.[variant]?.temporal;
-      const relativeGA = points?.relativeGA?.[location]?.[variant]?.temporal;
-      if (!freqTemporal || !relativeGA) continue
-      points.freqGA[location][variant] = {
-        temporal: Array(data.get('dateIdx').size)
-          .fill(undefined)
-          .map((_, tIdx) => {
-            if (tIdx > freqCutoffIdx) return undefined;
-            const [freqPt, relativeGaPt] = [freqTemporal[tIdx], relativeGA[tIdx]];
-            if (freqPt === undefined || relativeGaPt === undefined) {
-              return undefined;
-            }
-            return {
-              date: freqPt.date,
-              freq: freqPt.value,
-              relativeGa: relativeGaPt.value,
-            };
-          })
-      };
-    }
+function _locationMeanPopFitness(
+  location: string,
+  dates: string[],
+  locationGa: Record<string, GaData>,
+  locationFreq: Record<string, FreqData>,
+): MeanPopFitnessData {
+  const fitnessSum = Array(dates.length).fill(0);
+  for (const [variant, freqs] of Object.entries(locationFreq)) {
+    if (SKIP_VARIANT.has(variant)) continue;
+    const ga = locationGa?.[variant]?.value;
+    if (ga === undefined) continue;
+    freqs.temporal.forEach((f, idx) => {
+      /* not all variants have frequency data for all time points (censoring) */
+      if (!f) return;
+      fitnessSum[idx] += f.value * ga
+    });
+    console.log(`locationMeanPopFitness: ${location} ${variant} ${fitnessSum.slice(0,5).join(" ")}`)
   }
+  let [lower, upper]: [number, number] = [Infinity, -Infinity];
+  const temporal = fitnessSum.map((value, idx) => {
+    if (value < lower) lower = value;
+    if (value > upper) upper = value;
+    return { date: dates[idx], value };
+  });
+  return { lower, upper, temporal };
 }
+
+function _relativeFitness(
+  location: string,
+  locationGa: Record<string, GaData>,
+  meanPopFitnessValues: MeanPopFitnessData['temporal'],
+): [number, number, Record<string, RelativeFitnessData>] {
+
+  const locRelFit: Record<string, RelativeFitnessData> = {}; // location relative fitness
+  let [lower, upper]: [number, number] = [Infinity, -Infinity]; // location bounds
+
+  for (const [variant, gaData] of Object.entries(locationGa)) {
+    if (SKIP_VARIANT.has(variant) || !Object.hasOwn(gaData, 'value')) continue;
+    const ga = gaData.value!;
+    const temporal = meanPopFitnessValues.map((timePt) => {
+      console.log("GA", ga, "POP", timePt.value)
+      const popFit = timePt.value || 1e-12;
+      const value = Math.log(ga) - Math.log(popFit); // log(a/b) == log(a) - log(b)
+      if (value < lower) lower = value;
+      if (value > upper) upper = value;      
+      return {
+        date: timePt.date,
+        value: Math.log(ga) - Math.log(timePt.value),
+        // nonLogValue: ga / timePt.value,
+      }
+    });
+    // console.log(`location relative fitness (ga: ${ga}) RAW: ${location} ${variant} ${temporal.slice(0, 5).map((x) => x.nonLogValue).join(" ")}`)
+    console.log(`location relative fitness (ga: ${ga}) LOG: ${location} ${variant} ${temporal.slice(0, 5).map((x) => x.value).join(" ")}`)
+    locRelFit[variant] = { temporal };
+  }
+  console.log(`**location relative fitness bounds ${lower} ${upper}\n\n`)
+  return [lower, upper, locRelFit];
+}
+

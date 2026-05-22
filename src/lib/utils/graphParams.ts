@@ -60,8 +60,8 @@ export function expandParams(providedParams: UserGraphParams): GraphParams {
       params.key = 'ga';
       params.interval  = ['ga_HDI_95_lower', 'ga_HDI_95_upper'];
       params.tooltipPt = categoryPointTooltip;
-      params.yDomain = function() {return this.modelData.get('domains').ga;};
-      params.xDomain = function() {
+      params.yDomain = function(this: D3GraphInstance) {return this.modelData.get('domains').ga;};
+      params.xDomain = function(this: D3GraphInstance) {
         return ['', ...this.modelData.get('variants')]
       }
       params.dashedLines = [1.0]
@@ -70,16 +70,47 @@ export function expandParams(providedParams: UserGraphParams): GraphParams {
       params.graphType = "lines"
       params.key = 'relativeGA';
       params.forecastLine = true;
-      params.yDomain = function (this) { return this.modelData.get('domains').relativeGa; };
+      params.yDomain = function (this: D3GraphInstance) { return this.modelData.get('domains').relativeGa; };
       // params.tooltipXY = tooltipGeneric; // TODO XXX
       break;
-    case 'freqGA':
+
+    case 'meanPopFitness':
+      params.graphType = "lines"
+      params.key = 'meanPopFitness';
+      params.forecastLine = true;
+      params.yDomain = function (this: D3GraphInstance) {
+        let [low, high]: [number, number] = [Infinity, -Infinity];
+        for (const meanPopFitnessData of Object.values(this.modelData.get('points').meanPopFitness)) {
+          if (meanPopFitnessData.lower < low) low = meanPopFitnessData.lower;
+          if (meanPopFitnessData.upper > high) high = meanPopFitnessData.upper;
+        }
+        const delta = high - low;
+        return [low - 0.1*delta, high+0.1*delta];
+      };
+      // params.tooltipXY = tooltipGeneric; // TODO XXX
+      break;
+    case 'relativeFitness':
+      params.graphType = "lines"
+      params.key = 'relativeFitness';
+      params.forecastLine = true;
+      params.yDomain = function (this: D3GraphInstance) {
+        const bounds = this.modelData.get('domains').relativeFitness;
+        const delta = bounds[1] - bounds[0]; // this is in log space, so not quite right but good enough
+        return [bounds[0] - delta * 0.1, bounds[1] + delta * 0.1];
+      };
+      // params.tooltipXY = tooltipGeneric; // TODO XXX
+      break;
+    case 'relativeFitnessVsFrequency':
       params.graphType = "statespace"
-      params.key = 'freqGA';
-      params.canUseLogit = true;
+      params.key = 'relativeFitness';
+      params.forecastLine = true;
       params.annotateFinalPoint = true;
-      params.yDomain = function (this) { return this.modelData.get('domains').relativeGa; };
-      params.xDomain = [0, 1];
+      params.canUseLogit = true;
+      params.yDomain = function (this: D3GraphInstance) {
+        const bounds = this.modelData.get('domains').relativeFitness;
+        const delta = bounds[1] - bounds[0]; // this is in log space, so not quite right but good enough
+        return [bounds[0] - delta * 0.1, bounds[1] + delta * 0.1];
+      };
       // params.tooltipXY = tooltipGeneric; // TODO XXX
       break;
     default:
